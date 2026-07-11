@@ -77,6 +77,7 @@ button,.button{min-height:44px;cursor:pointer;font:inherit}button:focus-visible,
 .action-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.action-bar .button,.action-bar button{margin:0}.button.danger{background:var(--danger);border-color:var(--danger);color:#fff}.button.subtle,.subtle{background:var(--surface-alt);color:var(--ink);border:1px solid var(--line)}
 .trip-progress{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0 0}.progress-meter{height:10px;flex:1;min-width:150px;border-radius:999px;background:#dbe5e5;overflow:hidden}.progress-meter>span{display:block;height:100%;background:#0f766e;border-radius:inherit;transition:width .2s ease}
 .mode-note{border-left:5px solid var(--warn);background:#fff7ed;border-radius:12px;padding:12px 14px;margin:14px 0}.mode-note strong{color:#92400e}.mode-note.safe{border-color:var(--ok);background:#ecfdf5}.mode-note.safe strong{color:#065f46}
+.ticket-alert{border-left:5px solid #0f5b63;background:#ecfeff;border-radius:12px;padding:12px 14px;margin:12px 0}.ticket-alert.required{border-color:var(--warn);background:#fff7ed}.ticket-alert h4{margin:0 0 6px;font-size:15px}.ticket-alert p{margin:6px 0}.ticket-alert .action-bar{margin-top:8px}
 .day-summary{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start}.day-summary h2{margin:0 0 8px}.day-summary .summary-actions{min-width:190px}.route-label{font-size:12px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
 .stop{position:relative}.stop.is-complete{opacity:.68;border-left-color:var(--ok)}.stop.is-complete h3{text-decoration:line-through}.stop.is-skipped{display:none}.stop-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.stop-actions button{min-height:38px;padding:7px 10px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--accent2);font-weight:800}.stop-actions button[aria-pressed="true"]{background:#ecfdf5;border-color:#0f766e;color:#065f46}
 .meal-plan{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:14px 0}.meal-plan-card{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--surface)}.meal-plan-card .tag{margin-top:0}.meal-plan-card h3{margin:8px 0}.meal-plan-card p{margin:6px 0}
@@ -418,6 +419,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
       mapUrl: details.mapUrl || mapSearchUrl(details.address || ''),
       sourceUrl: details.sourceUrl || '',
       reservation: details.reservation || '',
+      ticket: details.ticket || null,
       conditional: Boolean(details.conditional)
     };
   }
@@ -461,6 +463,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
       mapUrl: patch.mapUrl || original['Map URL'],
       sourceUrl: patch.sourceUrl || original['Source URL'],
       reservation: patch.reservation || '',
+      ticket: patch.ticket || null,
       conditional: Boolean(patch.conditional)
     });
   }
@@ -540,6 +543,77 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
     if (name.indexOf('noshery') !== -1) food.source = 'https://brockvilletourism.com/directory/the-noshery/';
   });
 
+  var ticketGuidance = {
+    montmorency: {
+      label: 'Advance tickets recommended',
+      cta: 'Buy daily access',
+      url: 'https://www.sepaq.com/en/reservation/purchase/pcm-daily-access',
+      secondaryCta: 'Cable car tickets',
+      secondaryUrl: 'https://www.sepaq.com/en/reservation/purchase/pcm-cable-car',
+      note: 'Buy the daily access online before Aug 8. Sépaq says online purchase guarantees access and makes arrival smoother; cable car tickets are separate if you want them.',
+      required: true
+    },
+    hopewell: {
+      label: 'Buy after setting tide window',
+      cta: 'Buy Hopewell tickets',
+      url: 'https://www.pxw1.snb.ca/SNB9000/product.aspx?ProductID=A001PHR0001&l=e',
+      secondaryCta: 'Tide table',
+      secondaryUrl: 'https://www.parcsnbparks.ca/en/parks/33/hopewell-rocks-provincial-park/26/tide-tables',
+      note: 'Buy official admission once the Aug 12 low-tide access window is chosen. NB Parks says 2026 tickets are valid for any two consecutive days.',
+      required: true
+    },
+    greenGables: {
+      label: 'No ticket to buy for this date',
+      cta: 'Plan ahead',
+      url: 'https://parks.canada.ca/lhn-nhs/pe/greengables/visit/pass-canada',
+      note: 'Admission is free during Aug 11 under the Canada Strong Pass, but Parks Canada expects very high 2026 visitation. Go early and keep the visit flexible.',
+      required: false
+    },
+    cavendish: {
+      label: 'No park pass to buy for this date',
+      cta: 'Check park updates',
+      url: 'https://parks.canada.ca/pn-np/pe/pei-ipe',
+      note: 'PEI National Park admission is free during Aug 11 under the Canada Strong Pass. Still check beach conditions, parking, and temporary closures before going.',
+      required: false
+    },
+    magneticHill: {
+      label: 'Pay on arrival',
+      cta: 'Check hours and fees',
+      url: 'https://www.moncton.ca/en/magnetic-hill-illusion',
+      note: 'City of Moncton lists the illusion as $10/car during the summer operating period. No advance-purchase flow is needed for this quick optional stop.',
+      required: false
+    }
+  };
+
+  var ticketGuidanceList = [
+    { name: 'Montmorency Falls tickets', fact: 'Sépaq strongly recommends buying daily access online before arrival.', url: ticketGuidance.montmorency.url },
+    { name: 'Montmorency cable car tickets', fact: 'Cable car tickets are separate from daily access if you want the easier family route.', url: ticketGuidance.montmorency.secondaryUrl },
+    { name: 'Hopewell Rocks tickets', fact: 'Official 2026 admission is valid for any two consecutive days.', url: ticketGuidance.hopewell.url },
+    { name: 'Green Gables Canada Strong Pass', fact: 'Admission is free June 19 to September 7, 2026, with very high visitation expected.', url: ticketGuidance.greenGables.url },
+    { name: 'PEI National Park Canada Strong Pass', fact: 'Cavendish Beach / PEI National Park admission is free during the Aug 11 visit window.', url: ticketGuidance.cavendish.url }
+  ];
+
+  function ticketForAttraction(name) {
+    var value = normalize(name);
+    if (value.indexOf('montmorency') !== -1 || value.indexOf('chute-montmorency') !== -1) return ticketGuidance.montmorency;
+    if (value.indexOf('hopewell') !== -1) return ticketGuidance.hopewell;
+    if (value.indexOf('green gables') !== -1) return ticketGuidance.greenGables;
+    if (value.indexOf('cavendish beach') !== -1 || value.indexOf('pei national park') !== -1) return ticketGuidance.cavendish;
+    if (value.indexOf('magnetic hill') !== -1) return ticketGuidance.magneticHill;
+    return null;
+  }
+
+  function renderTicketGuidance(ticket) {
+    if (!ticket) return '';
+    return [
+      '<div class="ticket-alert ', ticket.required ? 'required' : '', '">',
+      '<h4>', escapeHtml(ticket.label), '</h4>',
+      '<p class="small">', escapeHtml(ticket.note), '</p>',
+      '<div class="action-bar">', externalLink(ticket.url, ticket.cta || 'Open ticket link', 'button primary'), ticket.secondaryUrl ? externalLink(ticket.secondaryUrl, ticket.secondaryCta || 'More ticket info', 'button subtle') : '', '</div>',
+      '</div>'
+    ].join('');
+  }
+
   var operationalPlan = {
     schemaVersion: 2,
     generatedOn: '2026-07-10',
@@ -594,7 +668,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
         stops: [
           sourceStop('2026-08-08', 'Depart Montréal', { id: 'd2-depart', time: '08:30', zone: 'ET', priority: 'required' }),
           sourceStop('2026-08-08', 'Trois-Rivières stretch', { id: 'd2-lunch', time: '10:15', zone: 'ET', kind: 'Lunch / washroom', priority: 'required', notes: 'Canonical light lunch; Fairmount and Schwartz are optional Montréal detours, not routed stops.' }),
-          sourceStop('2026-08-08', 'Montmorency Falls', { id: 'd2-falls', time: '12:30', zone: 'ET', priority: 'required' }),
+          sourceStop('2026-08-08', 'Montmorency Falls', { id: 'd2-falls', time: '12:30', zone: 'ET', priority: 'required', ticket: ticketGuidance.montmorency }),
           sourceStop('2026-08-08', 'Check in: Hôtel Cofortel', { id: 'd2-hotel', time: '15:30', zone: 'ET', priority: 'required' }),
           sourceStop('2026-08-08', 'Old Québec / Dufferin', { id: 'd2-old-quebec', time: '17:15–18:25', zone: 'ET', priority: 'optional', skipAt: 30, saves: '60 min', notes: 'End the walk by 18:25 to preserve a realistic 19:00 dinner.' }),
           foodStop('2026-08-08', 'La Bûche', { id: 'd2-dinner', time: '19:00', zone: 'ET', kind: 'Dinner', priority: 'required', notes: 'Canonical Old Québec dinner. Reserve in advance; Cochon Dingue is the fallback.' })
@@ -642,7 +716,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
         emergency: 'Wally’s or hotel-area food is the late-arrival fallback.',
         stops: [
           sourceStop('2026-08-10', 'Depart Fredericton', { id: 'd4-depart', time: '08:30', zone: 'AT', priority: 'required' }),
-          sourceStop('2026-08-10', 'Magnetic Hill', { id: 'd4-magnetic', time: '10:45', zone: 'AT', priority: 'optional', skipAt: 30, saves: '45 min' }),
+          sourceStop('2026-08-10', 'Magnetic Hill', { id: 'd4-magnetic', time: '10:45', zone: 'AT', priority: 'optional', skipAt: 30, saves: '45 min', ticket: ticketGuidance.magneticHill }),
           foodStop('2026-08-10', 'Tony’s Bistro', { id: 'd4-lunch', time: '12:00', zone: 'AT', kind: 'Lunch', priority: 'required', notes: 'Canonical Moncton lunch. Keep it within the daytime service window.' }),
           sourceStop('2026-08-10', 'Esso / Magnetic Hill', { id: 'd4-fuel', time: '13:00', zone: 'AT', priority: 'required' }),
           sourceStop('2026-08-10', 'Cape Jourimain', { id: 'd4-cape', time: '14:30', zone: 'AT', priority: 'optional', skipAt: 45, saves: '45 min', notes: 'Shorten to washroom and bridge viewpoint if running late.' }),
@@ -666,9 +740,9 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
         contingency: 'If beach weather or energy is poor, protect Blue Mussel and Slaymaker; make Green Gables or the beach shorter.',
         emergency: 'Lobster on the Wharf is the easier dinner fallback.',
         stops: [
-          sourceStop('2026-08-11', 'Green Gables', { id: 'd5-green-gables', time: '09:35', zone: 'AT', priority: 'optional', skipAt: 30, saves: '60 min' }),
+          sourceStop('2026-08-11', 'Green Gables', { id: 'd5-green-gables', time: '09:35', zone: 'AT', priority: 'optional', skipAt: 30, saves: '60 min', ticket: ticketGuidance.greenGables }),
           foodStop('2026-08-11', 'Blue Mussel', { id: 'd5-lunch', time: '11:45', zone: 'AT', kind: 'Lunch', priority: 'required', notes: 'Canonical seafood lunch. Join the waitlist or check the same day.' }),
-          sourceStop('2026-08-11', 'Cavendish Beach', { id: 'd5-beach', time: '13:15', zone: 'AT', priority: 'optional', skipAt: 30, saves: '90 min' }),
+          sourceStop('2026-08-11', 'Cavendish Beach', { id: 'd5-beach', time: '13:15', zone: 'AT', priority: 'optional', skipAt: 30, saves: '90 min', ticket: ticketGuidance.cavendish }),
           sourceStop('2026-08-11', 'Return to Rodd Royalty', { id: 'd5-hotel', time: '18:00', zone: 'AT', priority: 'required' }),
           foodStop('2026-08-11', 'Slaymaker', { id: 'd5-dinner', time: '19:00', zone: 'AT', kind: 'Dinner', priority: 'required', notes: 'Canonical Charlottetown dinner. Book early; this is a drive from the hotel, so leave the beach on time.' })
         ],
@@ -693,7 +767,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
           sourceStop('2026-08-12', 'Victoria Row', { id: 'd6-victoria', time: 'Only if tide departure allows', zone: 'AT', priority: 'conditional', conditional: true, skipAt: 1, saves: '45 min' }),
           foodStop('2026-08-12', 'Lobster on the Wharf', { id: 'd6-lunch', time: 'Only if tide departure allows', zone: 'AT', kind: 'Lunch', priority: 'conditional', conditional: true, skipAt: 1, saves: '60 min', notes: 'Conditional lunch only. Keep it out of the plan until the official Hopewell window is set.' }),
           customStop({ id: 'd6-bridge', dayId: '2026-08-12', time: 'Tide-dependent departure', zone: 'AT', title: 'Confederation Bridge crossing', kind: 'Drive', priority: 'required', address: 'Confederation Bridge, Borden-Carleton, PE', city: 'Borden-Carleton, PE', notes: 'Check toll payment readiness before leaving PEI.', mapUrl: mapSearchUrl('Confederation Bridge, Borden-Carleton, PE'), sourceUrl: 'https://www.confederationbridge.com/tolls-fees/' }),
-          sourceStop('2026-08-12', 'Hopewell Rocks', { id: 'd6-hopewell', time: 'Official low-tide access window', zone: 'AT', kind: 'Tide-dependent attraction', priority: 'required', notes: 'Do not set a fixed time until the official table becomes available. Plan a 45-minute arrival buffer and at least 150 minutes on site.', sourceUrl: 'https://www.parcsnbparks.ca/en/parks/33/hopewell-rocks-provincial-park/26/tide-tables' }),
+          sourceStop('2026-08-12', 'Hopewell Rocks', { id: 'd6-hopewell', time: 'Official low-tide access window', zone: 'AT', kind: 'Tide-dependent attraction', priority: 'required', notes: 'Do not set a fixed time until the official table becomes available. Plan a 45-minute arrival buffer and at least 150 minutes on site.', sourceUrl: 'https://www.parcsnbparks.ca/en/parks/33/hopewell-rocks-provincial-park/26/tide-tables', ticket: ticketGuidance.hopewell }),
           sourceStop('2026-08-12', 'Check in: Fairfield', { id: 'd6-hotel', time: 'After Hopewell', zone: 'AT', priority: 'required' }),
           foodStop('2026-08-12', 'Tide & Boar', { id: 'd6-dinner', time: 'Only if Hopewell exit allows', zone: 'AT', kind: 'Dinner', priority: 'conditional', conditional: true, skipAt: 1, saves: '90 min', notes: 'Conditional dinner. Use hotel/quick food if the tide visit runs long.' })
         ],
@@ -778,6 +852,9 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
 
   var checklistTasks = [
     task({ id: 'hopewell-window', category: 'Tide', title: 'Set the Hopewell Rocks low-tide access window', description: 'After July 12, use the official table. Subtract 195 minutes for departure from Charlottetown, drive, parking, and buffer. Confirm access with park staff on arrival.', dueDate: '2026-07-12', url: operationalPlan.tidePlan.sourceUrl, priority: 'Critical' }),
+    task({ id: 'ticket-montmorency', category: 'Tickets', title: 'Buy Montmorency Falls daily access online', description: 'Buy official Sépaq daily access before Aug 8. Decide separately whether the family wants cable car tickets.', dueDate: '2026-07-24', url: ticketGuidance.montmorency.url, priority: 'Critical' }),
+    task({ id: 'ticket-hopewell', category: 'Tickets', title: 'Buy Hopewell Rocks admission after tide plan is set', description: 'Once the Aug 12 low-tide access window is selected, buy official admission and keep the two-consecutive-day validity in mind.', dueDate: '2026-07-13', url: ticketGuidance.hopewell.url, priority: 'Critical' }),
+    task({ id: 'green-gables-plan-ahead', category: 'Admission', title: 'Plan Green Gables arrival for Canada Strong Pass crowds', description: 'No ticket purchase is needed for Aug 11, but Parks Canada expects very high visitation in 2026. Keep the visit early and flexible.', dueDate: '2026-08-06', url: ticketGuidance.greenGables.url, priority: 'High' }),
     task({ id: 'road-checks', category: 'Roads', title: 'Save provincial 511 links and check them every drive morning', description: 'Check construction, closures, cameras, weather alerts, and traffic before leaving.', dueDate: '2026-08-06', url: 'https://511on.ca/roadconditions', priority: 'High' }),
     task({ id: 'offline-maps', category: 'Offline', title: 'Download offline map areas and save this trip pack', description: 'Maps and restaurant pages require connectivity; keep an offline copy and route downloads ready.', dueDate: '2026-08-06', priority: 'High' }),
     task({ id: 'fuel-readiness', category: 'Fuel', title: 'Confirm 91 AKI availability and card/payment readiness', description: 'Use the planned Esso stops as a preference, with a nearby premium-capable fallback before rural legs.', dueDate: '2026-08-06', priority: 'High' }),
@@ -1108,6 +1185,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
       '<h3>', escapeHtml(stop.title), '</h3>',
       '<p><strong>', escapeHtml(stop.city), '</strong>', stop.address ? ' · ' + escapeHtml(stop.address) : '', '</p>',
       '<p>', escapeHtml(stop.notes), '</p>',
+      renderTicketGuidance(stop.ticket),
       '<p class="small"><strong>Food / washroom:</strong> ', escapeHtml(stop.food || '—'), '<br><strong>Kid plan:</strong> ', escapeHtml(stop.kidPlan || '—'), '<br><strong>From prior stop:</strong> ', escapeHtml(stop.leg || '—'), stop.timeBudget ? ' · <strong>Time:</strong> ' + escapeHtml(stop.timeBudget) : '', '</p>',
       stop.skipAt ? '<p class="small"><strong>Late rule:</strong> Skip at ' + escapeHtml(stop.skipAt) + '+ minutes late' + (stop.saves ? ' to save about ' + escapeHtml(stop.saves) : '') + '.</p>' : '',
       stop.reservation ? '<p class="small"><strong>Reservation:</strong> ' + escapeHtml(stop.reservation) + '</p>' : '',
@@ -1223,19 +1301,22 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
   function renderAttractionsContent() {
     var query = normalize(uiFilters.attractionSearch);
     var rows = rawData.attractions.filter(function (attraction) {
-      return !query || normalize([attraction.Attraction, attraction.Description, attraction.Address, attraction['Kid fit']].join(' ')).indexOf(query) !== -1;
+      var ticket = ticketForAttraction(attraction.Attraction);
+      return !query || normalize([attraction.Attraction, attraction.Description, attraction.Address, attraction['Kid fit'], ticket && ticket.label, ticket && ticket.note].join(' ')).indexOf(query) !== -1;
     });
     document.getElementById('attrSearchV2').value = uiFilters.attractionSearch;
     document.getElementById('attrResultStatus').textContent = rows.length ? 'Showing ' + rows.length + ' attractions.' : 'No attractions match that search.';
     document.getElementById('attrResult').innerHTML = rows.length ? rows.map(function (attraction) {
       var photoUrl = attraction['Photo URL'] || '';
       var photoAllowed = !tripState.offlineMode && brokenPhotos.indexOf(normalize(attraction.Attraction)) === -1 && safeExternalUrl(photoUrl);
+      var ticket = ticketForAttraction(attraction.Attraction);
       return [
         '<article class="card attr">',
         photoAllowed ? '<img class="attraction-photo" src="' + escapeHtml(photoUrl) + '" alt="' + escapeHtml(attraction.Attraction) + '" loading="lazy">' : '<div class="data-card small"><strong>Offline-friendly card</strong><br>Photo omitted so this stop stays useful without a remote image.</div>',
         '<h3>', escapeHtml(attraction.Attraction), '</h3>',
         '<p class="muted">', escapeHtml(attraction.Day || ''), ' · Best time: ', escapeHtml(attraction['Best time'] || 'Verify'), '</p>',
         '<p>', escapeHtml(attraction.Description || ''), '</p>',
+        renderTicketGuidance(ticket),
         '<p class="small"><strong>Kid fit:</strong> ', escapeHtml(attraction['Kid fit'] || '—'), '<br><strong>Food / washroom:</strong> ', escapeHtml(attraction['Food / Washroom'] || '—'), '<br>', escapeHtml(attraction.Address || ''), '</p>',
         '<div class="links">', externalLink(attraction['Map URL'], 'Map'), externalLink(attraction['Source URL'], 'Source'), photoAllowed ? externalLink(photoUrl, 'Photo') : '', '</div>',
         '</article>'
@@ -1316,7 +1397,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
     var section = document.getElementById('sources');
     var items = rawData.sources.map(function (source) {
       return { name: source.Topic, fact: source['Key fact used'], url: source['Source URL'] };
-    }).concat(roadLinks.map(function (link) {
+    }).concat(ticketGuidanceList).concat(roadLinks.map(function (link) {
       return { name: link.title, fact: link.detail, url: link.url };
     }));
     section.innerHTML = [

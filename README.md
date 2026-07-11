@@ -6,6 +6,8 @@ A self-contained, interactive family road-trip itinerary for a Vaughan, Ontario 
 
 Open [index.html](index.html) in a modern web browser. The dashboard works as a single local file; external map, photo, booking, road-condition, and source links require an internet connection.
 
+Live public site: https://henrymaplehonda.github.io/pei-foodie-road-trip/
+
 ## Contents
 
 - `index.html` — interactive itinerary dashboard, live trip controls, checklist, and offline pack
@@ -14,6 +16,6 @@ Open [index.html](index.html) in a modern web browser. The dashboard works as a 
 
 ## Before traveling
 
-Confirm operating hours, reservations, road conditions, fuel availability, tides, and weather before departure. The August 12 Hopewell Rocks visit deliberately remains tide-window dependent until the official table can be confirmed.
+Confirm operating hours, attraction admissions, reservations, road conditions, fuel availability, tides, and weather before departure. The August 12 Hopewell Rocks visit deliberately remains tide-window dependent until the official table can be confirmed.
 
-This repository contains personal travel plans and is intended for the trip participants. Keep the repository private, avoid sharing it during the trip, and use a redacted export if anything needs to be shared publicly.
+This repository contains personal travel plans. Because the repository and GitHub Pages site are public, avoid sharing real-time locations during the trip and use a redacted export if anything needs to be shared more widely.
