@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="PEI road trip">
+  <rect width="512" height="512" rx="96" fill="#0f5b63"/>
+  <path d="M96 330c63-108 121-150 183-150 54 0 91 28 137 91" fill="none" stroke="#f7f3eb" stroke-linecap="round" stroke-width="38"/>
+  <path d="M110 335h292" stroke="#f7f3eb" stroke-dasharray="24 26" stroke-linecap="round" stroke-width="22"/>
+  <circle cx="125" cy="330" r="32" fill="#9b1c31" stroke="#fffaf2" stroke-width="14"/>
+  <path d="M385 152c0 48-57 98-57 98s-57-50-57-98a57 57 0 1 1 114 0Z" fill="#9b1c31" stroke="#fffaf2" stroke-width="14"/>
+  <circle cx="328" cy="151" r="17" fill="#fffaf2"/>
+</svg>

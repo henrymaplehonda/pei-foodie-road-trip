@@ -58,6 +58,7 @@ tr:last-child td{border-bottom:0}
 @media print{nav,.controls,.links .button{display:none}section{display:block;page-break-after:always}.card{box-shadow:none}body{background:#fff}}
  </style>
 <meta name="theme-color" content="#0f5b63">
+<meta name="referrer" content="no-referrer">
 <link rel="manifest" href="manifest.webmanifest">
 <style id="trip-control-styles">
 :root{--danger:#9b1c31;--focus:#0b63ce;--surface:#fff;--surface-alt:#f7f3eb;--shadow:0 8px 26px rgba(31,41,51,.09)}
@@ -336,6 +337,1316 @@ function renderSources(){
   document.getElementById('sourceContainer').innerHTML = all.map(s=>`<li><b>${esc(s.name || '')}</b>: ${esc(s.fact || '')}<br><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url)}</a></li>`).join('');
 }
 initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); renderSanity(); renderSources();
+</script>
+<script id="trip-control-script">
+(function () {
+  'use strict';
+
+  var STORE_KEY = 'pei-foodie-road-trip/state/v2';
+  var rawData = JSON.parse(document.getElementById('trip-data').textContent);
+  var buildErrors = [];
+  var appStatus = null;
+  var brokenPhotos = ['the big apple', 'brockville railway tunnel', 'magnetic hill', 'victoria row', 'shediac giant lobster'];
+
+  function normalize(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[’']/g, '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (match) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[match];
+    });
+  }
+
+  function slug(value) {
+    return normalize(value).replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  }
+
+  function unique(values) {
+    return Array.from(new Set(values.filter(Boolean)));
+  }
+
+  function sourceDay(dayId) {
+    return rawData.days.find(function (day) { return day.date === dayId; });
+  }
+
+  function mapSearchUrl(address) {
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address || '');
+  }
+
+  function safeExternalUrl(url) {
+    try {
+      var parsed = new URL(String(url || ''));
+      return parsed.protocol === 'https:' ? parsed.href : '';
+    } catch (error) {
+      return '';
+    }
+  }
+
+  function externalLink(url, label, className) {
+    var safe = safeExternalUrl(url);
+    if (!safe) return '';
+    return '<a class="' + escapeHtml(className || 'button') + '" href="' + escapeHtml(safe) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="' + escapeHtml(label + ' (opens in a new tab)') + '">' + escapeHtml(label) + ' <span aria-hidden="true">↗</span></a>';
+  }
+
+  function customStop(details) {
+    return {
+      id: details.id || slug(details.dayId + '-' + details.title),
+      dayId: details.dayId,
+      time: details.time || 'Flexible',
+      zone: details.zone || '',
+      title: details.title || 'Trip stop',
+      kind: details.kind || 'Stop',
+      priority: details.priority || 'required',
+      skipAt: Number(details.skipAt || 0),
+      saves: details.saves || '',
+      address: details.address || '',
+      city: details.city || '',
+      leg: details.leg || '',
+      timeBudget: details.timeBudget || '',
+      notes: details.notes || '',
+      food: details.food || '',
+      kidPlan: details.kidPlan || '',
+      mapUrl: details.mapUrl || mapSearchUrl(details.address || ''),
+      sourceUrl: details.sourceUrl || '',
+      reservation: details.reservation || '',
+      conditional: Boolean(details.conditional)
+    };
+  }
+
+  function sourceStop(dayId, phrase, patch) {
+    patch = patch || {};
+    var day = sourceDay(dayId);
+    var original = day && day.stops.find(function (stop) {
+      return normalize(stop['Stop / Segment']).indexOf(normalize(phrase)) !== -1;
+    });
+    if (!original) {
+      buildErrors.push('Missing source stop "' + phrase + '" on ' + dayId);
+      return customStop({
+        id: patch.id || slug(dayId + '-' + phrase),
+        dayId: dayId,
+        title: patch.title || phrase,
+        time: patch.time || 'Verify',
+        zone: patch.zone || '',
+        kind: patch.kind || 'Stop',
+        priority: patch.priority || 'required',
+        notes: patch.notes || 'Source stop needs review.'
+      });
+    }
+    return customStop({
+      id: patch.id || slug(dayId + '-' + (patch.title || original['Stop / Segment'])),
+      dayId: dayId,
+      time: patch.time != null ? patch.time : original.Time,
+      zone: patch.zone || '',
+      title: patch.title || original['Stop / Segment'],
+      kind: patch.kind || original.Type || 'Stop',
+      priority: patch.priority || (normalize(original.Type).indexOf('optional') !== -1 ? 'optional' : 'required'),
+      skipAt: patch.skipAt || 0,
+      saves: patch.saves || '',
+      address: patch.address || original.Address,
+      city: patch.city || original['City / Province'],
+      leg: patch.leg || original['Drive from previous'],
+      timeBudget: patch.timeBudget || original['Time budget'],
+      notes: patch.notes || original.Notes,
+      food: patch.food || original['Food / Washroom'],
+      kidPlan: patch.kidPlan || original['Kid plan'],
+      mapUrl: patch.mapUrl || original['Map URL'],
+      sourceUrl: patch.sourceUrl || original['Source URL'],
+      reservation: patch.reservation || '',
+      conditional: Boolean(patch.conditional)
+    });
+  }
+
+  function foodRecord(dayId, phrase) {
+    return rawData.foodies.find(function (food) {
+      return food.date === dayId && normalize(food.name).indexOf(normalize(phrase)) !== -1;
+    });
+  }
+
+  function foodStop(dayId, phrase, patch) {
+    patch = patch || {};
+    var food = foodRecord(dayId, phrase);
+    if (!food) {
+      buildErrors.push('Missing foodie record "' + phrase + '" on ' + dayId);
+      return customStop({
+        id: patch.id || slug(dayId + '-' + phrase),
+        dayId: dayId,
+        title: patch.title || phrase,
+        time: patch.time || 'Verify',
+        kind: patch.kind || 'Meal',
+        priority: patch.priority || 'required'
+      });
+    }
+    return customStop({
+      id: patch.id || slug(dayId + '-' + (patch.title || food.name)),
+      dayId: dayId,
+      time: patch.time || 'Flexible',
+      zone: patch.zone || '',
+      title: patch.title || food.name,
+      kind: patch.kind || food.meal || 'Meal',
+      priority: patch.priority || 'required',
+      skipAt: patch.skipAt || 0,
+      saves: patch.saves || '',
+      address: patch.address || food.address,
+      city: patch.city || food.city,
+      leg: patch.leg || '',
+      timeBudget: patch.timeBudget || '',
+      notes: patch.notes || food.why,
+      food: patch.food || food.order,
+      kidPlan: patch.kidPlan || '',
+      mapUrl: patch.mapUrl || food.mapUrl,
+      sourceUrl: patch.sourceUrl || food.source,
+      reservation: patch.reservation || food.reserve,
+      conditional: Boolean(patch.conditional)
+    });
+  }
+
+  function mealSlot(details) {
+    return {
+      id: details.id,
+      meal: details.meal,
+      title: details.title,
+      selectedStopId: details.selectedStopId,
+      backup: details.backup || '',
+      reserve: details.reserve || '',
+      reservationTaskId: details.reservationTaskId || '',
+      conditional: Boolean(details.conditional)
+    };
+  }
+
+  function makeDay(details) {
+    details.stops = details.stops.map(function (stop, index) {
+      stop.order = index + 1;
+      return stop;
+    });
+    return details;
+  }
+
+  rawData.foodies.forEach(function (food) {
+    var name = normalize(food.name);
+    if (name.indexOf('diannes fish') !== -1) food.source = 'https://dianneskingston.com/';
+    if (name.indexOf('lestaminet') !== -1) food.source = 'https://www.restopubestaminet.com/';
+    if (name.indexOf('wolastoq') !== -1) food.source = 'https://stmarysretail.com/wolastoq-wharf';
+    if (name.indexOf('540 north') !== -1) food.source = 'https://picaroons.ca/experience-the-roundhouse/';
+    if (name.indexOf('fromagerie lemaire') !== -1) food.source = 'https://www.fromagerie-lemaire.ca/';
+    if (name.indexOf('noshery') !== -1) food.source = 'https://brockvilletourism.com/directory/the-noshery/';
+  });
+
+  var operationalPlan = {
+    schemaVersion: 2,
+    generatedOn: '2026-07-10',
+    roughTotalKm: 3907,
+    tidePlan: {
+      date: '2026-08-12',
+      timeZone: 'America/Moncton',
+      status: 'pending',
+      verifyAfter: '2026-07-12',
+      parkHours: '08:00–20:00 Atlantic',
+      sourceUrl: 'https://www.parcsnbparks.ca/en/parks/33/hopewell-rocks-provincial-park/26/tide-tables',
+      arrivalBufferMin: 45,
+      minimumVisitMin: 150
+    },
+    days: [
+      makeDay({
+        id: '2026-08-07',
+        label: 'Fri, Aug 7, 2026',
+        routeFocus: 'Vaughan → Colborne → Napanee → Brockville (optional) → Montréal',
+        driveKm: 577,
+        pureDriveTime: 'About 6–7 h with planned city stops',
+        risk: 'Medium',
+        lateThresholdMin: 20,
+        timeZoneNote: 'All times are Eastern Time (America/Toronto).',
+        contingency: 'At 20 minutes behind, skip Brockville. At 45 minutes behind, keep the ONroute break short and go straight to the hotel.',
+        emergency: 'Hotel check-in and Time Out Market are the no-friction finish.',
+        stops: [
+          sourceStop('2026-08-07', 'Depart Vaughan', { id: 'd1-depart', time: '07:00', zone: 'ET', leg: '0 km', priority: 'required' }),
+          sourceStop('2026-08-07', 'Esso Circle K Maple', { id: 'd1-fuel', time: '07:10', zone: 'ET', priority: 'required' }),
+          sourceStop('2026-08-07', 'The Big Apple', { id: 'd1-big-apple', time: '08:25', zone: 'ET', leg: 'About 105 km / 1 h 15', priority: 'optional', skipAt: 20, saves: '45 min', notes: 'Corrected order: stop here before Napanee. Keep it short if traffic builds.' }),
+          sourceStop('2026-08-07', 'ONroute Napanee', { id: 'd1-napanee', time: '10:05', zone: 'ET', leg: 'About 120 km / 1 h 10', priority: 'required', notes: 'Canonical quick lunch, washroom, and stretch stop. This replaces the off-route lunch recommendation.' }),
+          sourceStop('2026-08-07', 'Brockville Railway Tunnel', { id: 'd1-brockville', time: '12:50', zone: 'ET', leg: 'About 185 km / 1 h 50', priority: 'optional', skipAt: 20, saves: '45 min', notes: 'Only if the family needs a real movement break and you are on schedule.' }),
+          sourceStop('2026-08-07', 'Check in: Le Square Phillips', { id: 'd1-hotel', time: '16:30', zone: 'ET', leg: 'About 225 km / 2 h 30', priority: 'required' }),
+          sourceStop('2026-08-07', 'Easy dinner: Time Out Market', { id: 'd1-dinner', time: '18:00', zone: 'ET', kind: 'Dinner', priority: 'required', notes: 'Canonical dinner: closest low-friction choice after a long drive. Ma Poule Mouillée is an alternate only if you arrive early and want the detour.' })
+        ],
+        meals: [
+          mealSlot({ id: 'd1-lunch', meal: 'Lunch', title: 'ONroute Napanee — fast family lunch', selectedStopId: 'd1-napanee', backup: 'Dianne’s Fish Shack only if you intentionally add a Kingston detour.' }),
+          mealSlot({ id: 'd1-dinner', meal: 'Dinner', title: 'Time Out Market Montréal', selectedStopId: 'd1-dinner', backup: 'Ma Poule Mouillée if you arrive early and want a detour.' })
+        ]
+      }),
+      makeDay({
+        id: '2026-08-08',
+        label: 'Sat, Aug 8, 2026',
+        routeFocus: 'Montréal → Trois-Rivières → Montmorency → Old Québec',
+        driveKm: 310,
+        pureDriveTime: 'About 3.5–4 h with city driving',
+        risk: 'Medium',
+        lateThresholdMin: 30,
+        timeZoneNote: 'All times are Eastern Time (America/Toronto).',
+        contingency: 'If late, shorten Old Québec to a walk and protect the 19:00 dinner reservation.',
+        emergency: 'Use the airport-area hotel dinner if city parking or energy becomes the constraint.',
+        stops: [
+          sourceStop('2026-08-08', 'Depart Montréal', { id: 'd2-depart', time: '08:30', zone: 'ET', priority: 'required' }),
+          sourceStop('2026-08-08', 'Trois-Rivières stretch', { id: 'd2-lunch', time: '10:15', zone: 'ET', kind: 'Lunch / washroom', priority: 'required', notes: 'Canonical light lunch; Fairmount and Schwartz are optional Montréal detours, not routed stops.' }),
+          sourceStop('2026-08-08', 'Montmorency Falls', { id: 'd2-falls', time: '12:30', zone: 'ET', priority: 'required' }),
+          sourceStop('2026-08-08', 'Check in: Hôtel Cofortel', { id: 'd2-hotel', time: '15:30', zone: 'ET', priority: 'required' }),
+          sourceStop('2026-08-08', 'Old Québec / Dufferin', { id: 'd2-old-quebec', time: '17:15–18:25', zone: 'ET', priority: 'optional', skipAt: 30, saves: '60 min', notes: 'End the walk by 18:25 to preserve a realistic 19:00 dinner.' }),
+          foodStop('2026-08-08', 'La Bûche', { id: 'd2-dinner', time: '19:00', zone: 'ET', kind: 'Dinner', priority: 'required', notes: 'Canonical Old Québec dinner. Reserve in advance; Cochon Dingue is the fallback.' })
+        ],
+        meals: [
+          mealSlot({ id: 'd2-breakfast', meal: 'Breakfast', title: 'Hotel breakfast', selectedStopId: 'd2-depart', backup: 'Fairmount Bagel only if picked up before the scheduled departure.' }),
+          mealSlot({ id: 'd2-lunch', meal: 'Lunch', title: 'Trois-Rivières light lunch', selectedStopId: 'd2-lunch', backup: 'Simple hotel-area food if the departure slips.' }),
+          mealSlot({ id: 'd2-dinner', meal: 'Dinner', title: 'La Bûche', selectedStopId: 'd2-dinner', backup: 'Cochon Dingue Champlain.', reserve: 'High priority', reservationTaskId: 'reserve-d2-la-buche' })
+        ]
+      }),
+      makeDay({
+        id: '2026-08-09',
+        label: 'Sun, Aug 9, 2026',
+        routeFocus: 'Québec City → Rivière-du-Loup → Edmundston → Fredericton',
+        driveKm: 672,
+        pureDriveTime: 'About 6.5–7.5 h with Grand Falls',
+        risk: 'High',
+        lateThresholdMin: 30,
+        timeZoneNote: 'Start in America/Toronto (ET). New Brunswick stops use America/Moncton (AT), one hour ahead.',
+        contingency: 'If Edmundston fuel is not complete by 13:15 Atlantic, skip Grand Falls. If hotel arrival slips, use the Swiss Chalet fallback instead of a reservation chase.',
+        emergency: 'Go straight to the hotel/pool and use the low-friction dinner backup.',
+        stops: [
+          sourceStop('2026-08-09', 'Depart Québec City', { id: 'd3-depart', time: '07:30', zone: 'ET', priority: 'required' }),
+          foodStop('2026-08-09', 'L’Estaminet', { id: 'd3-brunch', time: '10:15', zone: 'ET', kind: 'Brunch / early lunch', priority: 'required', notes: 'Canonical Sunday stop. Keep it efficient before the New Brunswick stretch.' }),
+          sourceStop('2026-08-09', 'Esso Edmundston', { id: 'd3-fuel', time: '13:15', zone: 'AT', priority: 'required', notes: 'Mandatory fuel. Atlantic Time starts after entering New Brunswick.' }),
+          sourceStop('2026-08-09', 'Grand Falls Gorge', { id: 'd3-grand-falls', time: '13:50', zone: 'AT', priority: 'optional', skipAt: 30, saves: '60 min', notes: 'Skip if fuel is not complete by 13:15 Atlantic.' }),
+          sourceStop('2026-08-09', 'Check in: Château Fredericton', { id: 'd3-hotel', time: '17:30', zone: 'AT', priority: 'required' }),
+          foodStop('2026-08-09', 'Wolastoq Wharf', { id: 'd3-dinner', time: '18:30', zone: 'AT', kind: 'Dinner', priority: 'conditional', conditional: true, skipAt: 30, saves: '90 min', notes: 'Use only with a confirmed reservation and a timely hotel arrival. Swiss Chalet is the canonical low-friction fallback.' })
+        ],
+        meals: [
+          mealSlot({ id: 'd3-brunch', meal: 'Brunch', title: 'Resto-Pub L’Estaminet', selectedStopId: 'd3-brunch', backup: 'A quick Rivière-du-Loup stop if timing changes.' }),
+          mealSlot({ id: 'd3-dinner', meal: 'Dinner', title: 'Wolastoq Wharf — conditional', selectedStopId: 'd3-dinner', backup: 'Swiss Chalet Fredericton after hotel check-in.', reserve: 'Confirm before travel', reservationTaskId: 'reserve-d3-wolastoq', conditional: true })
+        ]
+      }),
+      makeDay({
+        id: '2026-08-10',
+        label: 'Mon, Aug 10, 2026',
+        routeFocus: 'Fredericton → Moncton → Cape Jourimain → Charlottetown',
+        driveKm: 340,
+        pureDriveTime: 'About 4–5 h with bridge and local stops',
+        risk: 'Medium',
+        lateThresholdMin: 30,
+        timeZoneNote: 'All times are Atlantic Time (America/Moncton).',
+        contingency: 'At 30 minutes late, skip Magnetic Hill. At 45 minutes late, make Cape Jourimain a washroom-only stop.',
+        emergency: 'Wally’s or hotel-area food is the late-arrival fallback.',
+        stops: [
+          sourceStop('2026-08-10', 'Depart Fredericton', { id: 'd4-depart', time: '08:30', zone: 'AT', priority: 'required' }),
+          sourceStop('2026-08-10', 'Magnetic Hill', { id: 'd4-magnetic', time: '10:45', zone: 'AT', priority: 'optional', skipAt: 30, saves: '45 min' }),
+          foodStop('2026-08-10', 'Tony’s Bistro', { id: 'd4-lunch', time: '12:00', zone: 'AT', kind: 'Lunch', priority: 'required', notes: 'Canonical Moncton lunch. Keep it within the daytime service window.' }),
+          sourceStop('2026-08-10', 'Esso / Magnetic Hill', { id: 'd4-fuel', time: '13:00', zone: 'AT', priority: 'required' }),
+          sourceStop('2026-08-10', 'Cape Jourimain', { id: 'd4-cape', time: '14:30', zone: 'AT', priority: 'optional', skipAt: 45, saves: '45 min', notes: 'Shorten to washroom and bridge viewpoint if running late.' }),
+          sourceStop('2026-08-10', 'Check in: Rodd Royalty', { id: 'd4-hotel', time: '16:45', zone: 'AT', priority: 'required' }),
+          foodStop('2026-08-10', 'New Glasgow Lobster Suppers', { id: 'd4-dinner', time: '18:00', zone: 'AT', kind: 'Dinner', priority: 'required', notes: 'Canonical PEI-arrival dinner. Confirm the 16:00–19:30 service window.' })
+        ],
+        meals: [
+          mealSlot({ id: 'd4-lunch', meal: 'Lunch', title: 'Tony’s Bistro & Pâtisserie', selectedStopId: 'd4-lunch', backup: 'Quick Moncton food only if Tony’s timing fails.' }),
+          mealSlot({ id: 'd4-dinner', meal: 'Dinner', title: 'New Glasgow Lobster Suppers', selectedStopId: 'd4-dinner', backup: 'Wally’s Restaurant & Lounge after hotel check-in.', reserve: 'Confirm ahead', reservationTaskId: 'reserve-d4-new-glasgow' })
+        ]
+      }),
+      makeDay({
+        id: '2026-08-11',
+        label: 'Tue, Aug 11, 2026',
+        routeFocus: 'Cavendish / North Rustico → Charlottetown',
+        driveKm: 101,
+        pureDriveTime: 'Local driving only',
+        risk: 'Low',
+        lateThresholdMin: 30,
+        timeZoneNote: 'All times are Atlantic Time (America/Moncton).',
+        contingency: 'If beach weather or energy is poor, protect Blue Mussel and Slaymaker; make Green Gables or the beach shorter.',
+        emergency: 'Lobster on the Wharf is the easier dinner fallback.',
+        stops: [
+          sourceStop('2026-08-11', 'Green Gables', { id: 'd5-green-gables', time: '09:35', zone: 'AT', priority: 'optional', skipAt: 30, saves: '60 min' }),
+          foodStop('2026-08-11', 'Blue Mussel', { id: 'd5-lunch', time: '11:45', zone: 'AT', kind: 'Lunch', priority: 'required', notes: 'Canonical seafood lunch. Join the waitlist or check the same day.' }),
+          sourceStop('2026-08-11', 'Cavendish Beach', { id: 'd5-beach', time: '13:15', zone: 'AT', priority: 'optional', skipAt: 30, saves: '90 min' }),
+          sourceStop('2026-08-11', 'Return to Rodd Royalty', { id: 'd5-hotel', time: '18:00', zone: 'AT', priority: 'required' }),
+          foodStop('2026-08-11', 'Slaymaker', { id: 'd5-dinner', time: '19:00', zone: 'AT', kind: 'Dinner', priority: 'required', notes: 'Canonical Charlottetown dinner. Book early; this is a drive from the hotel, so leave the beach on time.' })
+        ],
+        meals: [
+          mealSlot({ id: 'd5-lunch', meal: 'Lunch', title: 'Blue Mussel Café', selectedStopId: 'd5-lunch', backup: 'Richard’s Fresh Seafood at Covehead.' }),
+          mealSlot({ id: 'd5-dinner', meal: 'Dinner', title: 'Slaymaker & Nichols', selectedStopId: 'd5-dinner', backup: 'Lobster on the Wharf.', reserve: 'Very high priority', reservationTaskId: 'reserve-d5-slaymaker' })
+        ]
+      }),
+      makeDay({
+        id: '2026-08-12',
+        label: 'Wed, Aug 12, 2026',
+        routeFocus: 'PEI → Hopewell Rocks → Moncton, anchored to the tide window',
+        driveKm: 317,
+        pureDriveTime: 'About 3 h 15 before parking and tide buffer',
+        risk: 'High',
+        lateThresholdMin: 30,
+        timeZoneNote: 'All times are Atlantic Time (America/Moncton). Hopewell timing is not fixed until the official low-tide access window is confirmed.',
+        contingency: 'Set the Hopewell access window first. Subtract 195 minutes for drive, parking, and buffer; only then decide whether Victoria Row, Lobster on the Wharf, or Tide & Boar fit.',
+        emergency: 'Go directly to Hopewell, then hotel/quick dinner. Do not trade the tide window for a restaurant.',
+        stops: [
+          sourceStop('2026-08-12', 'Esso Charlottetown', { id: 'd6-fuel', time: '08:45', zone: 'AT', priority: 'required' }),
+          sourceStop('2026-08-12', 'Victoria Row', { id: 'd6-victoria', time: 'Only if tide departure allows', zone: 'AT', priority: 'conditional', conditional: true, skipAt: 1, saves: '45 min' }),
+          foodStop('2026-08-12', 'Lobster on the Wharf', { id: 'd6-lunch', time: 'Only if tide departure allows', zone: 'AT', kind: 'Lunch', priority: 'conditional', conditional: true, skipAt: 1, saves: '60 min', notes: 'Conditional lunch only. Keep it out of the plan until the official Hopewell window is set.' }),
+          customStop({ id: 'd6-bridge', dayId: '2026-08-12', time: 'Tide-dependent departure', zone: 'AT', title: 'Confederation Bridge crossing', kind: 'Drive', priority: 'required', address: 'Confederation Bridge, Borden-Carleton, PE', city: 'Borden-Carleton, PE', notes: 'Check toll payment readiness before leaving PEI.', mapUrl: mapSearchUrl('Confederation Bridge, Borden-Carleton, PE'), sourceUrl: 'https://www.confederationbridge.com/tolls-fees/' }),
+          sourceStop('2026-08-12', 'Hopewell Rocks', { id: 'd6-hopewell', time: 'Official low-tide access window', zone: 'AT', kind: 'Tide-dependent attraction', priority: 'required', notes: 'Do not set a fixed time until the official table becomes available. Plan a 45-minute arrival buffer and at least 150 minutes on site.', sourceUrl: 'https://www.parcsnbparks.ca/en/parks/33/hopewell-rocks-provincial-park/26/tide-tables' }),
+          sourceStop('2026-08-12', 'Check in: Fairfield', { id: 'd6-hotel', time: 'After Hopewell', zone: 'AT', priority: 'required' }),
+          foodStop('2026-08-12', 'Tide & Boar', { id: 'd6-dinner', time: 'Only if Hopewell exit allows', zone: 'AT', kind: 'Dinner', priority: 'conditional', conditional: true, skipAt: 1, saves: '90 min', notes: 'Conditional dinner. Use hotel/quick food if the tide visit runs long.' })
+        ],
+        meals: [
+          mealSlot({ id: 'd6-lunch', meal: 'Lunch', title: 'Lobster on the Wharf — conditional', selectedStopId: 'd6-lunch', backup: 'Grab-and-go after the bridge or skip lunch until Moncton.', conditional: true }),
+          mealSlot({ id: 'd6-dinner', meal: 'Dinner', title: 'Tide & Boar — conditional', selectedStopId: 'd6-dinner', backup: 'Hotel/quick dinner in Moncton.', reserve: 'Only after the tide plan is set', reservationTaskId: 'reserve-d6-tide-boar', conditional: true })
+        ]
+      }),
+      makeDay({
+        id: '2026-08-13',
+        label: 'Thu, Aug 13, 2026',
+        routeFocus: 'Moncton → Fredericton → Edmundston → Québec City',
+        driveKm: 770,
+        pureDriveTime: 'About 8–9 h with essential breaks',
+        risk: 'High',
+        lateThresholdMin: 30,
+        timeZoneNote: 'Start in America/Moncton (AT); Québec stops use America/Toronto (ET), one hour behind.',
+        contingency: 'Leave by 07:00 Atlantic. At 30 minutes late, use only essential breaks. At 60 minutes late, surface the Rivière-du-Loup overnight safety valve.',
+        emergency: 'Hotel/airport-area takeout is the canonical dinner; Le Chic Shack is an early-arrival optional only.',
+        stops: [
+          sourceStop('2026-08-13', 'Depart Moncton', { id: 'd7-depart', time: '07:00', zone: 'AT', priority: 'required', notes: 'Leave no later than 07:00 Atlantic if keeping the Québec City overnight.' }),
+          sourceStop('2026-08-13', 'Fredericton service', { id: 'd7-fredericton', time: '09:30', zone: 'AT', kind: 'Washroom / stretch', priority: 'required', notes: 'Quick break only; 540/Picaroons is not a core lunch because it opens too late for this schedule.' }),
+          sourceStop('2026-08-13', 'Esso Edmundston', { id: 'd7-lunch-fuel', time: '12:00', zone: 'AT', kind: 'Fuel / grab-and-go lunch', priority: 'required', notes: 'Canonical efficient lunch and premium fuel stop.' }),
+          sourceStop('2026-08-13', 'Rivière-du-Loup stretch', { id: 'd7-rdl', time: '14:00', zone: 'ET', kind: 'Washroom / stretch', priority: 'required', notes: 'Québec time begins after the border. Do not turn this into a long lunch.' }),
+          sourceStop('2026-08-13', 'Check in: Hôtel Cofortel', { id: 'd7-hotel', time: '17:30', zone: 'ET', priority: 'required' }),
+          foodStop('2026-08-13', 'Le Chic Shack', { id: 'd7-dinner', time: 'Early-arrival optional', zone: 'ET', kind: 'Dinner', priority: 'optional', skipAt: 30, saves: '90 min', notes: 'Optional only if you arrive early. Otherwise eat near the hotel and protect sleep.' })
+        ],
+        meals: [
+          mealSlot({ id: 'd7-lunch', meal: 'Lunch', title: 'Esso Edmundston grab-and-go', selectedStopId: 'd7-lunch-fuel', backup: 'Carry a cooler meal for the car.' }),
+          mealSlot({ id: 'd7-dinner', meal: 'Dinner', title: 'Hotel-area takeout', selectedStopId: 'd7-hotel', backup: 'Le Chic Shack only if arriving early.', conditional: true })
+        ]
+      }),
+      makeDay({
+        id: '2026-08-14',
+        label: 'Fri, Aug 14, 2026',
+        routeFocus: 'Québec City → Centre-du-Québec → Vaudreuil → Mallorytown → Vaughan',
+        driveKm: 820,
+        pureDriveTime: 'About 8.5–9.5 h with essential breaks',
+        risk: 'High',
+        lateThresholdMin: 30,
+        timeZoneNote: 'All times are Eastern Time (America/Toronto).',
+        contingency: 'At 30 minutes late, skip the optional Napanee fuel top-up. At 60 minutes late, choose a Kingston/Cornwall overnight rather than forcing a fatigued final push.',
+        emergency: 'The Noshery is only for a deliberate return split, not a same-day dinner plan.',
+        stops: [
+          sourceStop('2026-08-14', 'Depart Québec City', { id: 'd8-depart', time: '07:00', zone: 'ET', priority: 'required' }),
+          foodStop('2026-08-14', 'Fromagerie Lemaire', { id: 'd8-lemaire', time: '09:30', zone: 'ET', kind: 'Morning food stop', priority: 'required', notes: 'Canonical morning food stop, not lunch. Pick up curds/snacks and keep moving.' }),
+          sourceStop('2026-08-14', 'Esso Vaudreuil', { id: 'd8-fuel', time: '12:15', zone: 'ET', priority: 'required' }),
+          sourceStop('2026-08-14', 'ONroute Mallorytown', { id: 'd8-lunch', time: '14:15', zone: 'ET', kind: 'Lunch / washroom', priority: 'required', notes: 'Canonical lunch and rest break.' }),
+          sourceStop('2026-08-14', 'Esso Napanee', { id: 'd8-napanee', time: '16:15', zone: 'ET', priority: 'optional', skipAt: 30, saves: '15 min', notes: 'Top up only if needed; do not add a stop by habit.' }),
+          foodStop('2026-08-14', 'The Noshery', { id: 'd8-noshery', time: 'Return-split only', zone: 'ET', kind: 'Dinner', priority: 'optional', skipAt: 1, saves: '90 min', notes: 'Use only if you decide to stop overnight in Kingston/Cornwall. It is not a same-day Vaughan dinner.' }),
+          customStop({ id: 'd8-home', dayId: '2026-08-14', time: 'Late evening', zone: 'ET', title: 'Arrive Vaughan', kind: 'Finish', priority: 'required', address: 'Vaughan, ON', city: 'Vaughan, ON', notes: 'If fatigue wins, use the safety overnight option instead of forcing the final stretch.', mapUrl: mapSearchUrl('Vaughan, ON') })
+        ],
+        meals: [
+          mealSlot({ id: 'd8-morning', meal: 'Morning food', title: 'Fromagerie Lemaire', selectedStopId: 'd8-lemaire', backup: 'Vaudreuil / ONroute snacks if timing is off.' }),
+          mealSlot({ id: 'd8-lunch', meal: 'Lunch', title: 'ONroute Mallorytown South', selectedStopId: 'd8-lunch', backup: 'Fast food near the highway only if needed.' }),
+          mealSlot({ id: 'd8-dinner', meal: 'Dinner', title: 'At home or on a planned return split', selectedStopId: 'd8-home', backup: 'The Noshery only after choosing a Kingston/Cornwall overnight.', conditional: true })
+        ]
+      })
+    ]
+  };
+
+  var roadLinks = [
+    { title: 'Ontario 511', detail: 'Road conditions, closures, and cameras', url: 'https://511on.ca/roadconditions' },
+    { title: 'Québec 511', detail: 'Road network, cameras, and service areas', url: 'https://www.quebec511.info/en/' },
+    { title: 'New Brunswick 511', detail: 'Road conditions, incidents, cameras, and weather', url: 'https://511.gnb.ca/' },
+    { title: 'PEI 511', detail: 'Official PEI road information', url: 'https://511.gov.pe.ca/' },
+    { title: 'Environment Canada', detail: 'Forecasts and weather alerts', url: 'https://weather.gc.ca/' }
+  ];
+
+  function task(details) {
+    return {
+      id: details.id,
+      category: details.category || 'Prep',
+      title: details.title,
+      description: details.description || '',
+      dueDate: details.dueDate || '',
+      url: details.url || '',
+      priority: details.priority || 'Normal',
+      private: Boolean(details.private)
+    };
+  }
+
+  var checklistTasks = [
+    task({ id: 'hopewell-window', category: 'Tide', title: 'Set the Hopewell Rocks low-tide access window', description: 'After July 12, use the official table. Subtract 195 minutes for departure from Charlottetown, drive, parking, and buffer. Confirm access with park staff on arrival.', dueDate: '2026-07-12', url: operationalPlan.tidePlan.sourceUrl, priority: 'Critical' }),
+    task({ id: 'road-checks', category: 'Roads', title: 'Save provincial 511 links and check them every drive morning', description: 'Check construction, closures, cameras, weather alerts, and traffic before leaving.', dueDate: '2026-08-06', url: 'https://511on.ca/roadconditions', priority: 'High' }),
+    task({ id: 'offline-maps', category: 'Offline', title: 'Download offline map areas and save this trip pack', description: 'Maps and restaurant pages require connectivity; keep an offline copy and route downloads ready.', dueDate: '2026-08-06', priority: 'High' }),
+    task({ id: 'fuel-readiness', category: 'Fuel', title: 'Confirm 91 AKI availability and card/payment readiness', description: 'Use the planned Esso stops as a preference, with a nearby premium-capable fallback before rural legs.', dueDate: '2026-08-06', priority: 'High' }),
+    task({ id: 'return-safety', category: 'Safety', title: 'Choose a cancellable Kingston/Cornwall safety overnight option', description: 'Use it if Aug 14 is 60+ minutes behind or anyone is too tired for the final push.', dueDate: '2026-08-01', priority: 'High' })
+  ];
+
+  operationalPlan.days.forEach(function (day) {
+    day.meals.forEach(function (slot) {
+      if (!slot.reservationTaskId || checklistTasks.some(function (item) { return item.id === slot.reservationTaskId; })) return;
+      var stop = day.stops.find(function (item) { return item.id === slot.selectedStopId; });
+      checklistTasks.push(task({
+        id: slot.reservationTaskId,
+        category: 'Reservation',
+        title: 'Confirm ' + slot.title,
+        description: slot.reserve || 'Confirm hours, reservation, party size, cancellation policy, and arrival plan.',
+        dueDate: '2026-07-24',
+        url: stop && stop.sourceUrl,
+        priority: 'High'
+      }));
+    });
+    var hotel = day.stops.find(function (stop) { return normalize(stop.kind).indexOf('hotel') !== -1 || normalize(stop.title).indexOf('check in') !== -1; });
+    if (hotel) {
+      checklistTasks.push(task({
+        id: 'hotel-' + day.id,
+        category: 'Hotel',
+        title: 'Confirm parking and check-in for ' + hotel.title.replace(/^Check in:\s*/i, ''),
+        description: 'Confirm parking, vehicle-height limits, arrival timing, pool hours, and cancellation terms.',
+        dueDate: '2026-07-31',
+        url: hotel.sourceUrl,
+        priority: 'High'
+      }));
+    }
+  });
+
+  function defaultDate() {
+    var dates = operationalPlan.days.map(function (day) { return day.id; });
+    var today = new Date().toISOString().slice(0, 10);
+    return dates.find(function (date) { return date >= today; }) || dates[0];
+  }
+
+  function emptyState() {
+    return { version: 2, activeDate: defaultDate(), modes: {}, stops: {}, tasks: {}, offlineMode: false };
+  }
+
+  function readState() {
+    try {
+      var parsed = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+      if (!parsed || parsed.version !== 2) return emptyState();
+      var base = emptyState();
+      base.activeDate = operationalPlan.days.some(function (day) { return day.id === parsed.activeDate; }) ? parsed.activeDate : base.activeDate;
+      base.modes = parsed.modes && typeof parsed.modes === 'object' ? parsed.modes : {};
+      base.stops = parsed.stops && typeof parsed.stops === 'object' ? parsed.stops : {};
+      base.tasks = parsed.tasks && typeof parsed.tasks === 'object' ? parsed.tasks : {};
+      base.offlineMode = Boolean(parsed.offlineMode);
+      return base;
+    } catch (error) {
+      return emptyState();
+    }
+  }
+
+  var tripState = readState();
+
+  function persist() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(tripState));
+      setStatus('Saved privately in this browser.');
+    } catch (error) {
+      setStatus('This browser could not save private progress. Use an export before closing the page.');
+    }
+  }
+
+  function setStatus(message) {
+    if (appStatus) appStatus.textContent = message || '';
+  }
+
+  function dayById(dayId) {
+    return operationalPlan.days.find(function (day) { return day.id === dayId; }) || operationalPlan.days[0];
+  }
+
+  function stopById(day, stopId) {
+    return day.stops.find(function (stop) { return stop.id === stopId; });
+  }
+
+  function modeMinutes(day) {
+    var mode = tripState.modes[day.id] || 'preview';
+    return mode === 'late60' ? 60 : mode === 'late30' ? 30 : 0;
+  }
+
+  function hiddenInMode(day, stop) {
+    var minutes = modeMinutes(day);
+    return Boolean(stop.skipAt && minutes >= stop.skipAt);
+  }
+
+  function stopStatus(stopId) {
+    return tripState.stops[stopId] || 'pending';
+  }
+
+  function visibleStops(day) {
+    return day.stops.filter(function (stop) {
+      return stopStatus(stop.id) !== 'skipped' && !hiddenInMode(day, stop);
+    });
+  }
+
+  function nextStop(day) {
+    var list = visibleStops(day);
+    return list.find(function (stop) {
+      return stopStatus(stop.id) === 'pending' && (stop.priority === 'required' || stop.priority === 'conditional');
+    }) || list.find(function (stop) { return stopStatus(stop.id) === 'pending'; }) || null;
+  }
+
+  function routeUrl(stops) {
+    var usable = stops.filter(function (stop) { return stop.address; });
+    if (!usable.length) return '';
+    if (usable.length === 1) return usable[0].mapUrl || mapSearchUrl(usable[0].address);
+    var params = new URLSearchParams();
+    params.set('api', '1');
+    params.set('origin', usable[0].address);
+    params.set('destination', usable[usable.length - 1].address);
+    if (usable.length > 2) params.set('waypoints', usable.slice(1, -1).map(function (stop) { return stop.address; }).join('|'));
+    params.set('travelmode', 'driving');
+    return 'https://www.google.com/maps/dir/?' + params.toString();
+  }
+
+  function dayRouteUrl(day) {
+    return routeUrl(visibleStops(day));
+  }
+
+  function validateOperationalPlan() {
+    var errors = buildErrors.slice();
+    var ids = new Set();
+    operationalPlan.days.forEach(function (day) {
+      if (!day.id || !day.stops.length) errors.push('Day ' + day.id + ' is missing operational stops.');
+      day.stops.forEach(function (stop) {
+        if (!stop.id || ids.has(stop.id)) errors.push('Duplicate or missing stop id: ' + stop.id);
+        ids.add(stop.id);
+        if (!stop.address) errors.push('Missing address for ' + stop.id);
+      });
+      day.meals.forEach(function (slot) {
+        if (!stopById(day, slot.selectedStopId)) errors.push('Meal ' + slot.id + ' points to a missing stop.');
+      });
+    });
+    return errors;
+  }
+
+  var planValidationErrors = validateOperationalPlan();
+  if (planValidationErrors.length) console.warn('Trip plan validation:', planValidationErrors);
+
+  var uiFilters = {
+    dayId: tripState.activeDate,
+    dayType: '',
+    daySearch: '',
+    foodDay: '',
+    foodMeal: '',
+    foodSearch: '',
+    attractionSearch: ''
+  };
+
+  function buildNavigation() {
+    var tabs = [
+      ['live', 'Trip control'],
+      ['overview', 'Overview'],
+      ['daybyday', 'Day-by-day'],
+      ['food', 'Food plan'],
+      ['attractions', 'Attractions'],
+      ['hotels', 'Hotels'],
+      ['fuel', 'Fuel'],
+      ['sanity', 'Drive sanity'],
+      ['checklist', 'Checklist'],
+      ['offline', 'Offline pack'],
+      ['sources', 'Sources']
+    ];
+    var nav = document.getElementById('nav');
+    nav.innerHTML = tabs.map(function (tab, index) {
+      return '<button type="button" class="navbtn" role="tab" id="tab-' + tab[0] + '" aria-controls="' + tab[0] + '" aria-selected="' + (index === 0 ? 'true' : 'false') + '" data-section="' + tab[0] + '">' + escapeHtml(tab[1]) + '</button>';
+    }).join('');
+    nav.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-section]');
+      if (button) activateSection(button.dataset.section, true);
+    });
+    nav.addEventListener('keydown', function (event) {
+      if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].indexOf(event.key) === -1) return;
+      var buttons = Array.from(nav.querySelectorAll('[role="tab"]'));
+      var index = buttons.indexOf(document.activeElement);
+      if (index === -1) return;
+      event.preventDefault();
+      if (event.key === 'ArrowRight') index = (index + 1) % buttons.length;
+      if (event.key === 'ArrowLeft') index = (index - 1 + buttons.length) % buttons.length;
+      if (event.key === 'Home') index = 0;
+      if (event.key === 'End') index = buttons.length - 1;
+      buttons[index].focus();
+      activateSection(buttons[index].dataset.section, false);
+    });
+  }
+
+  function activateSection(sectionId, moveFocus) {
+    var sections = Array.from(document.querySelectorAll('main > section'));
+    sections.forEach(function (section) {
+      var active = section.id === sectionId;
+      section.classList.toggle('active', active);
+      section.hidden = !active;
+      section.setAttribute('role', 'tabpanel');
+      section.setAttribute('aria-labelledby', 'tab-' + section.id);
+    });
+    Array.from(document.querySelectorAll('#nav [role="tab"]')).forEach(function (button) {
+      button.setAttribute('aria-selected', button.dataset.section === sectionId ? 'true' : 'false');
+    });
+    if (moveFocus) {
+      var target = document.getElementById(sectionId);
+      var heading = target && target.querySelector('.section-heading, h2');
+      if (heading) {
+        heading.setAttribute('tabindex', '-1');
+        heading.focus({ preventScroll: true });
+      }
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+    }
+  }
+
+  function riskClass(risk) {
+    return normalize(risk) === 'high' ? 'warn' : normalize(risk) === 'low' ? 'ok' : '';
+  }
+
+  function statusLabel(status) {
+    return status === 'done' ? 'Completed' : status === 'skipped' ? 'Skipped' : 'Pending';
+  }
+
+  function renderOverview() {
+    var section = document.getElementById('overview');
+    section.innerHTML = [
+      '<h2 class="section-heading">Trip overview</h2>',
+      '<div class="grid">',
+      '<div class="card kpi"><div class="num">8</div><div class="label">Calendar days</div></div>',
+      '<div class="card kpi"><div class="num">7</div><div class="label">Hotel nights</div></div>',
+      '<div class="card kpi"><div class="num">~3,900</div><div class="label">Validated planning km, approximate</div></div>',
+      '<div class="card kpi"><div class="num">3</div><div class="label">High-risk driving days</div></div>',
+      '<div class="card full warn"><h3>Use this as an operational plan, not a promise</h3><p>The route now has one selected meal plan per day, explicit late-mode cutoffs, and a tide-anchored Hopewell day. Check live traffic, weather, hours, and reservations before every departure.</p></div>',
+      '<div class="card half"><h3>Fastest way to use it</h3><p>Open <strong>Trip control</strong>, choose the active day, then select preview, on-time, 30-minute late, or 60-minute late. It keeps optional stops out of the route and makes the next required stop obvious.</p></div>',
+      '<div class="card half"><h3>Privacy rule</h3><p>Keep this private and avoid sharing it while travelling. Progress, notes, and confirmation codes are stored only in this browser unless you explicitly export them.</p></div>',
+      '</div>'
+    ].join('');
+  }
+
+  function mountDaySection() {
+    var section = document.getElementById('daybyday');
+    var typeOptions = unique(operationalPlan.days.flatMap(function (day) {
+      return day.stops.map(function (stop) { return stop.kind; });
+    })).sort();
+    section.innerHTML = [
+      '<h2 id="daybyday-heading" class="section-heading">Day-by-day operations</h2>',
+      '<p class="section-intro">The timeline below is the single canonical plan. Meal alternatives are shown as backups, not extra stops.</p>',
+      '<div class="control-grid" aria-label="Day itinerary filters">',
+      '<label for="daySelectV2">Day<select id="daySelectV2"></select></label>',
+      '<label for="typeFilterV2">Stop type<select id="typeFilterV2"><option value="">All stop types</option>', typeOptions.map(function (type) { return '<option value="' + escapeHtml(type) + '">' + escapeHtml(type) + '</option>'; }).join(''), '</select></label>',
+      '<label for="stopSearchV2">Search stops<input id="stopSearchV2" type="search" placeholder="City, note, food, or stop" autocomplete="off"></label>',
+      '</div>',
+      '<div id="dayResultStatus" class="status-line" role="status" aria-live="polite"></div>',
+      '<div id="dayResult"></div>'
+    ].join('');
+    var select = document.getElementById('daySelectV2');
+    select.innerHTML = operationalPlan.days.map(function (day) {
+      return '<option value="' + escapeHtml(day.id) + '">' + escapeHtml(day.label + ' · ' + day.routeFocus) + '</option>';
+    }).join('');
+    select.value = uiFilters.dayId;
+    select.addEventListener('change', function () {
+      uiFilters.dayId = select.value;
+      tripState.activeDate = select.value;
+      persist();
+      renderDayContent();
+      renderLive();
+    });
+    document.getElementById('typeFilterV2').addEventListener('change', function (event) {
+      uiFilters.dayType = event.target.value;
+      renderDayContent();
+    });
+    document.getElementById('stopSearchV2').addEventListener('input', function (event) {
+      uiFilters.daySearch = event.target.value;
+      renderDayContent();
+    });
+    document.getElementById('dayResult').addEventListener('click', function (event) {
+      var button = event.target.closest('[data-stop-action]');
+      if (!button) return;
+      var stopId = button.dataset.stopId;
+      if (button.dataset.stopAction === 'toggle') {
+        tripState.stops[stopId] = stopStatus(stopId) === 'done' ? 'pending' : 'done';
+        persist();
+        renderDayContent();
+        renderLive();
+      }
+      if (button.dataset.stopAction === 'skip') {
+        tripState.stops[stopId] = stopStatus(stopId) === 'skipped' ? 'pending' : 'skipped';
+        persist();
+        renderDayContent();
+        renderLive();
+      }
+      if (button.dataset.stopAction === 'copy') {
+        copyText(button.dataset.address || '').then(function () { setStatus('Address copied to the clipboard.'); });
+      }
+    });
+    renderDayContent();
+  }
+
+  function renderMealPlan(day) {
+    return '<div class="meal-plan">' + day.meals.map(function (meal) {
+      var stop = stopById(day, meal.selectedStopId);
+      var state = stop ? stopStatus(stop.id) : 'pending';
+      return [
+        '<article class="meal-plan-card">',
+        '<span class="tag">', escapeHtml(meal.meal), '</span>',
+        meal.conditional ? '<span class="tag">Conditional</span>' : '',
+        '<h3>', escapeHtml(meal.title), '</h3>',
+        '<p><strong>Plan A:</strong> ', escapeHtml(stop ? stop.title : 'Review plan'), '</p>',
+        meal.backup ? '<p class="small"><strong>Backup:</strong> ' + escapeHtml(meal.backup) + '</p>' : '',
+        meal.reserve ? '<p class="small"><strong>Reservation:</strong> ' + escapeHtml(meal.reserve) + '</p>' : '',
+        '<p class="small"><strong>Status:</strong> ', escapeHtml(statusLabel(state)), '</p>',
+        '</article>'
+      ].join('');
+    }).join('') + '</div>';
+  }
+
+  function renderStopCard(day, stop) {
+    var currentStatus = stopStatus(stop.id);
+    var classes = 'stop ' + (currentStatus === 'done' ? 'is-complete' : '') + (currentStatus === 'skipped' ? ' is-skipped' : '');
+    var label = stop.priority === 'optional' ? 'Optional' : stop.priority === 'conditional' ? 'Conditional' : stop.kind;
+    return [
+      '<article class="', classes, '">',
+      '<div class="time">', escapeHtml(stop.time), stop.zone ? '<br><span class="type">' + escapeHtml(stop.zone) + '</span>' : '', '<br><span class="type">', escapeHtml(label), '</span></div>',
+      '<div>',
+      '<h3>', escapeHtml(stop.title), '</h3>',
+      '<p><strong>', escapeHtml(stop.city), '</strong>', stop.address ? ' · ' + escapeHtml(stop.address) : '', '</p>',
+      '<p>', escapeHtml(stop.notes), '</p>',
+      '<p class="small"><strong>Food / washroom:</strong> ', escapeHtml(stop.food || '—'), '<br><strong>Kid plan:</strong> ', escapeHtml(stop.kidPlan || '—'), '<br><strong>From prior stop:</strong> ', escapeHtml(stop.leg || '—'), stop.timeBudget ? ' · <strong>Time:</strong> ' + escapeHtml(stop.timeBudget) : '', '</p>',
+      stop.skipAt ? '<p class="small"><strong>Late rule:</strong> Skip at ' + escapeHtml(stop.skipAt) + '+ minutes late' + (stop.saves ? ' to save about ' + escapeHtml(stop.saves) : '') + '.</p>' : '',
+      stop.reservation ? '<p class="small"><strong>Reservation:</strong> ' + escapeHtml(stop.reservation) + '</p>' : '',
+      '<div class="links">', externalLink(stop.mapUrl, 'Map'), externalLink(stop.sourceUrl, 'Source'), '</div>',
+      '<div class="stop-actions">',
+      '<button type="button" data-stop-action="toggle" data-stop-id="', escapeHtml(stop.id), '" aria-pressed="', currentStatus === 'done' ? 'true' : 'false', '">', currentStatus === 'done' ? 'Mark pending' : 'Mark complete', '</button>',
+      '<button type="button" data-stop-action="skip" data-stop-id="', escapeHtml(stop.id), '" aria-pressed="', currentStatus === 'skipped' ? 'true' : 'false', '">', currentStatus === 'skipped' ? 'Restore stop' : 'Skip stop', '</button>',
+      stop.address ? '<button type="button" class="copy-address" data-stop-action="copy" data-address="' + escapeHtml(stop.address) + '">Copy address</button>' : '',
+      '</div>',
+      '</div>',
+      '</article>'
+    ].join('');
+  }
+
+  function renderDayContent() {
+    var day = dayById(uiFilters.dayId);
+    var type = uiFilters.dayType;
+    var query = normalize(uiFilters.daySearch);
+    var filtered = visibleStops(day).filter(function (stop) {
+      var searchText = normalize([stop.title, stop.kind, stop.address, stop.city, stop.notes, stop.food, stop.kidPlan].join(' '));
+      return (!type || stop.kind === type) && (!query || searchText.indexOf(query) !== -1);
+    });
+    document.getElementById('daySelectV2').value = day.id;
+    document.getElementById('typeFilterV2').value = type;
+    document.getElementById('stopSearchV2').value = uiFilters.daySearch;
+    document.getElementById('dayResultStatus').textContent = filtered.length ? 'Showing ' + filtered.length + ' of ' + visibleStops(day).length + ' active stops for ' + day.label + '.' : 'No stops match those filters. Clear a filter or search term.';
+    var mode = tripState.modes[day.id] || 'preview';
+    var modeText = mode === 'late60' ? '60+ minutes late' : mode === 'late30' ? '30+ minutes late' : mode === 'on-time' ? 'on time' : 'preview mode';
+    var body = [
+      '<div class="card full ', riskClass(day.risk), '">',
+      '<div class="day-summary"><div><p class="route-label">', escapeHtml(day.risk), ' risk · ', escapeHtml(modeText), '</p><h2>', escapeHtml(day.label), '</h2><p><strong>', escapeHtml(day.routeFocus), '</strong></p><p class="muted">Approx drive: <strong>', escapeHtml(day.driveKm), ' km</strong> · ', escapeHtml(day.pureDriveTime), '</p><p class="note"><strong>Time zone:</strong> ', escapeHtml(day.timeZoneNote), '</p></div>',
+      '<div class="summary-actions">', externalLink(dayRouteUrl(day), 'Open active-day route', 'button primary'), '</div></div>',
+      '<div class="mode-note ', mode === 'on-time' || mode === 'preview' ? 'safe' : '', '"><strong>Decision rule:</strong> ', escapeHtml(day.contingency), '<br><span class="small"><strong>Fallback:</strong> ', escapeHtml(day.emergency), '</span></div>',
+      renderMealPlan(day),
+      '</div>',
+      filtered.length ? '<div class="timeline">' + filtered.map(function (stop) { return renderStopCard(day, stop); }).join('') + '</div>' : '<div class="empty-state">No stops match. Try clearing the stop type or search field.</div>'
+    ].join('');
+    document.getElementById('dayResult').innerHTML = body;
+  }
+
+  function mountFoodSection() {
+    var section = document.getElementById('food');
+    section.innerHTML = [
+      '<h2 id="food-heading" class="section-heading">Canonical food plan</h2>',
+      '<p class="section-intro">One Plan A per meal slot. Alternatives are clearly marked as backups and do not appear as extra routed stops.</p>',
+      '<div class="control-grid" aria-label="Food plan filters">',
+      '<label for="foodDayV2">Day<select id="foodDayV2"><option value="">All days</option></select></label>',
+      '<label for="mealFilterV2">Meal<select id="mealFilterV2"><option value="">All meals</option></select></label>',
+      '<label for="foodSearchV2">Search meals<input id="foodSearchV2" type="search" placeholder="Restaurant, city, or backup" autocomplete="off"></label>',
+      '</div>',
+      '<div id="foodResultStatus" class="status-line" role="status" aria-live="polite"></div>',
+      '<div id="foodResult" class="timeline"></div>'
+    ].join('');
+    document.getElementById('foodDayV2').innerHTML += operationalPlan.days.map(function (day) {
+      return '<option value="' + escapeHtml(day.id) + '">' + escapeHtml(day.label) + '</option>';
+    }).join('');
+    var meals = unique(operationalPlan.days.flatMap(function (day) { return day.meals.map(function (meal) { return meal.meal; }); })).sort();
+    document.getElementById('mealFilterV2').innerHTML += meals.map(function (meal) { return '<option value="' + escapeHtml(meal) + '">' + escapeHtml(meal) + '</option>'; }).join('');
+    document.getElementById('foodDayV2').addEventListener('change', function (event) { uiFilters.foodDay = event.target.value; renderFoodContent(); });
+    document.getElementById('mealFilterV2').addEventListener('change', function (event) { uiFilters.foodMeal = event.target.value; renderFoodContent(); });
+    document.getElementById('foodSearchV2').addEventListener('input', function (event) { uiFilters.foodSearch = event.target.value; renderFoodContent(); });
+    renderFoodContent();
+  }
+
+  function renderFoodContent() {
+    var query = normalize(uiFilters.foodSearch);
+    var rows = operationalPlan.days.flatMap(function (day) {
+      return day.meals.map(function (meal) {
+        var stop = stopById(day, meal.selectedStopId);
+        return { day: day, meal: meal, stop: stop };
+      });
+    }).filter(function (row) {
+      var text = normalize([row.day.label, row.meal.meal, row.meal.title, row.meal.backup, row.stop && row.stop.city, row.stop && row.stop.food].join(' '));
+      return (!uiFilters.foodDay || row.day.id === uiFilters.foodDay) && (!uiFilters.foodMeal || row.meal.meal === uiFilters.foodMeal) && (!query || text.indexOf(query) !== -1);
+    });
+    document.getElementById('foodDayV2').value = uiFilters.foodDay;
+    document.getElementById('mealFilterV2').value = uiFilters.foodMeal;
+    document.getElementById('foodSearchV2').value = uiFilters.foodSearch;
+    document.getElementById('foodResultStatus').textContent = rows.length ? 'Showing ' + rows.length + ' canonical meal slots.' : 'No meal slots match those filters.';
+    document.getElementById('foodResult').innerHTML = rows.length ? rows.map(function (row) {
+      var stop = row.stop;
+      return [
+        '<article class="food-card">',
+        '<div class="meal">', escapeHtml(row.meal.meal), '</div>',
+        '<div><h3>', escapeHtml(row.meal.title), '</h3>',
+        '<div><span class="tag">', escapeHtml(row.day.label), '</span>', row.meal.conditional ? '<span class="tag">Conditional</span>' : '', stop && stop.city ? '<span class="tag">' + escapeHtml(stop.city) + '</span>' : '', '</div>',
+        '<p><strong>Plan A:</strong> ', escapeHtml(stop ? stop.title : 'Review plan'), '</p>',
+        stop && stop.food ? '<p><strong>Order / food:</strong> ' + escapeHtml(stop.food) + '</p>' : '',
+        row.meal.backup ? '<p><strong>Backup:</strong> ' + escapeHtml(row.meal.backup) + '</p>' : '',
+        row.meal.reserve ? '<p><strong>Reservation:</strong> ' + escapeHtml(row.meal.reserve) + '</p>' : '',
+        stop ? '<div class="links">' + externalLink(stop.mapUrl, 'Map') + externalLink(stop.sourceUrl, 'Restaurant / source') + '</div>' : '',
+        '</div></article>'
+      ].join('');
+    }).join('') : '<div class="empty-state">No meal slots match. Clear a filter or search term.</div>';
+  }
+
+  function mountAttractionsSection() {
+    var section = document.getElementById('attractions');
+    section.innerHTML = [
+      '<h2 id="attractions-heading" class="section-heading">Attractions & weather alternatives</h2>',
+      '<p class="section-intro">Photos are optional and may be unavailable offline. Each stop keeps its source and map links.</p>',
+      '<div class="control-grid"><label for="attrSearchV2">Search attractions<input id="attrSearchV2" type="search" placeholder="Attraction, city, or detail" autocomplete="off"></label></div>',
+      '<div id="attrResultStatus" class="status-line" role="status" aria-live="polite"></div>',
+      '<div id="attrResult" class="attr-grid"></div>'
+    ].join('');
+    document.getElementById('attrSearchV2').addEventListener('input', function (event) {
+      uiFilters.attractionSearch = event.target.value;
+      renderAttractionsContent();
+    });
+    renderAttractionsContent();
+  }
+
+  function renderAttractionsContent() {
+    var query = normalize(uiFilters.attractionSearch);
+    var rows = rawData.attractions.filter(function (attraction) {
+      return !query || normalize([attraction.Attraction, attraction.Description, attraction.Address, attraction['Kid fit']].join(' ')).indexOf(query) !== -1;
+    });
+    document.getElementById('attrSearchV2').value = uiFilters.attractionSearch;
+    document.getElementById('attrResultStatus').textContent = rows.length ? 'Showing ' + rows.length + ' attractions.' : 'No attractions match that search.';
+    document.getElementById('attrResult').innerHTML = rows.length ? rows.map(function (attraction) {
+      var photoUrl = attraction['Photo URL'] || '';
+      var photoAllowed = !tripState.offlineMode && brokenPhotos.indexOf(normalize(attraction.Attraction)) === -1 && safeExternalUrl(photoUrl);
+      return [
+        '<article class="card attr">',
+        photoAllowed ? '<img class="attraction-photo" src="' + escapeHtml(photoUrl) + '" alt="' + escapeHtml(attraction.Attraction) + '" loading="lazy">' : '<div class="data-card small"><strong>Offline-friendly card</strong><br>Photo omitted so this stop stays useful without a remote image.</div>',
+        '<h3>', escapeHtml(attraction.Attraction), '</h3>',
+        '<p class="muted">', escapeHtml(attraction.Day || ''), ' · Best time: ', escapeHtml(attraction['Best time'] || 'Verify'), '</p>',
+        '<p>', escapeHtml(attraction.Description || ''), '</p>',
+        '<p class="small"><strong>Kid fit:</strong> ', escapeHtml(attraction['Kid fit'] || '—'), '<br><strong>Food / washroom:</strong> ', escapeHtml(attraction['Food / Washroom'] || '—'), '<br>', escapeHtml(attraction.Address || ''), '</p>',
+        '<div class="links">', externalLink(attraction['Map URL'], 'Map'), externalLink(attraction['Source URL'], 'Source'), photoAllowed ? externalLink(photoUrl, 'Photo') : '', '</div>',
+        '</article>'
+      ].join('');
+    }).join('') : '<div class="empty-state">No attractions match. Try another search.</div>';
+    Array.from(document.querySelectorAll('.attraction-photo')).forEach(function (image) {
+      image.addEventListener('error', function () {
+        var fallback = document.createElement('div');
+        fallback.className = 'data-card small';
+        fallback.innerHTML = '<strong>Photo unavailable</strong><br>This attraction still has its map and official source links.';
+        image.replaceWith(fallback);
+      }, { once: true });
+    });
+  }
+
+  function renderHotels() {
+    var section = document.getElementById('hotels');
+    section.innerHTML = [
+      '<h2 id="hotels-heading" class="section-heading">Hotels</h2>',
+      '<p class="section-intro">Use the checklist to record confirmation numbers, parking instructions, and the cancellation deadline.</p>',
+      '<div class="mobile-card-list">',
+      rawData.hotels.map(function (hotel) {
+        return [
+          '<article class="data-card"><h3>', escapeHtml(hotel['Recommended hotel'] || ''), '</h3>',
+          '<p><strong>', escapeHtml(hotel['Date label'] || hotel.Date || ''), '</strong> · ', escapeHtml(hotel.Base || ''), '</p>',
+          '<p>', escapeHtml(hotel['Why recommended'] || ''), '</p>',
+          '<dl><dt>Address</dt><dd>', escapeHtml(hotel.Address || '—'), '</dd><dt>Booking</dt><dd>', escapeHtml(hotel['Booking instruction'] || 'Confirm parking and cancellation terms.'), '</dd></dl>',
+          '<div class="links">', externalLink(hotel['Map URL'], 'Map'), externalLink(hotel['Address/source'], 'Hotel source'), externalLink(hotel['Amenities/source'], 'Amenities'), '</div></article>'
+        ].join('');
+      }).join(''),
+      '</div>'
+    ].join('');
+  }
+
+  function renderFuel() {
+    var section = document.getElementById('fuel');
+    var rows = rawData.fuel.filter(function (fuel) { return fuel['Fuel stop'] || fuel.Action; });
+    section.innerHTML = [
+      '<h2 id="fuel-heading" class="section-heading">Fuel plan</h2>',
+      '<p class="section-intro">Phone-friendly cards replace the original wide table. Treat every listed Esso as a preferred stop, not a guarantee; verify 91 AKI availability before rural legs.</p>',
+      '<div class="mobile-card-list">',
+      rows.map(function (fuel) {
+        return [
+          '<article class="data-card"><h3>', escapeHtml(fuel['Fuel stop'] || 'Fuel decision'), '</h3>',
+          '<p><span class="tag">', escapeHtml(fuel['Date label'] || fuel.Date || ''), '</span></p>',
+          '<dl><dt>Address</dt><dd>', escapeHtml(fuel.Address || '—'), '</dd><dt>Tank estimate</dt><dd>', escapeHtml(fuel['Tank estimate before stop'] || 'Check gauge'), '</dd><dt>Action</dt><dd>', escapeHtml(fuel.Action || 'Review'), '</dd><dt>Why</dt><dd>', escapeHtml(fuel.Reason || '—'), '</dd></dl>',
+          '<p class="small">', escapeHtml(fuel['Premium 91 note'] || ''), '</p>',
+          '<div class="links">', externalLink(fuel['Map URL'], 'Map'), externalLink(fuel['Source URL'], 'Station source'), '</div></article>'
+        ].join('');
+      }).join(''),
+      '</div>'
+    ].join('');
+  }
+
+  function renderSanity() {
+    var section = document.getElementById('sanity');
+    section.innerHTML = [
+      '<h2 id="sanity-heading" class="section-heading">Drive sanity & fallbacks</h2>',
+      '<p class="section-intro">The app never auto-completes a stop. Choose a manual delay mode when reality changes, then protect sleep and the next required stop.</p>',
+      '<div class="mobile-card-list">',
+      operationalPlan.days.map(function (day) {
+        return [
+          '<article class="data-card ', riskClass(day.risk), '"><h3>', escapeHtml(day.label), '</h3>',
+          '<p><span class="tag">', escapeHtml(day.risk), ' risk</span><span class="tag">', escapeHtml(day.driveKm), ' km</span></p>',
+          '<p><strong>', escapeHtml(day.routeFocus), '</strong><br>', escapeHtml(day.pureDriveTime), '</p>',
+          '<p><strong>Delay rule:</strong> ', escapeHtml(day.contingency), '</p>',
+          '<p><strong>Fallback:</strong> ', escapeHtml(day.emergency), '</p>',
+          '<p class="small"><strong>Time zone:</strong> ', escapeHtml(day.timeZoneNote), '</p>',
+          externalLink(dayRouteUrl(day), 'Open active-day route'),
+          '</article>'
+        ].join('');
+      }).join(''),
+      '</div>'
+    ].join('');
+  }
+
+  function renderSources() {
+    var section = document.getElementById('sources');
+    var items = rawData.sources.map(function (source) {
+      return { name: source.Topic, fact: source['Key fact used'], url: source['Source URL'] };
+    }).concat(roadLinks.map(function (link) {
+      return { name: link.title, fact: link.detail, url: link.url };
+    }));
+    section.innerHTML = [
+      '<h2 id="sources-heading" class="section-heading">Sources & live verification</h2>',
+      '<p class="section-intro">Use these links before departure and whenever a schedule, tide, menu, or road condition might have changed.</p>',
+      '<ol class="source-list">',
+      items.filter(function (item) { return safeExternalUrl(item.url); }).map(function (item) {
+        return '<li><strong>' + escapeHtml(item.name || 'Source') + '</strong>: ' + escapeHtml(item.fact || 'Open for details.') + '<br>' + externalLink(item.url, 'Open source') + '</li>';
+      }).join(''),
+      '</ol>'
+    ].join('');
+  }
+
+  function renderLive() {
+    var section = document.getElementById('live');
+    var day = dayById(tripState.activeDate);
+    var mode = tripState.modes[day.id] || 'preview';
+    var stops = visibleStops(day);
+    var completed = stops.filter(function (stop) { return stopStatus(stop.id) === 'done'; }).length;
+    var next = nextStop(day);
+    var prior = stops.filter(function (stop) { return stopStatus(stop.id) === 'done'; }).pop() || stops[0];
+    var nextRoute = next ? routeUrl(prior && prior.id !== next.id ? [prior, next] : [next]) : '';
+    var progress = stops.length ? Math.round((completed / stops.length) * 100) : 0;
+    var modeName = { preview: 'Preview / pre-trip', 'on-time': 'On time', late30: '30+ minutes late', late60: '60+ minutes late' }[mode] || 'Preview / pre-trip';
+    var tideDetails = day.id === operationalPlan.tidePlan.date ? '<div class="mode-note"><strong>Hopewell tide status:</strong> ' + escapeHtml(operationalPlan.tidePlan.status) + '. Verify after ' + escapeHtml(operationalPlan.tidePlan.verifyAfter) + '; park hours currently noted as ' + escapeHtml(operationalPlan.tidePlan.parkHours) + '.</div>' : '';
+    section.innerHTML = [
+      '<h2 id="live-heading" class="section-heading">Trip control</h2>',
+      '<p class="section-intro">Pick the active day and your delay mode. The plan changes only when you choose it; it does not guess from the clock.</p>',
+      '<div class="control-grid" aria-label="Trip control settings">',
+      '<label for="liveDay">Active day<select id="liveDay">', operationalPlan.days.map(function (item) { return '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(item.label) + '</option>'; }).join(''), '</select></label>',
+      '<label for="liveMode">Travel mode<select id="liveMode"><option value="preview">Preview / pre-trip</option><option value="on-time">On time</option><option value="late30">30+ minutes late</option><option value="late60">60+ minutes late</option></select></label>',
+      '</div>',
+      '<div class="trip-control-grid">',
+      '<article class="next-stop"><p class="route-label">', escapeHtml(modeName), ' · ', escapeHtml(day.risk), ' risk</p>',
+      next ? '<h3>Next: ' + escapeHtml(next.title) + '</h3><p class="muted">' + escapeHtml(next.time) + (next.zone ? ' ' + escapeHtml(next.zone) : '') + ' · ' + escapeHtml(next.city) + '</p><p>' + escapeHtml(next.notes) + '</p>' : '<h3>Day complete</h3><p class="muted">Every currently active stop is completed, skipped, or removed by your delay mode.</p>',
+      '<div class="action-bar">', next ? externalLink(nextRoute, 'Navigate to next stop', 'button') : '', externalLink(dayRouteUrl(day), 'Open active-day route', 'button secondary'), '</div>',
+      '<div class="trip-progress"><strong>', completed, '/', stops.length, ' active stops complete</strong><div class="progress-meter" aria-label="' + completed + ' of ' + stops.length + ' active stops complete"><span style="width:' + progress + '%"></span></div></div>',
+      '</article>',
+      '<article class="quick-card"><h3>Delay decision</h3><p><strong>At 30+ minutes late:</strong> ', escapeHtml(day.contingency), '</p><p><strong>Protect:</strong> ', escapeHtml(day.emergency), '</p><p class="small"><strong>Time zone:</strong> ', escapeHtml(day.timeZoneNote), '</p><div class="action-bar"><button type="button" class="button subtle" id="openDayPlan">Open this day’s plan</button><button type="button" class="button danger" id="quickMode">Switch to 30+ late mode</button></div></article>',
+      '</div>',
+      tideDetails
+    ].join('');
+    document.getElementById('liveDay').value = day.id;
+    document.getElementById('liveMode').value = mode;
+    document.getElementById('liveDay').addEventListener('change', function (event) {
+      tripState.activeDate = event.target.value;
+      uiFilters.dayId = event.target.value;
+      persist();
+      renderDayContent();
+      renderLive();
+    });
+    document.getElementById('liveMode').addEventListener('change', function (event) {
+      tripState.modes[day.id] = event.target.value;
+      persist();
+      renderDayContent();
+      renderLive();
+    });
+    document.getElementById('openDayPlan').addEventListener('click', function () {
+      uiFilters.dayId = day.id;
+      renderDayContent();
+      activateSection('daybyday', true);
+    });
+    document.getElementById('quickMode').addEventListener('click', function () {
+      tripState.modes[day.id] = 'late30';
+      persist();
+      renderDayContent();
+      renderLive();
+    });
+  }
+
+  function taskState(taskId) {
+    var existing = tripState.tasks[taskId] || {};
+    return {
+      done: Boolean(existing.done),
+      status: ['Not started', 'Need confirmation', 'Confirmed', 'Completed', 'Not applicable'].indexOf(existing.status) !== -1 ? existing.status : 'Not started',
+      checkedAt: typeof existing.checkedAt === 'string' ? existing.checkedAt : '',
+      confirmation: typeof existing.confirmation === 'string' ? existing.confirmation.slice(0, 120) : '',
+      notes: typeof existing.notes === 'string' ? existing.notes.slice(0, 500) : ''
+    };
+  }
+
+  function checklistProgress() {
+    return checklistTasks.filter(function (item) { return taskState(item.id).done; }).length;
+  }
+
+  function renderChecklist() {
+    var section = document.getElementById('checklist');
+    var done = checklistProgress();
+    section.innerHTML = [
+      '<h2 id="checklist-heading" class="section-heading">Booking & verification checklist</h2>',
+      '<p class="section-intro">Private fields stay in local browser storage. Export redacted progress by default; choose the private export only when you need confirmation codes and notes.</p>',
+      '<div class="checklist-toolbar"><strong>', done, ' / ', checklistTasks.length, ' tasks completed</strong><div class="action-bar"><button type="button" class="button subtle" id="exportRedacted">Export redacted</button><button type="button" class="button subtle" id="exportPrivate">Export private</button><button type="button" class="button subtle" id="importProgress">Import progress</button><button type="button" class="button danger" id="resetProgress">Reset local progress</button></div></div>',
+      '<input id="importProgressFile" type="file" accept="application/json" hidden>',
+      '<div id="checklistStatus" class="status-line" role="status" aria-live="polite"></div>',
+      checklistTasks.map(function (item) {
+        var state = taskState(item.id);
+        return [
+          '<article class="checklist-row ', state.done ? 'is-done' : '', '">',
+          '<input id="task-', escapeHtml(item.id), '" type="checkbox" data-task-id="', escapeHtml(item.id), '" data-task-field="done" ', state.done ? 'checked' : '', ' aria-label="Mark ', escapeHtml(item.title), ' complete">',
+          '<div><h3>', escapeHtml(item.title), '</h3><p><span class="tag">', escapeHtml(item.category), '</span><span class="tag">', escapeHtml(item.priority), '</span></p><p>', escapeHtml(item.description), '</p>', item.dueDate ? '<p class="small"><strong>Target:</strong> ' + escapeHtml(item.dueDate) + '</p>' : '', externalLink(item.url, 'Open source'), '</div>',
+          '<div class="checklist-fields"><label>Status<select data-task-id="', escapeHtml(item.id), '" data-task-field="status"><option', state.status === 'Not started' ? ' selected' : '', '>Not started</option><option', state.status === 'Need confirmation' ? ' selected' : '', '>Need confirmation</option><option', state.status === 'Confirmed' ? ' selected' : '', '>Confirmed</option><option', state.status === 'Completed' ? ' selected' : '', '>Completed</option><option', state.status === 'Not applicable' ? ' selected' : '', '>Not applicable</option></select></label>',
+          '<label>Last checked<input type="date" value="', escapeHtml(state.checkedAt), '" data-task-id="', escapeHtml(item.id), '" data-task-field="checkedAt"></label>',
+          '<details><summary>Private confirmation & notes</summary><label>Confirmation code<input maxlength="120" value="', escapeHtml(state.confirmation), '" data-task-id="', escapeHtml(item.id), '" data-task-field="confirmation"></label><label>Notes<input maxlength="500" value="', escapeHtml(state.notes), '" data-task-id="', escapeHtml(item.id), '" data-task-field="notes"></label></details>',
+          '</div></article>'
+        ].join('');
+      }).join('')
+    ].join('');
+    section.addEventListener('change', onChecklistChange);
+    document.getElementById('exportRedacted').addEventListener('click', function () { exportProgress(true); });
+    document.getElementById('exportPrivate').addEventListener('click', function () { exportProgress(false); });
+    document.getElementById('importProgress').addEventListener('click', function () { document.getElementById('importProgressFile').click(); });
+    document.getElementById('importProgressFile').addEventListener('change', importProgress);
+    document.getElementById('resetProgress').addEventListener('click', resetProgress);
+  }
+
+  function onChecklistChange(event) {
+    var target = event.target;
+    if (!target.dataset.taskId) return;
+    var id = target.dataset.taskId;
+    var field = target.dataset.taskField;
+    var current = taskState(id);
+    current[field] = field === 'done' ? target.checked : String(target.value || '').slice(field === 'notes' ? 0 : 0, field === 'notes' ? 500 : 120);
+    tripState.tasks[id] = current;
+    persist();
+    renderChecklist();
+  }
+
+  function serializableState(redacted) {
+    var taskData = {};
+    checklistTasks.forEach(function (item) {
+      var current = taskState(item.id);
+      taskData[item.id] = redacted ? { done: current.done, status: current.status, checkedAt: current.checkedAt } : current;
+    });
+    return {
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      redacted: Boolean(redacted),
+      activeDate: tripState.activeDate,
+      modes: tripState.modes,
+      stops: tripState.stops,
+      tasks: taskData
+    };
+  }
+
+  function downloadText(filename, content, type) {
+    var blob = new Blob([content], { type: type || 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function exportProgress(redacted) {
+    downloadText(redacted ? 'pei-road-trip-progress-redacted.json' : 'pei-road-trip-progress-private.json', JSON.stringify(serializableState(redacted), null, 2), 'application/json');
+    setStatus(redacted ? 'Redacted progress exported.' : 'Private progress exported. Keep that file secure.');
+  }
+
+  function importProgress(event) {
+    var file = event.target.files && event.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var imported = JSON.parse(String(reader.result || ''));
+        if (!imported || imported.version !== 2 || typeof imported !== 'object') throw new Error('Unsupported export');
+        var validDays = new Set(operationalPlan.days.map(function (day) { return day.id; }));
+        var validStops = new Set(operationalPlan.days.flatMap(function (day) { return day.stops.map(function (stop) { return stop.id; }); }));
+        var validTasks = new Set(checklistTasks.map(function (item) { return item.id; }));
+        if (validDays.has(imported.activeDate)) tripState.activeDate = imported.activeDate;
+        if (imported.modes && typeof imported.modes === 'object') {
+          Object.keys(imported.modes).forEach(function (key) {
+            if (validDays.has(key) && ['preview', 'on-time', 'late30', 'late60'].indexOf(imported.modes[key]) !== -1) tripState.modes[key] = imported.modes[key];
+          });
+        }
+        if (imported.stops && typeof imported.stops === 'object') {
+          Object.keys(imported.stops).forEach(function (key) {
+            if (validStops.has(key) && ['pending', 'done', 'skipped'].indexOf(imported.stops[key]) !== -1) tripState.stops[key] = imported.stops[key];
+          });
+        }
+        if (imported.tasks && typeof imported.tasks === 'object') {
+          Object.keys(imported.tasks).forEach(function (key) {
+            if (!validTasks.has(key) || !imported.tasks[key] || typeof imported.tasks[key] !== 'object') return;
+            var input = imported.tasks[key];
+            tripState.tasks[key] = {
+              done: Boolean(input.done),
+              status: ['Not started', 'Need confirmation', 'Confirmed', 'Completed', 'Not applicable'].indexOf(input.status) !== -1 ? input.status : 'Not started',
+              checkedAt: typeof input.checkedAt === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input.checkedAt) ? input.checkedAt : '',
+              confirmation: typeof input.confirmation === 'string' ? input.confirmation.slice(0, 120) : '',
+              notes: typeof input.notes === 'string' ? input.notes.slice(0, 500) : ''
+            };
+          });
+        }
+        uiFilters.dayId = tripState.activeDate;
+        persist();
+        renderDayContent();
+        renderLive();
+        renderChecklist();
+        setStatus('Progress imported and validated.');
+      } catch (error) {
+        setStatus('That file could not be imported. Use an export from this version of the itinerary.');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function resetProgress() {
+    if (!window.confirm('Reset all locally stored trip progress, notes, and confirmation codes on this browser?')) return;
+    tripState = emptyState();
+    uiFilters.dayId = tripState.activeDate;
+    persist();
+    renderDayContent();
+    renderLive();
+    renderChecklist();
+    renderAttractionsContent();
+    setStatus('Local trip progress was reset.');
+  }
+
+  function buildOfflineTextPack() {
+    var lines = [
+      'PEI FOODIE ROAD TRIP 2026 — OFFLINE ESSENTIALS',
+      'Private family plan. Do not share real-time locations.',
+      'Approximate route: ' + operationalPlan.roughTotalKm + ' km',
+      ''
+    ];
+    operationalPlan.days.forEach(function (day) {
+      lines.push(day.label + ' — ' + day.routeFocus);
+      lines.push('Drive: ' + day.driveKm + ' km | ' + day.pureDriveTime);
+      lines.push('Time zone: ' + day.timeZoneNote);
+      lines.push('Fallback: ' + day.emergency);
+      visibleStops(day).forEach(function (stop) {
+        lines.push('• ' + stop.time + (stop.zone ? ' ' + stop.zone : '') + ' — ' + stop.title + (stop.address ? ' — ' + stop.address : ''));
+      });
+      lines.push('');
+    });
+    lines.push('OFFICIAL ROAD CHECKS');
+    roadLinks.forEach(function (link) { lines.push('• ' + link.title + ': ' + link.url); });
+    lines.push('');
+    lines.push('Emergency: call 911 for emergencies. Maps, sources, restaurant pages, and live checks need connectivity.');
+    return lines.join('\n');
+  }
+
+  function renderOffline() {
+    var section = document.getElementById('offline');
+    var protocolNotice = location.protocol === 'file:' ? 'This downloaded file works without a service worker. Hosted caching activates only on HTTPS or localhost.' : 'Hosted cache support is available; maps, photos, and external sources still need a connection.';
+    section.innerHTML = [
+      '<h2 id="offline-heading" class="section-heading">Offline & safety pack</h2>',
+      '<p class="section-intro">The itinerary and your local progress can work offline. Google Maps, photographs, bookings, sources, and live road/tide checks cannot.</p>',
+      '<div class="note" id="networkNotice" role="status">', navigator.onLine ? 'Online right now.' : 'Offline right now — use the saved itinerary and addresses, then reconnect for external links.', ' ', escapeHtml(protocolNotice), '</div>',
+      '<div class="offline-grid" style="margin-top:16px">',
+      '<article class="card"><h3>Before leaving Wi-Fi</h3><ul class="offline-list"><li>Download your map areas in your preferred map app.</li><li>Open every confirmed hotel and restaurant once.</li><li>Export redacted progress and save the emergency text pack.</li><li>Check weather, provincial 511 pages, and the Hopewell tide plan.</li></ul><div class="action-bar"><button type="button" class="button primary" id="printTrip">Print / save PDF</button><button type="button" class="button subtle" id="downloadTextPack">Download emergency text</button><button type="button" class="button subtle" id="downloadHtmlPack">Download offline HTML copy</button></div></article>',
+      '<article class="card"><h3>Photo mode</h3><p>Hide remote attraction photos while preparing for an offline trip. This never hides addresses or operational details.</p><label><input id="offlinePhotoMode" type="checkbox" ', tripState.offlineMode ? 'checked' : '', '> Use offline-friendly attraction cards</label><p class="small">Photos are not cached because they are third-party URLs.</p></article>',
+      '<article class="card"><h3>Roads & weather</h3><div class="road-grid">', roadLinks.map(function (link) { return '<a class="road-link" href="' + escapeHtml(safeExternalUrl(link.url)) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">' + escapeHtml(link.title) + '<span>' + escapeHtml(link.detail) + '</span></a>'; }).join(''), '</div></article>',
+      '</div>'
+    ].join('');
+    document.getElementById('printTrip').addEventListener('click', function () { window.print(); });
+    document.getElementById('downloadTextPack').addEventListener('click', function () {
+      downloadText('pei-foodie-road-trip-offline-essentials.txt', buildOfflineTextPack());
+      setStatus('Offline emergency text pack downloaded.');
+    });
+    document.getElementById('downloadHtmlPack').addEventListener('click', function () {
+      downloadText('pei-foodie-road-trip-offline-copy.html', '<!doctype html>\n' + document.documentElement.outerHTML, 'text/html;charset=utf-8');
+      setStatus('Offline HTML copy downloaded. It keeps the itinerary but not live external links.');
+    });
+    document.getElementById('offlinePhotoMode').addEventListener('change', function (event) {
+      tripState.offlineMode = event.target.checked;
+      persist();
+      renderAttractionsContent();
+      renderOffline();
+    });
+  }
+
+  function copyText(value) {
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(value);
+    return new Promise(function (resolve) {
+      var area = document.createElement('textarea');
+      area.value = value;
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      try { document.execCommand('copy'); } catch (error) {}
+      area.remove();
+      resolve();
+    });
+  }
+
+  function registerOfflineSupport() {
+    function refreshNetworkNotice() {
+      var notice = document.getElementById('networkNotice');
+      if (notice) notice.textContent = navigator.onLine ? 'Online right now. External links and live checks can open.' : 'Offline right now — use the saved itinerary and addresses, then reconnect for external links.';
+    }
+    window.addEventListener('online', refreshNetworkNotice);
+    window.addEventListener('offline', refreshNetworkNotice);
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      navigator.serviceWorker.register('./sw.js').then(function () {
+        setStatus('Offline cache support is ready for this hosted copy.');
+      }).catch(function () {
+        setStatus('This copy still works offline as a downloaded file; hosted cache registration was unavailable.');
+      });
+    }
+  }
+
+  function boot() {
+    var main = document.getElementById('main-content');
+    appStatus = document.createElement('div');
+    appStatus.className = 'sr-only';
+    appStatus.setAttribute('role', 'status');
+    appStatus.setAttribute('aria-live', 'polite');
+    main.prepend(appStatus);
+    buildNavigation();
+    renderOverview();
+    mountDaySection();
+    mountFoodSection();
+    mountAttractionsSection();
+    renderHotels();
+    renderFuel();
+    renderSanity();
+    renderSources();
+    renderLive();
+    renderChecklist();
+    renderOffline();
+    activateSection('live', false);
+    registerOfflineSupport();
+    if (planValidationErrors.length) setStatus('The operational plan has ' + planValidationErrors.length + ' validation warning' + (planValidationErrors.length === 1 ? '' : 's') + '. Review the sources section before travel.');
+  }
+
+  boot();
+}());
 </script>
 </body>
 </html>

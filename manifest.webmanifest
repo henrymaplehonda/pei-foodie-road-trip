@@ -1,0 +1,17 @@
+{
+  "name": "PEI Foodie Road Trip 2026",
+  "short_name": "PEI Road Trip",
+  "description": "Private family road-trip itinerary with offline-ready operational details.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f3eb",
+  "theme_color": "#0f5b63",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
