@@ -20,4 +20,6 @@ Confirm operating hours, attraction admissions, reservations, road conditions, f
 
 The active itinerary now follows a family-driving cadence: roughly every two hours or less, the route includes a real stop such as an attraction, park, beach, boardwalk, or scenic photo break. Several of those breaks are adapted from the original spreadsheet plan.
 
+Attraction-style stops include a 4.0+ Google Maps review gate plus a nearby kid-friendly fallback with a map link, so there is always a low-friction backup if a main stop is crowded, closed, or not matching the kid mood.
+
 This repository contains personal travel plans. Because the repository and GitHub Pages site are public, avoid sharing real-time locations during the trip and use a redacted export if anything needs to be shared more widely.
