@@ -18,4 +18,6 @@ Live public site: https://henrymaplehonda.github.io/pei-foodie-road-trip/
 
 Confirm operating hours, attraction admissions, reservations, road conditions, fuel availability, tides, and weather before departure. The August 12 Hopewell Rocks visit deliberately remains tide-window dependent until the official table can be confirmed.
 
+The active itinerary now follows a family-driving cadence: roughly every two hours or less, the route includes a real stop such as an attraction, park, beach, boardwalk, or scenic photo break. Several of those breaks are adapted from the original spreadsheet plan.
+
 This repository contains personal travel plans. Because the repository and GitHub Pages site are public, avoid sharing real-time locations during the trip and use a redacted export if anything needs to be shared more widely.
