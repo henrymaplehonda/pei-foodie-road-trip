@@ -99,12 +99,12 @@ button,.button{min-height:44px;cursor:pointer;font:inherit}button:focus-visible,
 <header>
   <div class="wrap">
     <h1>Henry Family Foodie Road Trip</h1>
-    <p class="sub">Vaughan → Montréal → Québec City → Fredericton → PEI → Moncton → Québec City → Vaughan. Built for a wife, 6-year-old son, foodie lunches/dinners, Esso premium fuel stops, washroom breaks, hotel rhythm, and realistic drive-time pressure.</p>
+    <p class="sub">Vaughan → Montréal → Québec City → Fredericton → PEI → Moncton → Québec City → Vaughan. Built for a wife, 6-year-old son, foodie lunches/dinners, minimized premium-fuel stops, washroom breaks, hotel rhythm, and realistic drive-time pressure.</p>
     <div class="pills">
       <span class="pill">Aug 7–14, 2026</span>
       <span class="pill">8 calendar days / 7 nights</span>
       <span class="pill">2025 Volvo XC60 · 91 AKI recommended</span>
-      <span class="pill">Refuel near 1/4 tank</span>
+      <span class="pill">Minimal fuel stops · 6% trigger</span>
     </div>
   </div>
 </header>
@@ -127,7 +127,7 @@ button,.button{min-height:44px;cursor:pointer;font:inherit}button:focus-visible,
     </div>
     <div class="card half">
       <h2>Fuel strategy</h2>
-      <p>Use Esso where practical, fill with 91 AKI premium, and refuel around the 1/4-tank point. Do not enter rural NB / PEI segments with a low tank, especially after dinner or before attractions when everyone is tired.</p>
+      <p>Start with a full tank, then minimize fuel stops: aim to refuel only when the dash is near 6% remaining, about 48 km on the conservative 800 km range. Treat this as a tight trigger, not a comfort margin, especially in rural NB / PEI or after hours.</p>
     </div>
   </div>
 </section>
@@ -166,7 +166,7 @@ button,.button{min-height:44px;cursor:pointer;font:inherit}button:focus-visible,
 </section>
 
 <section id="fuel">
-  <div class="card full"><h2>Esso fuel plan</h2><p class="muted">Based on 2025 Volvo XC60, premium recommended 91 AKI, ~71 L tank, and conservative 800 km highway range.</p></div>
+  <div class="card full"><h2>Minimal fuel plan</h2><p class="muted">Based on 2025 Volvo XC60, premium recommended 91 AKI, ~71 L tank, conservative 800 km highway range, and a 6% / ~48 km remaining trigger.</p></div>
   <div id="fuelContainer" style="margin-top:16px"></div>
 </section>
 
@@ -205,7 +205,7 @@ const tabs = [
   ['food','Foodie lunch & dinner'],
   ['attractions','Attractions + photos'],
   ['hotels','Hotels'],
-  ['fuel','Esso fuel'],
+  ['fuel','Minimal fuel'],
   ['sanity','Drive sanity'],
   ['sources','Sources']
 ];
@@ -735,7 +735,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
         emergency: 'Hotel check-in and Time Out Market are the no-friction finish.',
         stops: [
           sourceStop('2026-08-07', 'Depart Vaughan', { id: 'd1-depart', time: '07:00', zone: 'ET', leg: '0 km', priority: 'required' }),
-          sourceStop('2026-08-07', 'Esso Circle K Maple', { id: 'd1-fuel', time: '07:10', zone: 'ET', priority: 'required' }),
+          sourceStop('2026-08-07', 'Esso Circle K Maple', { id: 'd1-fuel', time: '07:10', zone: 'ET', priority: 'required', notes: 'Start-full exception to the 6% rule. Fill with 91 AKI premium and reset the trip odometer; after this, do not top up by habit.' }),
           sourceStop('2026-08-07', 'The Big Apple', { id: 'd1-big-apple', time: '08:25', zone: 'ET', leg: 'About 105 km / 1 h 15', priority: 'optional', skipAt: 20, saves: '45 min', notes: 'Corrected order: stop here before Napanee. Keep it short if traffic builds.' }),
           sourceStop('2026-08-07', 'ONroute Napanee', { id: 'd1-napanee', time: '10:05', zone: 'ET', leg: 'About 120 km / 1 h 10', priority: 'required', notes: 'Canonical quick lunch, washroom, and stretch stop. This replaces the off-route lunch recommendation.' }),
           sourceStop('2026-08-07', 'Brockville Railway Tunnel', { id: 'd1-brockville', time: '12:50', zone: 'ET', leg: 'About 185 km / 1 h 50', priority: 'optional', skipAt: 20, saves: '45 min', notes: 'Only if the family needs a real movement break and you are on schedule.' }),
@@ -762,6 +762,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
         stops: [
           sourceStop('2026-08-08', 'Depart Montréal', { id: 'd2-depart', time: '08:30', zone: 'ET', priority: 'required' }),
           sourceStop('2026-08-08', 'Trois-Rivières stretch', { id: 'd2-lunch', time: '10:15', zone: 'ET', kind: 'Lunch / washroom', priority: 'required', notes: 'Canonical light lunch; Fairmount and Schwartz are optional Montréal detours, not routed stops.' }),
+          customStop({ id: 'd2-low-fuel', dayId: '2026-08-08', time: '11:15', zone: 'ET', title: 'Low-fuel fill: Autoroute 40 Québec approach', kind: 'Fuel', priority: 'required', address: 'Deschambault-Grondines, QC', city: 'Deschambault-Grondines, QC', leg: 'About 750 km since the Maple full tank; target is 6% / about 48 km remaining', timeBudget: '10-15 min', notes: 'Minimal-fuel strategy stop. Fill full only when the dash is near 6%; if range is clearly higher, continue to the next premium-capable station on A-40.', food: 'Fuel only; use the earlier Trois-Rivières stop for food/washroom.', kidPlan: 'Keep child in road-trip mode; this is not a play stop.', mapUrl: mapSearchUrl('premium gas near Deschambault-Grondines QC') }),
           sourceStop('2026-08-08', 'Montmorency Falls', { id: 'd2-falls', time: '12:30', zone: 'ET', priority: 'required', ticket: ticketGuidance.montmorency }),
           sourceStop('2026-08-08', 'Check in: Hôtel Cofortel', { id: 'd2-hotel', time: '15:30', zone: 'ET', priority: 'required' }),
           sourceStop('2026-08-08', 'Old Québec / Dufferin', { id: 'd2-old-quebec', time: '17:15–18:25', zone: 'ET', priority: 'optional', skipAt: 30, saves: '60 min', notes: 'End the walk by 18:25 to preserve a realistic 19:00 dinner.' }),
@@ -782,15 +783,15 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
         risk: 'High',
         lateThresholdMin: 30,
         timeZoneNote: 'Start in America/Toronto (ET). New Brunswick stops use America/Moncton (AT), one hour ahead.',
-        contingency: 'If Edmundston fuel is not complete by 13:15 Atlantic, skip Grand Falls. If hotel arrival slips, use the Swiss Chalet fallback instead of a reservation chase.',
+        contingency: 'If the Woodstock/Hartland low-fuel fill slips, shorten Hartland and protect hotel arrival. If hotel arrival slips, use the Swiss Chalet fallback instead of a reservation chase.',
         emergency: 'Go straight to the hotel/pool and use the low-friction dinner backup.',
         stops: [
           sourceStop('2026-08-09', 'Depart Québec City', { id: 'd3-depart', time: '07:30', zone: 'ET', priority: 'required' }),
           customStop({ id: 'd3-kamouraska', dayId: '2026-08-09', time: '09:15', zone: 'ET', title: 'Kamouraska river-view stretch', kind: 'Park / scenic break', priority: 'required', address: 'Av. LeBlanc, Kamouraska, QC G0L 1M0', city: 'Kamouraska, QC', leg: 'About 165 km / 1 h 45 from Quebec City; about 55 km / 40 min to Riviere-du-Loup', timeBudget: '15-20 min', notes: 'From the original plan. Quick St. Lawrence view and leg stretch before lunch so the first drive block stays under two hours.', food: 'Use packed snacks; lunch remains in Riviere-du-Loup.', kidPlan: 'Short waterfront look-around, then back in the car.', mapUrl: mapSearchUrl('Av. LeBlanc, Kamouraska, QC G0L 1M0'), sourceUrl: 'https://www.tourismekamouraska.com/en/' }),
           foodStop('2026-08-09', 'L’Estaminet', { id: 'd3-brunch', time: '10:15', zone: 'ET', kind: 'Brunch / early lunch', priority: 'required', notes: 'Canonical Sunday stop. Keep it efficient before the New Brunswick stretch.' }),
-          sourceStop('2026-08-09', 'Esso Edmundston', { id: 'd3-fuel', time: '13:15', zone: 'AT', priority: 'required', notes: 'Mandatory fuel. Atlantic Time starts after entering New Brunswick.' }),
-          sourceStop('2026-08-09', 'Grand Falls Gorge', { id: 'd3-grand-falls', time: '13:50', zone: 'AT', priority: 'optional', skipAt: 30, saves: '60 min', notes: 'Skip if fuel is not complete by 13:15 Atlantic.' }),
+          sourceStop('2026-08-09', 'Grand Falls Gorge', { id: 'd3-grand-falls', time: '13:50', zone: 'AT', priority: 'optional', skipAt: 30, saves: '60 min', notes: 'Skip if the day is slipping; the low-fuel fill is now later near Woodstock/Hartland, not Edmundston.' }),
           customStop({ id: 'd3-hartland', dayId: '2026-08-09', time: '15:20', zone: 'AT', title: 'Hartland Covered Bridge photo stop', kind: 'Photo stop / stretch', priority: 'required', address: '365 Main St, Hartland, NB E7P 2N1', city: 'Hartland, NB', leg: 'About 115 km / 1 h 20 from Grand Falls; about 120 km / 1 h 20 to Fredericton', timeBudget: '15-20 min', notes: 'From the original plan. Keeps the Grand Falls to Fredericton leg from becoming a two-plus-hour grind.', food: 'No meal plan; use it as a quick stretch/photo stop.', kidPlan: 'Drive through or walk near the long covered bridge.', mapUrl: mapSearchUrl('365 Main St, Hartland, NB E7P 2N1'), sourceUrl: 'https://tourismnewbrunswick.ca/listing/hartland-covered-bridge' }),
+          customStop({ id: 'd3-low-fuel', dayId: '2026-08-09', time: '15:45', zone: 'AT', title: 'Low-fuel fill: Woodstock / Hartland corridor', kind: 'Fuel', priority: 'required', address: 'Woodstock, NB', city: 'Woodstock / Hartland, NB', leg: 'About 750-800 km since the Québec approach fill; target is 6% / about 48 km remaining', timeBudget: '10-15 min', notes: 'Minimal-fuel strategy stop paired with the Hartland photo break. Fill full only when the dash is near the 6% trigger; use Woodstock/Hartland services before the Fredericton finish.', food: 'Fuel only; dinner is after hotel check-in.', kidPlan: 'Short practical stop only.', mapUrl: mapSearchUrl('premium gas near Woodstock NB') }),
           sourceStop('2026-08-09', 'Check in: Château Fredericton', { id: 'd3-hotel', time: '17:30', zone: 'AT', priority: 'required' }),
           foodStop('2026-08-09', 'Wolastoq Wharf', { id: 'd3-dinner', time: '18:30', zone: 'AT', kind: 'Dinner', priority: 'conditional', conditional: true, skipAt: 30, saves: '90 min', notes: 'Use only with a confirmed reservation and a timely hotel arrival. Swiss Chalet is the canonical low-friction fallback.' })
         ],
@@ -815,7 +816,6 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
           customStop({ id: 'd4-oromocto', dayId: '2026-08-10', time: '09:00', zone: 'AT', title: 'Oromocto / NB Military History Museum stretch', kind: 'Museum / park stretch', priority: 'required', address: '119 Walnut St Building A5, Oromocto, NB E2V 4J5', city: 'Oromocto, NB', leg: 'About 25 km / 20 min from Fredericton; about 145 km / 1 h 35 to Magnetic Hill', timeBudget: '20-30 min', notes: 'Borrowed from the original plan as the first eastbound movement stop. If the museum is not open, use the area as a quick walk/stretch and keep rolling.', food: 'No meal plan; keep snacks in the car.', kidPlan: 'Short museum or outdoor leg stretch before the Moncton block.', mapUrl: mapSearchUrl('119 Walnut St Building A5, Oromocto, NB E2V 4J5'), sourceUrl: 'https://nbmhm-mhmnb.ca/' }),
           sourceStop('2026-08-10', 'Magnetic Hill', { id: 'd4-magnetic', time: '10:45', zone: 'AT', priority: 'optional', skipAt: 30, saves: '45 min', ticket: ticketGuidance.magneticHill }),
           foodStop('2026-08-10', 'Tony’s Bistro', { id: 'd4-lunch', time: '12:00', zone: 'AT', kind: 'Lunch', priority: 'required', notes: 'Canonical Moncton lunch. Keep it within the daytime service window.' }),
-          sourceStop('2026-08-10', 'Esso / Magnetic Hill', { id: 'd4-fuel', time: '13:00', zone: 'AT', priority: 'required' }),
           sourceStop('2026-08-10', 'Cape Jourimain', { id: 'd4-cape', time: '14:30', zone: 'AT', priority: 'optional', skipAt: 45, saves: '45 min', notes: 'Shorten to washroom and bridge viewpoint if running late.' }),
           sourceStop('2026-08-10', 'Check in: Rodd Royalty', { id: 'd4-hotel', time: '16:45', zone: 'AT', priority: 'required' }),
           foodStop('2026-08-10', 'New Glasgow Lobster Suppers', { id: 'd4-dinner', time: '18:00', zone: 'AT', kind: 'Dinner', priority: 'required', notes: 'Canonical PEI-arrival dinner. Confirm the 16:00–19:30 service window.' })
@@ -860,11 +860,11 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
         contingency: 'Set the Hopewell access window first. Subtract 195 minutes for drive, parking, and buffer; only then decide whether Victoria Row, Lobster on the Wharf, or Tide & Boar fit.',
         emergency: 'Go directly to Hopewell, then hotel/quick dinner. Do not trade the tide window for a restaurant.',
         stops: [
-          sourceStop('2026-08-12', 'Esso Charlottetown', { id: 'd6-fuel', time: '08:45', zone: 'AT', priority: 'required' }),
           sourceStop('2026-08-12', 'Victoria Row', { id: 'd6-victoria', time: 'Only if tide departure allows', zone: 'AT', priority: 'conditional', conditional: true, skipAt: 1, saves: '45 min' }),
           foodStop('2026-08-12', 'Lobster on the Wharf', { id: 'd6-lunch', time: 'Only if tide departure allows', zone: 'AT', kind: 'Lunch', priority: 'conditional', conditional: true, skipAt: 1, saves: '60 min', notes: 'Conditional lunch only. Keep it out of the plan until the official Hopewell window is set.' }),
           customStop({ id: 'd6-bridge', dayId: '2026-08-12', time: 'Tide-dependent departure', zone: 'AT', title: 'Confederation Bridge crossing', kind: 'Drive', priority: 'required', address: 'Confederation Bridge, Borden-Carleton, PE', city: 'Borden-Carleton, PE', notes: 'Check toll payment readiness before leaving PEI.', mapUrl: mapSearchUrl('Confederation Bridge, Borden-Carleton, PE'), sourceUrl: 'https://www.confederationbridge.com/tolls-fees/' }),
           customStop({ id: 'd6-sackville', dayId: '2026-08-12', time: 'Tide-dependent buffer stop', zone: 'AT', title: 'Sackville Waterfowl Park boardwalk stretch', kind: 'Park / boardwalk', priority: 'required', address: '34 Mallard Dr, Sackville, NB E4L 4C3', city: 'Sackville, NB', leg: 'About 100 km / 1 h 05 from Confederation Bridge; about 45 km / 40 min to Hopewell Rocks', timeBudget: '15-25 min', notes: 'From the original plan. Use this as the required no-more-than-two-hours stop between PEI and Hopewell unless the tide window is too tight.', food: 'Visitor area / nearby services; do not make it a meal stop.', kidPlan: 'Quick boardwalk walk and bird spotting.', mapUrl: mapSearchUrl('Sackville Waterfowl Park, Sackville, NB'), sourceUrl: 'https://tourismnewbrunswick.ca/listing/sackville-waterfowl-park' }),
+          customStop({ id: 'd6-low-fuel', dayId: '2026-08-12', time: 'Tide-dependent buffer stop', zone: 'AT', title: 'Low-fuel fill: Sackville corridor', kind: 'Fuel', priority: 'required', address: 'Sackville, NB', city: 'Sackville, NB', leg: 'About 750 km since the Woodstock/Hartland fill; target is 6% / about 48 km remaining', timeBudget: '10-15 min', notes: 'Minimal-fuel strategy stop paired with the Sackville boardwalk buffer. Skip the old Charlottetown top-up unless the dash is already near 6% before leaving PEI.', food: 'Fuel only; preserve the Hopewell tide window.', kidPlan: 'Keep this quick so the tide window stays protected.', mapUrl: mapSearchUrl('premium gas near Sackville NB') }),
           sourceStop('2026-08-12', 'Hopewell Rocks', { id: 'd6-hopewell', time: 'Official low-tide access window', zone: 'AT', kind: 'Tide-dependent attraction', priority: 'required', notes: 'Do not set a fixed time until the official table becomes available. Plan a 45-minute arrival buffer and at least 150 minutes on site.', sourceUrl: 'https://www.parcsnbparks.ca/en/parks/33/hopewell-rocks-provincial-park/26/tide-tables', ticket: ticketGuidance.hopewell }),
           sourceStop('2026-08-12', 'Check in: Fairfield', { id: 'd6-hotel', time: 'After Hopewell', zone: 'AT', priority: 'required' }),
           foodStop('2026-08-12', 'Tide & Boar', { id: 'd6-dinner', time: 'Only if Hopewell exit allows', zone: 'AT', kind: 'Dinner', priority: 'conditional', conditional: true, skipAt: 1, saves: '90 min', notes: 'Conditional dinner. Use hotel/quick food if the tide visit runs long.' })
@@ -890,36 +890,35 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
           customStop({ id: 'd7-oromocto', dayId: '2026-08-13', time: '08:45', zone: 'AT', title: 'Oromocto / NB Military History Museum stretch', kind: 'Museum / park stretch', priority: 'required', address: '119 Walnut St Building A5, Oromocto, NB E2V 4J5', city: 'Oromocto, NB', leg: 'About 155 km / 1 h 45 from Moncton; about 25 km / 20 min to Fredericton', timeBudget: '15-20 min', notes: 'From the original plan. Use it as the first drive-cadence stop before Fredericton.', food: 'No meal plan; keep it quick.', kidPlan: 'Short walk or quick museum peek if open.', mapUrl: mapSearchUrl('119 Walnut St Building A5, Oromocto, NB E2V 4J5'), sourceUrl: 'https://nbmhm-mhmnb.ca/' }),
           sourceStop('2026-08-13', 'Fredericton service', { id: 'd7-fredericton', time: '09:30', zone: 'AT', kind: 'Washroom / stretch', priority: 'required', notes: 'Quick break only; 540/Picaroons is not a core lunch because it opens too late for this schedule.' }),
           customStop({ id: 'd7-hartland', dayId: '2026-08-13', time: '10:55', zone: 'AT', title: 'Hartland Covered Bridge photo stop', kind: 'Photo stop / stretch', priority: 'required', address: '365 Main St, Hartland, NB E7P 2N1', city: 'Hartland, NB', leg: 'About 120 km / 1 h 15 from Fredericton; about 150 km / 1 h 35 to Edmundston', timeBudget: '15 min', notes: 'Original-plan photo stop that prevents the Fredericton-to-Edmundston block from becoming too long.', food: 'No meal plan.', kidPlan: 'Quick bridge photo and leg stretch.', mapUrl: mapSearchUrl('365 Main St, Hartland, NB E7P 2N1'), sourceUrl: 'https://tourismnewbrunswick.ca/listing/hartland-covered-bridge' }),
-          sourceStop('2026-08-13', 'Esso Edmundston', { id: 'd7-lunch-fuel', time: '12:00', zone: 'AT', kind: 'Fuel / grab-and-go lunch', priority: 'required', notes: 'Canonical efficient lunch and premium fuel stop.' }),
           sourceStop('2026-08-13', 'Rivière-du-Loup stretch', { id: 'd7-rdl', time: '14:00', zone: 'ET', kind: 'Washroom / stretch', priority: 'required', notes: 'Québec time begins after the border. Do not turn this into a long lunch.' }),
+          customStop({ id: 'd7-low-fuel', dayId: '2026-08-13', time: '14:45', zone: 'ET', title: 'Low-fuel fill: Rivière-du-Loup / Kamouraska corridor', kind: 'Fuel', priority: 'required', address: 'Rivière-du-Loup, QC', city: 'Rivière-du-Loup / Kamouraska, QC', leg: 'About 750 km since the Sackville fill; target is 6% / about 48 km remaining', timeBudget: '10-15 min', notes: 'Minimal-fuel strategy stop. Use the RDL/Kamouraska corridor before the final Québec City push; do not top up earlier in Edmundston unless the dash is already near 6%.', food: 'Fuel only; use packed food or the RDL stretch.', kidPlan: 'Quick practical stop, then the Kamouraska view reset.', mapUrl: mapSearchUrl('premium gas near Rivière-du-Loup QC') }),
           customStop({ id: 'd7-kamouraska', dayId: '2026-08-13', time: '15:05', zone: 'ET', title: 'Kamouraska river-view reset', kind: 'Park / scenic break', priority: 'required', address: 'Av. LeBlanc, Kamouraska, QC G0L 1M0', city: 'Kamouraska, QC', leg: 'About 55 km / 40 min from Riviere-du-Loup; about 165 km / 1 h 45 to Quebec City', timeBudget: '15-20 min', notes: 'From the original plan. This keeps the final Quebec City leg under two hours and gives everyone one last outside reset.', food: 'No meal plan; use packed snacks.', kidPlan: 'River view and a quick walk.', mapUrl: mapSearchUrl('Av. LeBlanc, Kamouraska, QC G0L 1M0'), sourceUrl: 'https://www.tourismekamouraska.com/en/' }),
           sourceStop('2026-08-13', 'Check in: Hôtel Cofortel', { id: 'd7-hotel', time: '17:30', zone: 'ET', priority: 'required' }),
           foodStop('2026-08-13', 'Le Chic Shack', { id: 'd7-dinner', time: 'Early-arrival optional', zone: 'ET', kind: 'Dinner', priority: 'optional', skipAt: 30, saves: '90 min', notes: 'Optional only if you arrive early. Otherwise eat near the hotel and protect sleep.' })
         ],
         meals: [
-          mealSlot({ id: 'd7-lunch', meal: 'Lunch', title: 'Esso Edmundston grab-and-go', selectedStopId: 'd7-lunch-fuel', backup: 'Carry a cooler meal for the car.' }),
+          mealSlot({ id: 'd7-lunch', meal: 'Lunch', title: 'Rivière-du-Loup / cooler lunch', selectedStopId: 'd7-rdl', backup: 'Carry a cooler meal for the car; skip the old Edmundston fuel-lunch top-up unless the dash is near 6%.' }),
           mealSlot({ id: 'd7-dinner', meal: 'Dinner', title: 'Hotel-area takeout', selectedStopId: 'd7-hotel', backup: 'Le Chic Shack only if arriving early.', conditional: true })
         ]
       }),
       makeDay({
         id: '2026-08-14',
         label: 'Fri, Aug 14, 2026',
-        routeFocus: 'Québec City → Centre-du-Québec → Vaudreuil → Mallorytown → Vaughan',
+        routeFocus: 'Québec City → Centre-du-Québec → South Shore → Mallorytown → Vaughan',
         driveKm: 820,
         pureDriveTime: 'About 8.5–9.5 h with essential breaks',
         risk: 'High',
         lateThresholdMin: 30,
         timeZoneNote: 'All times are Eastern Time (America/Toronto).',
-        contingency: 'At 30 minutes late, skip the optional Napanee fuel top-up. At 60 minutes late, choose a Kingston/Cornwall overnight rather than forcing a fatigued final push.',
+        contingency: 'At 30 minutes late, keep the Napanee low-fuel fill fast. At 60 minutes late, choose a Kingston/Cornwall overnight rather than forcing a fatigued final push.',
         emergency: 'The Noshery is only for a deliberate return split, not a same-day dinner plan.',
         stops: [
           sourceStop('2026-08-14', 'Depart Québec City', { id: 'd8-depart', time: '07:00', zone: 'ET', priority: 'required' }),
           foodStop('2026-08-14', 'Fromagerie Lemaire', { id: 'd8-lemaire', time: '09:30', zone: 'ET', kind: 'Morning food stop', priority: 'required', notes: 'Canonical morning food stop, not lunch. Pick up curds/snacks and keep moving.' }),
           customStop({ id: 'd8-south-shore-park', dayId: '2026-08-14', time: '11:20', zone: 'ET', title: 'South Shore Montreal lunch + park walk', kind: 'Lunch / park stretch', priority: 'required', address: 'Parc Marie-Victorin, Longueuil, QC', city: 'Longueuil, QC', leg: 'About 150 km / 1 h 35 from Fromagerie Lemaire; about 55 km / 45 min to Vaudreuil', timeBudget: '35-45 min', notes: 'Based on the original plan South Shore Montreal lunch idea, upgraded into a real park/stretch stop so the return day keeps the two-hour cadence.', food: 'Fast lunch on the south shore; avoid downtown Montreal.', kidPlan: 'Short waterfront/park walk before the Ontario push.', mapUrl: mapSearchUrl('Parc Marie-Victorin, Longueuil, QC'), sourceUrl: 'https://longueuil.quebec/fr/parc-marie-victorin' }),
-          sourceStop('2026-08-14', 'Esso Vaudreuil', { id: 'd8-fuel', time: '12:15', zone: 'ET', priority: 'required' }),
           sourceStop('2026-08-14', 'ONroute Mallorytown', { id: 'd8-lunch', time: '14:15', zone: 'ET', kind: 'Lunch / washroom', priority: 'required', notes: 'Canonical lunch and rest break.' }),
           customStop({ id: 'd8-brockville-waterfront', dayId: '2026-08-14', time: '15:20', zone: 'ET', title: 'Brockville waterfront / St. Lawrence Park', kind: 'Park / waterfront break', priority: 'required', address: '525 King St W, Brockville, ON K6V 3T3', city: 'Brockville, ON', leg: 'About 35 km / 25 min from Mallorytown; about 95 km / 1 h to Napanee', timeBudget: '20-30 min', notes: 'From the original plan Brockville waterfront break. Use the river park instead of adding a sit-down meal.', food: 'Washrooms/canteen may vary; keep snacks handy.', kidPlan: 'Waterfront walk, playground/beach energy if conditions allow.', mapUrl: mapSearchUrl('St. Lawrence Park, 525 King St W, Brockville, ON'), sourceUrl: 'https://brockville.com/things-to-do/parks-trails/' }),
-          sourceStop('2026-08-14', 'Esso Napanee', { id: 'd8-napanee', time: '16:15', zone: 'ET', priority: 'optional', skipAt: 30, saves: '15 min', notes: 'Top up only if needed; do not add a stop by habit.' }),
+          sourceStop('2026-08-14', 'Esso Napanee', { id: 'd8-napanee', time: '16:15', zone: 'ET', priority: 'required', notes: 'Final minimal-fuel strategy stop. This should be close to the 6% trigger after the Kamouraska/RDL fill; fill enough to finish the Big Apple and Vaughan legs.' }),
           customStop({ id: 'd8-big-apple', dayId: '2026-08-14', time: '17:35', zone: 'ET', title: 'The Big Apple final stretch stop', kind: 'Attraction / snack', priority: 'required', address: '262 Orchard Rd, Colborne, ON K0K 1S0', city: 'Colborne, ON', leg: 'About 120 km / 1 h 10 from Napanee; about 130 km / 1 h 25 to Vaughan', timeBudget: '20-30 min', notes: 'Original-plan-style final fun stop. Even if you visited outbound, use this as the last kid-friendly stretch before the GTA.', food: 'Pie/snack/washroom stop.', kidPlan: 'One last fun stretch before the home push.', mapUrl: mapSearchUrl('262 Orchard Rd, Colborne, ON K0K 1S0'), sourceUrl: 'https://thebigapple.ca/' }),
           foodStop('2026-08-14', 'The Noshery', { id: 'd8-noshery', time: 'Return-split only', zone: 'ET', kind: 'Dinner', priority: 'optional', skipAt: 1, saves: '90 min', notes: 'Use only if you decide to stop overnight in Kingston/Cornwall. It is not a same-day Vaughan dinner.' }),
           customStop({ id: 'd8-home', dayId: '2026-08-14', time: 'Late evening', zone: 'ET', title: 'Arrive Vaughan', kind: 'Finish', priority: 'required', address: 'Vaughan, ON', city: 'Vaughan, ON', notes: 'If fatigue wins, use the safety overnight option instead of forcing the final stretch.', mapUrl: mapSearchUrl('Vaughan, ON') })
@@ -932,6 +931,73 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
       })
     ]
   };
+
+  var fuelMath = {
+    tankLitres: 71,
+    conservativeRangeKm: 800,
+    triggerPercent: 6,
+    triggerRemainingKm: 48,
+    targetSinceLastFillKm: 752
+  };
+
+  var minimalFuelPlan = [
+    {
+      dateLabel: 'Fri, Aug 7',
+      stop: 'Start full: Esso Circle K Maple',
+      address: '3100 Major Mackenzie Dr W, Maple, ON L6A 1S1',
+      tank: 'Start-full exception',
+      action: 'Fill full with 91 AKI and reset trip odometer.',
+      reason: 'Begin full, then stop using comfort top-ups. Next target is about 752 km later, when the dash is near 6% / ~48 km remaining.',
+      mapUrl: mapSearchUrl('3100 Major Mackenzie Dr W, Maple, ON L6A 1S1'),
+      sourceUrl: 'https://www.esso.ca/en-ca/find-station/maple-on-esso-200302605'
+    },
+    {
+      dateLabel: 'Sat, Aug 8',
+      stop: 'Low-fuel fill: Autoroute 40 Québec approach',
+      address: 'Deschambault-Grondines, QC',
+      tank: '~6-10%',
+      action: 'Fill full only when the dash is near 6%; otherwise continue to the next premium-capable A-40 station.',
+      reason: 'This is the first realistic low-fuel point after the Maple full tank, before Montmorency / Québec City.',
+      mapUrl: mapSearchUrl('premium gas near Deschambault-Grondines QC')
+    },
+    {
+      dateLabel: 'Sun, Aug 9',
+      stop: 'Low-fuel fill: Woodstock / Hartland corridor',
+      address: 'Woodstock, NB',
+      tank: '~6%',
+      action: 'Fill full near the Hartland covered bridge stretch.',
+      reason: 'Avoids the old Edmundston half-tank top-up and lands much closer to the 752 km low-fuel target.',
+      mapUrl: mapSearchUrl('premium gas near Woodstock NB')
+    },
+    {
+      dateLabel: 'Wed, Aug 12',
+      stop: 'Low-fuel fill: Sackville corridor',
+      address: 'Sackville, NB',
+      tank: '~6%',
+      action: 'Fill full while using the Sackville buffer stop.',
+      reason: 'Replaces the Charlottetown top-up. This is closer to the true low-fuel point after PEI local driving and the bridge.',
+      mapUrl: mapSearchUrl('premium gas near Sackville NB')
+    },
+    {
+      dateLabel: 'Thu, Aug 13',
+      stop: 'Low-fuel fill: Rivière-du-Loup / Kamouraska corridor',
+      address: 'Rivière-du-Loup, QC',
+      tank: '~6%',
+      action: 'Fill full before the final Québec City push.',
+      reason: 'Replaces the old Edmundston return fill; the RDL/Kamouraska corridor is the math-aligned low-fuel point.',
+      mapUrl: mapSearchUrl('premium gas near Rivière-du-Loup QC')
+    },
+    {
+      dateLabel: 'Fri, Aug 14',
+      stop: 'Final low-fuel fill: Napanee',
+      address: '359 Center St N, Napanee, ON K7R 1P7',
+      tank: '~6-9%',
+      action: 'Fill enough to finish Napanee → Big Apple → Vaughan.',
+      reason: 'Replaces the Vaudreuil comfort fill. Napanee is the practical final low-fuel stop before the GTA/home stretch.',
+      mapUrl: mapSearchUrl('359 Center St N, Napanee, ON K7R 1P7'),
+      sourceUrl: 'https://www.esso.ca/en-ca/find-station/napanee-on-esso-200303197'
+    }
+  ];
 
   var roadLinks = [
     { title: 'Ontario 511', detail: 'Road conditions, closures, and cameras', url: 'https://511on.ca/roadconditions' },
@@ -961,7 +1027,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
     task({ id: 'green-gables-plan-ahead', category: 'Admission', title: 'Plan Green Gables arrival for Canada Strong Pass crowds', description: 'No ticket purchase is needed for Aug 11, but Parks Canada expects very high visitation in 2026. Keep the visit early and flexible.', dueDate: '2026-08-06', url: ticketGuidance.greenGables.url, priority: 'High' }),
     task({ id: 'road-checks', category: 'Roads', title: 'Save provincial 511 links and check them every drive morning', description: 'Check construction, closures, cameras, weather alerts, and traffic before leaving.', dueDate: '2026-08-06', url: 'https://511on.ca/roadconditions', priority: 'High' }),
     task({ id: 'offline-maps', category: 'Offline', title: 'Download offline map areas and save this trip pack', description: 'Maps and restaurant pages require connectivity; keep an offline copy and route downloads ready.', dueDate: '2026-08-06', priority: 'High' }),
-    task({ id: 'fuel-readiness', category: 'Fuel', title: 'Confirm 91 AKI availability and card/payment readiness', description: 'Use the planned Esso stops as a preference, with a nearby premium-capable fallback before rural legs.', dueDate: '2026-08-06', priority: 'High' }),
+    task({ id: 'fuel-readiness', category: 'Fuel', title: 'Confirm low-fuel premium-gas corridors', description: 'Before travel, verify 91 AKI availability around each 6% trigger zone: A-40 Québec approach, Woodstock/Hartland, Sackville, Rivière-du-Loup/Kamouraska, and Napanee.', dueDate: '2026-08-06', priority: 'High' }),
     task({ id: 'return-safety', category: 'Safety', title: 'Choose a cancellable Kingston/Cornwall safety overnight option', description: 'Use it if Aug 14 is 60+ minutes behind or anyone is too tired for the final push.', dueDate: '2026-08-01', priority: 'High' })
   ];
 
@@ -1469,18 +1535,17 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
 
   function renderFuel() {
     var section = document.getElementById('fuel');
-    var rows = rawData.fuel.filter(function (fuel) { return fuel['Fuel stop'] || fuel.Action; });
     section.innerHTML = [
       '<h2 id="fuel-heading" class="section-heading">Fuel plan</h2>',
-      '<p class="section-intro">Phone-friendly cards replace the original wide table. Treat every listed Esso as a preferred stop, not a guarantee; verify 91 AKI availability before rural legs.</p>',
+      '<p class="section-intro">Minimized fuel strategy: start full, then refuel only near the 6% trigger. With the conservative ', escapeHtml(String(fuelMath.conservativeRangeKm)), ' km range, that means about ', escapeHtml(String(fuelMath.targetSinceLastFillKm)), ' km since the last fill and about ', escapeHtml(String(fuelMath.triggerRemainingKm)), ' km remaining. This is tight; verify 91 AKI availability before committing to a rural low-fuel stretch.</p>',
       '<div class="mobile-card-list">',
-      rows.map(function (fuel) {
+      minimalFuelPlan.map(function (fuel) {
         return [
-          '<article class="data-card"><h3>', escapeHtml(fuel['Fuel stop'] || 'Fuel decision'), '</h3>',
-          '<p><span class="tag">', escapeHtml(fuel['Date label'] || fuel.Date || ''), '</span></p>',
-          '<dl><dt>Address</dt><dd>', escapeHtml(fuel.Address || '—'), '</dd><dt>Tank estimate</dt><dd>', escapeHtml(fuel['Tank estimate before stop'] || 'Check gauge'), '</dd><dt>Action</dt><dd>', escapeHtml(fuel.Action || 'Review'), '</dd><dt>Why</dt><dd>', escapeHtml(fuel.Reason || '—'), '</dd></dl>',
-          '<p class="small">', escapeHtml(fuel['Premium 91 note'] || ''), '</p>',
-          '<div class="links">', externalLink(fuel['Map URL'], 'Map'), externalLink(fuel['Source URL'], 'Station source'), '</div></article>'
+          '<article class="data-card"><h3>', escapeHtml(fuel.stop || 'Fuel decision'), '</h3>',
+          '<p><span class="tag">', escapeHtml(fuel.dateLabel || ''), '</span><span class="tag">', escapeHtml(fuel.tank || 'Check dash'), '</span></p>',
+          '<dl><dt>Address / zone</dt><dd>', escapeHtml(fuel.address || '—'), '</dd><dt>Action</dt><dd>', escapeHtml(fuel.action || 'Review'), '</dd><dt>Why</dt><dd>', escapeHtml(fuel.reason || '—'), '</dd></dl>',
+          '<p class="small"><strong>Rule:</strong> no top-up by habit. Fill only when the dash is near 6%, unless weather, closures, or station availability make that unsafe.</p>',
+          '<div class="links">', externalLink(fuel.mapUrl, 'Map'), externalLink(fuel.sourceUrl, 'Station source'), '</div></article>'
         ].join('');
       }).join(''),
       '</div>'

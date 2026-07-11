@@ -22,4 +22,6 @@ The active itinerary now follows a family-driving cadence: roughly every two hou
 
 Attraction-style stops include a 4.0+ Google Maps review gate plus a nearby kid-friendly fallback with a map link, so there is always a low-friction backup if a main stop is crowded, closed, or not matching the kid mood.
 
+Fuel planning is now minimized: start full, then target fills only around the 6% remaining trigger, which is roughly 48 km remaining on the conservative 800 km highway range. Verify premium-fuel availability in each low-fuel corridor before travel.
+
 This repository contains personal travel plans. Because the repository and GitHub Pages site are public, avoid sharing real-time locations during the trip and use a redacted export if anything needs to be shared more widely.
