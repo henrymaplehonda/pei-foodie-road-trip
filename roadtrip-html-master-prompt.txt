@@ -1,0 +1,722 @@
+```text id="roadtrip-html-master-prompt"
+You are an expert family road-trip planner, travel researcher, route optimizer, UX designer, and front-end developer.
+
+TASK
+Create a polished, interactive, single-file HTML road trip itinerary page for a family road trip.
+
+This must not be a static itinerary. It must work like a live family road-trip control panel that can be used on a phone during the trip.
+
+TRIP CONTEXT
+Starting point: Vaughan, Ontario, Canada
+Travel dates: Start August 7, return August 14
+Travelers: Husband, wife, and 6-year-old son
+Trip style: Family-friendly, scenic, practical, foodie-focused, realistic, not rushed
+Vehicle: 2025 Volvo XC60
+Fuel type: Premium recommended, 91 AKI
+Tank capacity: approximately 71 L
+Estimated highway range: approximately 800 km per full tank
+Preferred gas brand: ESSO
+Fuel strategy: Add ESSO stops when the tank is around 1/4, especially before rural New Brunswick / PEI / long-distance segments
+
+CORE GOAL
+Scan the full route and rebuild the trip so it makes sense for:
+- Real driving time
+- Food
+- Washroom breaks
+- Sleep
+- Hotel locations
+- Family pacing
+- A 6-year-old child
+- Fuel planning
+- Weather delays
+- Traffic delays
+- Attraction hours
+- Restaurant hours
+- Hotel quality
+- Easy navigation
+
+INPUT FILE
+Use the uploaded Excel itinerary as the starting point, but do not blindly trust it.
+
+Scan the full file and correct:
+- Wrong dates
+- Unrealistic drive times
+- Bad stop order
+- Overloaded days
+- Weak hotels
+- Weak restaurant choices
+- Missing gas stops
+- Missing washroom/rest breaks
+- Missing backup plans
+- Missing addresses
+- Missing photos
+- Missing navigation links
+
+If the original itinerary is too aggressive, fix it and explain what changed.
+
+DATE CORRECTION
+The correct dates are:
+Day 1: August 7
+Day 2: August 8
+Day 3: August 9
+Day 4: August 10
+Day 5: August 11
+Day 6: August 12
+Day 7: August 13
+Return day: August 14
+
+RESEARCH REQUIREMENTS
+Do fresh online research before finalizing the itinerary.
+
+Verify:
+- Current attraction hours
+- Ticket/reservation requirements
+- Seasonal closures
+- Hotel quality and location
+- Hotel star rating
+- Hotel Google rating
+- Hotel Google review count
+- Restaurant Google rating
+- Restaurant Google review count
+- Restaurant hours
+- Restaurant family suitability
+- Restaurant reservation needs
+- Drive times and route logic
+- ESSO gas station locations
+- Washroom break opportunities
+- Scenic stop practicality
+- Parking availability where possible
+- Whether each day is realistic with a 6-year-old child
+
+Use reliable sources:
+- Official attraction websites
+- Official tourism boards
+- Hotel official pages
+- Major booking platforms
+- Restaurant official pages
+- Google Business Profile information when available
+- Reputable review sources
+- Maps/routing data
+- ESSO/fuel station locator or map data
+
+Do not invent:
+- Hours
+- Ratings
+- Review counts
+- Addresses
+- Prices
+- Hotel stars
+- Restaurant menu items
+- Parking details
+- Photos
+- Distances
+- Drive times
+
+If something cannot be verified, clearly label it:
+“Verify before departure.”
+
+OUTPUT FORMAT
+Return one complete, production-ready HTML file.
+
+The HTML must include:
+1. All CSS inside a <style> tag
+2. All JavaScript inside a <script> tag
+3. No build tools
+4. No React
+5. No Vue
+6. No Next.js
+7. No server dependency
+8. Mobile-first responsive design
+9. Works as a standalone HTML file
+10. Use CDN libraries only if necessary
+11. If using a map, use Leaflet + OpenStreetMap tiles, not paid Google Maps API
+12. Include fallback route/address information even if the map does not load
+
+PAGE DESIGN STYLE
+Make it premium, clean, family-travel oriented, and easy to use on a phone during the trip.
+
+Visual direction:
+- Modern travel dashboard
+- Soft neutral background
+- Clear day cards
+- Big readable typography
+- Sticky top summary/navigation
+- Beautiful hotel cards
+- Beautiful attraction cards
+- Beautiful restaurant cards
+- Foodie-focused restaurant sections
+- Practical icons for drive, hotel, gas, food, washroom, attraction, kid-friendly, parking
+- Professional color palette suitable for a premium family road trip
+- Clear visual hierarchy
+- Easy thumb-friendly buttons
+- Clean print layout
+
+NON-NEGOTIABLE UPGRADE
+Every hotel, restaurant, attraction, gas stop, scenic stop, backup stop, and rest stop must have a Google Maps navigation button.
+
+Hotels and restaurants must show:
+- Google star rating
+- Google review count
+- Date checked
+
+Hotels, restaurants, and attractions must include:
+- Photos or clear styled placeholders
+- Image alt text
+- Image source or credit link
+
+Add a delay-recovery system where the user can:
+- Skip selected stops
+- Mark stops completed
+- Auto-simplify a day when running late
+- Recalculate time saved
+- Save completed/skipped selections after page refresh using localStorage
+
+INTERACTIVE FEATURES REQUIRED
+
+1. STICKY TRIP OVERVIEW BAR
+Show:
+- Trip dates
+- Day buttons
+- Total estimated distance
+- Total estimated driving time
+- Number of hotel nights
+- Fuel reminder
+- Family pacing warning if a day is heavy
+- Quick buttons for food, hotels, map, print, and delay mode
+
+2. DAY-BY-DAY ACCORDION
+Each day should expand/collapse.
+Default: Day 1 expanded.
+
+Each day must show:
+- Date
+- Day number
+- Start city
+- End city
+- Hotel
+- Estimated drive time
+- Estimated distance
+- Main attractions
+- Lunch plan
+- Dinner plan
+- ESSO fuel stop
+- Washroom/rest stop
+- Backup/rain option
+- Kid fatigue note
+- Departure time recommendation
+- Arrival target
+- Daily Google Maps route button
+- Morning route button if needed
+- Afternoon route button if needed
+- Evening route button if needed
+- Delay recovery box
+
+3. INTERACTIVE ROUTE MAP
+Use Leaflet if possible.
+
+Show:
+- Start point
+- Hotels
+- Attractions
+- Restaurants
+- ESSO fuel stops
+- Major rest stops
+- Backup stops
+
+Map requirements:
+- Color-coded markers by category
+- Clicking marker opens popup with name, address, notes, and Google Maps search link
+- Route summary panel beside or below the map
+- Fallback address list if map does not load
+
+4. TIMELINE VIEW
+Each day should have an hour-by-hour recommended timeline:
+- Wake up / breakfast
+- Checkout
+- Drive segment 1
+- Washroom break
+- Attraction
+- Lunch
+- Drive segment 2
+- Fuel stop
+- Hotel check-in
+- Dinner
+- Evening walk / rest
+- Sleep target
+
+Every timeline item should show:
+- Time
+- Activity
+- Location
+- Address if relevant
+- Estimated duration
+- Priority
+- Maps link if relevant
+
+5. FOODIE MODE
+Create a dedicated food section and a filter button called “Foodie Mode.”
+
+For each lunch and dinner:
+- Restaurant name
+- Cuisine type
+- Full address
+- City/province/state
+- Google rating
+- Number of Google reviews
+- Date checked
+- Photo
+- Image source link
+- Why it is worth going
+- Family/kid suitability
+- Best dishes / must-order items if reliably known
+- Reservation recommendation
+- Parking note
+- Estimated meal duration
+- Backup nearby option
+- Google Maps navigation link
+- Source link
+
+Prioritize genuinely good food, not generic tourist traps.
+Balance “best food” with family practicality.
+Prefer dinner near the hotel after long driving days.
+
+If menu items, hours, rating, or review count are unavailable, write:
+“Verify before departure.”
+
+6. HOTEL COMPARISON SECTION
+For each overnight city, recommend the best hotel choice and at least one backup.
+
+For every hotel, include:
+- Hotel name
+- Full address
+- City/province/state
+- Hotel category: budget / mid-range / premium
+- Official hotel star rating if available
+- Google rating, for example 4.3 / 5
+- Number of Google reviews, for example 1,248 reviews
+- Date the rating/review count was checked
+- Booking platform rating if useful, for example Booking.com / Expedia / Hotels.com
+- Photo
+- Image source link
+- Why this hotel fits the route
+- Family suitability
+- Parking information
+- Breakfast information
+- Pool information
+- Nearby dinner or walkable area
+- Check-in/check-out note
+- Booking caution, for example high summer demand, parking fee, older rooms, no elevator, limited family rooms
+- Google Maps navigation link
+- Source link
+
+Do not invent hotel star ratings, Google ratings, or Google review counts.
+
+If live Google review data cannot be verified, write:
+“Google rating/review count: verify before booking.”
+
+7. ATTRACTION CARDS WITH PHOTOS
+For every attraction:
+- Attraction name
+- Full address
+- City/province/state
+- Photo
+- Image source link
+- Description
+- Why it is worth visiting
+- Recommended visit duration
+- Kid-friendly rating
+- Parking note
+- Washroom note if known
+- Best time to visit
+- Ticket/reservation note
+- Google Maps navigation link
+- Source link
+- Priority level
+- Delay/skip rule
+
+Photo source priority:
+1. Official attraction website
+2. Official tourism board
+3. Wikimedia Commons
+4. Unsplash, only if it accurately represents the location
+
+Do not use broken image links.
+Do not use random unrelated stock photos.
+
+Every image must include:
+- loading="lazy"
+- descriptive alt text
+- visible image source / credit link
+
+If no safe photo is available, use a styled placeholder saying:
+“Photo to be added.”
+
+8. PRACTICAL ROAD-TRIP CONTROLS
+Add buttons/filters:
+- Show all
+- Show only food
+- Show only attractions
+- Show only gas/rest stops
+- Show hotels
+- Family pace mode
+- Rainy day mode
+- Delay recovery mode
+- Print itinerary
+- Copy day plan
+- Open in Google Maps
+- Auto-simplify this day
+- Reset full day
+
+9. DELAY RECOVERY MODE / SKIP-STOPS FUNCTION
+Add an interactive “Delay Recovery Mode” feature.
+
+Purpose:
+Sometimes the trip will be delayed by traffic, weather, tired child, slow lunch, parking, hotel check-in, or unexpected stops. The page must help the user decide what to skip.
+
+Every optional stop must have controls:
+- Skip this stop
+- Mark completed
+- Mark running late
+- Move to backup
+
+Every stop must display:
+- Priority level: Must-do / Recommended / Optional / Only if time allows
+- Estimated duration
+- Estimated detour time
+- Energy level: low / medium / high
+- Kid fatigue risk: low / medium / high
+- Skip consequence
+
+Example skip consequences:
+- “Safe to skip if running late.”
+- “Do not skip unless necessary.”
+- “Good rainy-day replacement.”
+- “Only worth it if arriving before 4 PM.”
+- “Skip first if child is tired.”
+- “Keep this because it breaks up a long drive.”
+
+Delay calculator:
+User can select:
+- 30 minutes behind schedule
+- 60 minutes behind schedule
+- 90 minutes behind schedule
+- 2+ hours behind schedule
+
+The page should then highlight:
+- Which stop to skip first
+- Which stop to shorten
+- Which meal to move closer to hotel
+- Whether to cancel an attraction
+- New suggested hotel arrival time
+- New simplified day plan
+
+Button: “Auto-simplify this day”
+
+When clicked, JavaScript should:
+- Hide or visually fade optional stops
+- Keep must-do stops
+- Recalculate estimated day duration
+- Show a simplified timeline
+- Show time saved
+- Show recommended revised dinner/hotel timing
+
+Button: “Reset full day”
+This restores all skipped stops.
+
+Add localStorage support:
+When the user checks completed/skipped/running-late/moved-to-backup stops, save it in browser localStorage so it remains after refreshing the page.
+
+Stop status labels:
+- Planned
+- Completed
+- Skipped
+- Running late
+- Moved to backup
+
+Visual states:
+- Must-do: strong badge or border
+- Recommended: normal card
+- Optional: lighter badge
+- Skipped: faded with strikethrough label
+- Completed: checkmark badge
+- Running late: warning badge
+- Moved to backup: alternate badge
+
+Add a “Time saved” pill when stops are skipped.
+
+10. DAILY EMERGENCY SIMPLIFICATION BOX
+Every day must include:
+- If 30 minutes late: what to shorten
+- If 1 hour late: what to skip
+- If 2 hours late: what to cut and where to go directly
+- Best early dinner option near hotel
+- Best child-friendly fallback
+- Rainy-day replacement
+- Tired-child version of the day
+
+11. ROUTE LOGIC RULES FOR SKIPPING
+When suggesting what to skip:
+- Never skip hotel check-in
+- Never skip fuel stops if range is low or route enters rural areas
+- Prefer skipping optional scenic/photo stops first
+- Prefer keeping kid-friendly/high-value attractions
+- Avoid late-night driving with a child
+- After long driving days, prioritize hotel arrival and dinner near hotel
+- If weather is bad, replace outdoor attractions with indoor backup options
+- If the child is tired, reduce walking-heavy attractions
+- If the day is already above 7 hours driving, do not add optional detours
+- Keep realistic dinner timing
+- Keep restrooms and fuel practical
+
+12. GOOGLE MAPS NAVIGATION LINKS
+Every stop must have a clear button:
+“Open in Google Maps”
+
+This applies to:
+- Hotels
+- Restaurants
+- Attractions
+- ESSO gas stops
+- Washroom/rest stops
+- Scenic stops
+- Backup stops
+
+Use this URL format:
+https://www.google.com/maps/search/?api=1&query=ENCODED_NAME_AND_FULL_ADDRESS
+
+For multi-stop daily navigation, create a “Daily Google Maps Route” button when practical.
+
+Use Google Maps directions format when possible:
+https://www.google.com/maps/dir/?api=1&origin=ENCODED_START&destination=ENCODED_END&waypoints=ENCODED_STOP_1%7CENCODED_STOP_2
+
+If there are too many stops for one route link, split into:
+- Morning route
+- Afternoon route
+- Evening route
+
+13. ROUTE REALITY CHECK SECTION
+Create a section called “Route Reality Check.”
+
+Explain:
+- Which days are heavy
+- Which days are comfortable
+- Where traffic may hurt timing
+- Where construction may matter if known
+- Where ferry/bridge/seasonal timing matters, if applicable
+- Where reservations are strongly recommended
+- Where to simplify if the child gets tired
+- What to skip if running late
+- What should be booked first
+- Fuel risk areas
+- Best low-stress version of the trip
+
+14. PACKING AND PREP CHECKLIST
+Include:
+- Child road-trip items
+- Snacks and cooler
+- Water
+- Rain gear
+- Beach/nature gear if relevant
+- Car documents
+- Insurance
+- Health/medicine
+- Sunscreen
+- Bug spray
+- Phone chargers
+- Offline maps
+- Hotel confirmations
+- Restaurant reservations
+- Attraction tickets
+- Ferry/bridge/ticket reminders if applicable
+- Extra clothes
+- Small garbage bags
+- Wet wipes
+- Kid entertainment
+- Emergency contact list
+
+15. FUEL PLANNING SECTION
+For the 2025 Volvo XC60:
+- Assume approximately 800 km range per tank
+- Recommend ESSO refueling before long/rural stretches
+- Add ESSO stops with full addresses
+- Do not cut fuel too close
+- Include “fuel before entering rural stretch” warnings
+- Mention premium recommended 91 AKI
+- Include estimated fuel stop timing by day
+- Include whether each ESSO stop is must-do or optional
+- Include washroom/snack usefulness when known
+
+16. PRINT STYLING
+Add @media print CSS.
+
+Print should:
+- Hide map controls and buttons
+- Hide interactive-only UI
+- Show day-by-day itinerary clearly
+- Keep hotel, address, food, gas, and emergency notes
+- Keep Google Maps URLs visible or readable
+- Avoid cutting cards awkwardly
+- Print in readable black and white
+- Keep page breaks clean
+
+17. DATA STRUCTURE
+Inside JavaScript, store itinerary data in clean structured arrays/objects.
+
+Use a structure like:
+
+const tripData = [
+  {
+    day: 1,
+    date: "August 7",
+    title: "",
+    start: "",
+    end: "",
+    hotel: {},
+    drive: {
+      estimatedDistanceKm: 0,
+      estimatedDriveMinutes: 0,
+      familyPaceWarning: ""
+    },
+    timeline: [],
+    stops: [],
+    restaurants: [],
+    attractions: [],
+    gasStops: [],
+    restStops: [],
+    backups: [],
+    delayPlan: {
+      thirtyMinutesLate: "",
+      sixtyMinutesLate: "",
+      ninetyMinutesLate: "",
+      twoHoursLate: "",
+      earlyDinnerNearHotel: "",
+      tiredChildFallback: "",
+      rainyDayFallback: ""
+    },
+    notes: []
+  }
+];
+
+Use a stop object like:
+
+{
+  id: "day2-stop3",
+  name: "",
+  category: "attraction",
+  priority: "recommended",
+  status: "planned",
+  address: "",
+  city: "",
+  province: "",
+  description: "",
+  durationMinutes: 75,
+  detourMinutes: 15,
+  energyLevel: "medium",
+  kidFatigueRisk: "medium",
+  skipRule: "Safe to skip if running more than 60 minutes late.",
+  imageUrl: "",
+  imageAlt: "",
+  imageSource: "",
+  googleRating: "",
+  googleReviewCount: "",
+  ratingCheckedDate: "",
+  sourceUrl: "",
+  mapsUrl: "",
+  latitude: null,
+  longitude: null
+}
+
+18. JAVASCRIPT FUNCTION REQUIREMENTS
+The JavaScript should include functions like:
+- renderTrip()
+- renderDay(day)
+- renderTimeline(day)
+- renderStopCard(stop)
+- renderHotelCard(hotel)
+- renderRestaurantCard(restaurant)
+- renderAttractionCard(attraction)
+- toggleSkip(dayId, stopId)
+- markCompleted(dayId, stopId)
+- markRunningLate(dayId, stopId)
+- moveToBackup(dayId, stopId)
+- applyDelayMode(dayId, delayMinutes)
+- autoSimplifyDay(dayId)
+- resetDay(dayId)
+- calculateTimeSaved(dayId)
+- updateDaySummary(dayId)
+- buildGoogleMapsSearchLink(name, address)
+- buildDailyRouteLink(day)
+- copyDayPlan(dayId)
+- saveStateToLocalStorage()
+- loadStateFromLocalStorage()
+- initMap()
+- addMapMarkers()
+
+19. CONTENT REQUIREMENTS FOR EVERY STOP
+Every attraction, restaurant, hotel, gas stop, rest stop, scenic stop, and backup stop must include:
+- Name
+- Category
+- Full address
+- City/province/state
+- Short description
+- Recommended duration or timing
+- Priority
+- Skip rule
+- Google Maps navigation link
+- Notes
+- Source link if researched
+- Photo or placeholder when applicable
+
+20. FAMILY PACING RULES
+For a family with a 6-year-old:
+- Avoid more than 6.5–7.5 hours of total drive time in one day unless unavoidable
+- Add a real break every 2–2.5 hours
+- Avoid late hotel arrivals
+- Prefer dinner near the hotel after long driving days
+- Put high-effort attractions earlier in the day
+- Include downtime
+- Add backup plans
+- Avoid overly ambitious evening activities
+- Avoid backtracking
+- Keep washrooms and meals predictable
+- Prefer hotels that reduce next-day stress
+
+21. FINAL QUALITY CHECK BEFORE OUTPUT
+Before giving the final HTML, verify:
+- Every stop has a Google Maps link
+- Every hotel has rating/review fields
+- Every restaurant has rating/review fields
+- Every hotel, restaurant, and attraction has a photo or styled placeholder
+- Every photo has alt text
+- Every image has source/credit
+- Every day has at least one delay-recovery recommendation
+- Every day has a skip selected stops function
+- Every long driving segment has ESSO fuel planning
+- Every day remains realistic for a family with a 6-year-old
+- No day is overloaded without warning
+- All dates are correct
+- The HTML runs standalone
+- The print version is readable
+- localStorage works
+- Google Maps buttons work
+- The route logic makes sense
+
+FINAL RESPONSE FORMAT
+Return:
+1. A short summary of the improvements made
+2. The complete HTML code in one code block
+3. A short “before publishing” checklist:
+   - Verify hotel rates
+   - Book hotels
+   - Confirm restaurant hours
+   - Confirm attraction hours
+   - Confirm Google ratings/review counts
+   - Save offline maps
+   - Check weather 48 hours before departure
+   - Confirm ESSO stops
+   - Confirm tickets/reservations
+
+Do not give a partial mockup.
+Do not give only a plan.
+Produce the full page.
+```
