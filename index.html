@@ -60,6 +60,10 @@ tr:last-child td{border-bottom:0}
  </style>
 <meta name="theme-color" content="#0f5b63">
 <meta name="referrer" content="no-referrer">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PEI Road Trip">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -221,7 +225,13 @@ body{overflow-x:clip}
 :root[data-theme="dark"] .skip-link{background:var(--panel);color:var(--ink)}
 :root[data-theme="dark"] .attr img{background:var(--soft)}
 :root[data-theme="dark"] .card,:root[data-theme="dark"] .quick-card,:root[data-theme="dark"] .data-card,:root[data-theme="dark"] .meal-plan-card,:root[data-theme="dark"] .milestone,:root[data-theme="dark"] .tel-link{background:var(--panel);border-color:var(--line);color:var(--ink)}
-@media print{:root[data-theme="dark"] body{background:#fff;color:#111827}}
+@media print{
+:root[data-theme="dark"]{--bg:#fff;--panel:#fff;--ink:#111827;--muted:#4b5563;--line:#d1d5db;--soft:#f3f4f6;--surface:#fff;--surface-alt:#fff;--shadow:none}
+:root[data-theme="dark"] body{background:#fff;color:#111827}
+button,textarea,.theme-toggle,.action-bar,.stop-actions,.expense-form,.checklist-toolbar .action-bar{display:none!important}
+.tel-link,.milestone,.card{break-inside:avoid}
+:root[data-theme="dark"] .privacy-banner,:root[data-theme="dark"] .mode-note,:root[data-theme="dark"] .warn,:root[data-theme="dark"] .ticket-alert,:root[data-theme="dark"] .note,:root[data-theme="dark"] .attraction-quality,:root[data-theme="dark"] .checklist-row.is-done,:root[data-theme="dark"] .mode-note.safe{background:#fff;color:#111827;border-color:#d1d5db}
+}
 </style>
 </head>
 <body>
@@ -470,7 +480,12 @@ function renderSources(){
   const all=[...baseSources,...foodSources].filter(s=>s.url);
   document.getElementById('sourceContainer').innerHTML = all.map(s=>`<li><b>${esc(s.name || '')}</b>: ${esc(s.fact || '')}<br><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url)}</a></li>`).join('');
 }
-initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); renderSanity(); renderSources();
+// Fallback renderers only: the trip-control script below rebuilds every
+// section, so skip this pass unless that script failed to boot.
+setTimeout(function () {
+  if (window.__tripControlBooted) return;
+  try { initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); renderSanity(); renderSources(); } catch (error) { console.warn('Legacy fallback render failed:', error); }
+}, 0);
 </script>
 <script id="trip-control-script">
 (function () {
@@ -1202,6 +1217,26 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
     { name: 'Rodd Royalty (Charlottetown, Aug 10-11)', phone: '902-894-8566', detail: '14 Capital Drive, Charlottetown' },
     { name: 'Fairfield Inn & Suites Moncton (Aug 12)', phone: '506-855-0033', detail: '26 Marriott Drive, Moncton' }
   ];
+
+  var reservationContacts = [
+    { name: 'La Bûche (Québec City — dinner Aug 8)', phone: '418-694-7272', note: 'Book for the Aug 8 evening; very busy in Old Québec in August.' },
+    { name: 'Wolastoq Wharf (Fredericton — dinner Aug 9)', phone: '506-449-0100', note: 'Also on OpenTable. Confirm Sunday-evening hours.' },
+    { name: 'New Glasgow Lobster Suppers (PEI — supper Aug 10 or 11)', phone: '902-964-2870', note: 'Reservations only for groups of 8+; a family of three should simply arrive before ~5 PM to beat the rush.' },
+    { name: 'Slaymaker & Nichols (Charlottetown — dinner Aug 11)', phone: '902-629-3411', note: 'Very high priority per the meal plan; book as soon as possible.' },
+    { name: 'Tide & Boar (Moncton — dinner Aug 12)', phone: '506-857-9118', note: 'Book ~7:30 PM — the confirmed tide plan has you leaving Hopewell by 6:15 PM.' }
+  ];
+
+  function renderReservationCallList() {
+    return [
+      '<div class="card full reservation-card"><h3>Reservation call list — target July 24</h3>',
+      '<p class="small muted">Numbers checked against each restaurant’s current listings. Tap to call, then record the confirmation in the matching task below.</p>',
+      '<ul class="offline-list emergency-list">',
+      reservationContacts.map(function (contact) {
+        return '<li><a class="tel-link" href="tel:' + escapeHtml(contact.phone.replace(/[^\d+]/g, '')) + '"><strong>' + escapeHtml(contact.name) + '</strong><span>' + escapeHtml(contact.phone) + ' · ' + escapeHtml(contact.note) + '</span></a></li>';
+      }).join(''),
+      '</ul></div>'
+    ].join('');
+  }
 
   var packingGroups = [
     { name: 'Documents & money', items: ['Driver licences (both adults)', 'Health cards', 'Vehicle registration & insurance slip', 'Hotel confirmation numbers (also in checklist)', 'Credit/debit cards + some cash for tolls & seasonal stands', 'CAA membership card'] },
@@ -2270,7 +2305,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
       '<label class="field-label">Note (optional)<input id="expenseLabel" maxlength="80" placeholder="e.g. Tide &amp; Boar dinner"></label>',
       '<button type="submit" class="button primary">Add</button>',
       '</form>',
-      '<div class="action-bar"><button type="button" class="button subtle" id="setBudget">', budget ? 'Change budget' : 'Set a trip budget', '</button></div>',
+      '<div class="action-bar"><button type="button" class="button subtle" id="setBudget">', budget ? 'Change budget' : 'Set a trip budget', '</button>', expenseState.items.length ? '<button type="button" class="button subtle" id="exportExpenses">Export CSV</button>' : '', '</div>',
       recent.length ? '<ul class="expense-list">' + recent.map(function (item) {
         return '<li><span>' + escapeHtml(item.date.slice(5)) + ' · ' + escapeHtml(item.category) + (item.label ? ' · ' + escapeHtml(item.label) : '') + '</span><span class="expense-row-right">' + escapeHtml(formatMoney(item.amount)) + ' <button type="button" class="expense-delete" data-expense-id="' + escapeHtml(item.id) + '" aria-label="Delete this expense">✕</button></span></li>';
       }).join('') + '</ul>' : '<p class="small muted">No expenses logged yet. Everything stays in this browser; use a sync code to bring it to the other phone.</p>',
@@ -2302,6 +2337,19 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
       persistExpenses();
       renderLive();
     });
+    var exportButton = document.getElementById('exportExpenses');
+    if (exportButton) {
+      exportButton.addEventListener('click', function () {
+        var csvField = function (value) { return '"' + String(value == null ? '' : value).replace(/"/g, '""') + '"'; };
+        var rows = [['Date', 'Category', 'Note', 'Amount'].join(',')];
+        expenseState.items.forEach(function (item) {
+          rows.push([item.date, item.category, csvField(item.label), item.amount.toFixed(2)].join(','));
+        });
+        rows.push(['', '', csvField('Total'), expenseTotals().total.toFixed(2)].join(','));
+        downloadText('pei-road-trip-expenses.csv', rows.join('\n'), 'text/csv;charset=utf-8');
+        setStatus('Expenses exported as CSV.');
+      });
+    }
     document.querySelectorAll('.expense-delete').forEach(function (button) {
       button.addEventListener('click', function () {
         expenseState.items = expenseState.items.filter(function (item) { return item.id !== button.dataset.expenseId; });
@@ -2455,6 +2503,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
       '<div class="checklist-toolbar"><strong>', done, ' / ', checklistTasks.length, ' tasks completed</strong><div class="action-bar"><button type="button" class="button subtle" id="exportRedacted">Export redacted</button><button type="button" class="button subtle" id="exportPrivate">Export private</button><button type="button" class="button subtle" id="importProgress">Import progress</button><button type="button" class="button danger" id="resetProgress">Reset local progress</button></div></div>',
       '<input id="importProgressFile" type="file" accept="application/json" hidden>',
       '<div id="checklistStatus" class="status-line" role="status" aria-live="polite"></div>',
+      renderReservationCallList(),
       checklistTasks.map(function (item) {
         var state = taskState(item.id);
         return [
@@ -2874,6 +2923,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
     });
     registerOfflineSupport();
     if (planValidationErrors.length) setStatus('The operational plan has ' + planValidationErrors.length + ' validation warning' + (planValidationErrors.length === 1 ? '' : 's') + '. Review the sources section before travel.');
+    window.__tripControlBooted = true;
   }
 
   boot();

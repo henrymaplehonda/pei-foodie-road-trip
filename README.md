@@ -31,6 +31,9 @@ The Food and Attractions tabs show every idea as a photo card with an approximat
 - **Route map** — a stylized offline SVG map of the loop (with the Hopewell tide window) on the Overview tab.
 - **Keep screen awake** — a wake-lock toggle on Trip control for the navigator's phone while driving.
 - **Tab deep links** — every tab has a `#hash` URL (back button works); the PWA exposes Trip control / Checklist / Offline pack shortcuts, and the Checklist tab shows a red badge when dated tasks are overdue.
+- **Reservation call list** — tap-to-call numbers for the five reservation-priority restaurants at the top of the Checklist tab (verified against current listings).
+- **Expense CSV export** — download the spend log as a spreadsheet-ready CSV from Trip control.
+- **Print pack** — printing (or Save as PDF from the Offline pack) always comes out in light colours with buttons and forms stripped, even from dark mode.
 
 ## Before traveling
 
