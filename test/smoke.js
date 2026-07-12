@@ -66,6 +66,10 @@ function check(name, ok, detail) {
   check('emergency card has 8 numbers', (await page.locator('#offline .emergency-list .tel-link').count()) === 8);
   check('packing list has items', (await page.locator('[data-packing-id]').count()) >= 25);
 
+  await page.click('#nav [data-section=hotels]');
+  check('every hotel night has two backups', (await page.locator('#hotels .hotel-backup').count()) === 14);
+  check('hotel backups include booking links', (await page.locator('#hotels .hotel-backup a').count()) === 28);
+
   // Aug 19 tide plan is wired through
   await page.click('#nav [data-section=daybyday]');
   await page.selectOption('#daySelectV2', '2026-08-19');
