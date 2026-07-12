@@ -24,4 +24,6 @@ Attraction-style stops include a 4.0+ Google Maps review gate plus a nearby kid-
 
 Fuel planning is now minimized: start full, then target fills only around the 6% remaining trigger, which is roughly 48 km remaining on the conservative 800 km highway range. Verify premium-fuel availability in each low-fuel corridor before travel.
 
+Daily timing assumes a 6:30 AM wake-up. Long-drive days use a two-driver rotation so one adult can drive while the other manages navigation, snacks, and kid rhythm.
+
 This repository contains personal travel plans. Because the repository and GitHub Pages site are public, avoid sharing real-time locations during the trip and use a redacted export if anything needs to be shared more widely.
