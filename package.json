@@ -1,0 +1,11 @@
+{
+  "name": "pei-foodie-road-trip",
+  "private": true,
+  "description": "Interactive PEI foodie road trip itinerary for August 2026",
+  "scripts": {
+    "test": "node test/smoke.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
+  }
+}
