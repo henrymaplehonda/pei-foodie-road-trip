@@ -22,7 +22,7 @@ The active itinerary now follows a family-driving cadence: roughly every two hou
 
 Attraction-style stops include a 4.0+ Google Maps review gate plus a nearby kid-friendly fallback with a map link, so there is always a low-friction backup if a main stop is crowded, closed, or not matching the kid mood.
 
-Fuel planning is now minimized: start full, then target fills only around the 6% remaining trigger, which is roughly 48 km remaining on the conservative 800 km highway range. Verify premium-fuel availability in each low-fuel corridor before travel.
+Fuel planning is now minimized: start full, then target fills only around the 10% remaining trigger, which is roughly 80 km remaining on the conservative 800 km highway range. Verify premium-fuel availability in each low-fuel corridor before travel, and skip comfort top-ups unless weather, closures, or station availability make waiting unsafe.
 
 Daily timing assumes a 6:30 AM wake-up. Long-drive days use a two-driver rotation so one adult can drive while the other manages navigation, snacks, and kid rhythm.
 
