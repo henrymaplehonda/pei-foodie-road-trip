@@ -35,6 +35,10 @@ The Food and Attractions tabs show every idea as a photo card with an approximat
 - **Expense CSV export** — download the spend log as a spreadsheet-ready CSV from Trip control.
 - **Print pack** — printing (or Save as PDF from the Offline pack) always comes out in light colours with buttons and forms stripped, even from dark mode.
 
+## Development
+
+`npm install && npx playwright install chromium && npm test` runs a headless smoke test (`test/smoke.js`) that loads the dashboard at phone width and checks every tab, the tide-anchored Aug 12 plan, dark mode, deep links, and layout overflow. The same test runs in GitHub Actions on every pull request.
+
 ## Before traveling
 
 Confirm operating hours, attraction admissions, reservations, road conditions, fuel availability, tides, and weather before departure. Card ratings are approximate Google review scores recorded at planning time; several seaside spots (Richard's, Malpeque Oyster Barn, Point Prim Chowder House) are seasonal, so verify hours the week before.
