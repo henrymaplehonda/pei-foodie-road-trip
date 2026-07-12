@@ -66,12 +66,12 @@ function check(name, ok, detail) {
   check('emergency card has 8 numbers', (await page.locator('#offline .emergency-list .tel-link').count()) === 8);
   check('packing list has items', (await page.locator('[data-packing-id]').count()) >= 25);
 
-  // Aug 12 tide plan is wired through
+  // Aug 19 tide plan is wired through
   await page.click('#nav [data-section=daybyday]');
-  await page.selectOption('#daySelectV2', '2026-08-12');
+  await page.selectOption('#daySelectV2', '2026-08-19');
   await page.waitForTimeout(150);
   const dayText = await page.locator('#dayResult').innerText();
-  check('Aug 12 anchored to tide window', dayText.includes('15:45') && dayText.toLowerCase().includes('ocean floor'));
+  check('Aug 19 anchored to tide window', dayText.includes('10:45') && dayText.toLowerCase().includes('ocean floor'));
 
   // Deep link boot
   await page.goto(base + '/index.html#checklist', { waitUntil: 'networkidle' });

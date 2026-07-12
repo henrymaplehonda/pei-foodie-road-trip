@@ -1,6 +1,6 @@
 # PEI Foodie Road Trip 2026
 
-A self-contained, interactive family road-trip itinerary for a Vaughan, Ontario to Prince Edward Island trip, August 7–14, 2026.
+A self-contained, interactive family road-trip itinerary for a Vaughan, Ontario to Prince Edward Island trip, August 14–21, 2026.
 
 ## Open the itinerary
 
@@ -37,13 +37,13 @@ The Food and Attractions tabs show every idea as a photo card with an approximat
 
 ## Development
 
-`npm install && npx playwright install chromium && npm test` runs a headless smoke test (`test/smoke.js`) that loads the dashboard at phone width and checks every tab, the tide-anchored Aug 12 plan, dark mode, deep links, and layout overflow. The same test runs in GitHub Actions on every pull request.
+`npm install && npx playwright install chromium && npm test` runs a headless smoke test (`test/smoke.js`) that loads the dashboard at phone width and checks every tab, the tide-anchored Aug 19 plan, dark mode, deep links, and layout overflow. The same test runs in GitHub Actions on every pull request.
 
 ## Before traveling
 
 Confirm operating hours, attraction admissions, reservations, road conditions, fuel availability, tides, and weather before departure. Card ratings are approximate Google review scores recorded at planning time; several seaside spots (Richard's, Malpeque Oyster Barn, Point Prim Chowder House) are seasonal, so verify hours the week before.
 
-The August 12 Hopewell Rocks tide window is now set from official Canadian Hydrographic Service predictions (station 00170, Hopewell Cape, ADT): low tide 6:27 AM (0.61 m), high 12:21 PM (12.77 m), low 6:49 PM (0.83 m). Ocean-floor walking runs roughly 3:50–8:00 PM, so the day keeps the morning in Charlottetown, departs 12:15 PM, and targets a 3:45 PM park arrival. Re-verify the official table 24–48 hours before the visit.
+The August 19 Hopewell Rocks tide window is set from official Canadian Hydrographic Service predictions (station 00170, Hopewell Cape, ADT): high 5:23 AM (11.33 m), low 11:52 AM (2.48 m), high 5:45 PM (11.32 m). Ocean-floor walking runs roughly 9:00 AM–2:45 PM, so the day rolls out of Charlottetown at 7:45 AM, targets a 10:45 AM park arrival for a floor walk over the midday low, and opens up a relaxed Moncton afternoon (pool, optional Magnetic Hill) with dinner at 6:00 PM. Re-verify the official table 24–48 hours before the visit.
 
 The active itinerary now follows a family-driving cadence: roughly every two hours or less, the route includes a real stop such as an attraction, park, beach, boardwalk, or scenic photo break. Several of those breaks are adapted from the original spreadsheet plan.
 
