@@ -60,6 +60,8 @@ tr:last-child td{border-bottom:0}
  </style>
 <meta name="theme-color" content="#0f5b63">
 <meta name="referrer" content="no-referrer">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <style id="trip-control-styles">
 :root{--danger:#9b1c31;--focus:#0b63ce;--surface:#fff;--surface-alt:#f7f3eb;--shadow:0 8px 26px rgba(31,41,51,.09)}
@@ -168,6 +170,19 @@ button,.button{min-height:44px;cursor:pointer;font:inherit}button:focus-visible,
 .tel-link span{font-size:13px;color:var(--muted)}
 textarea{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;color:var(--ink);font:inherit;width:100%;resize:vertical}
 .theme-toggle{margin-left:auto;flex:none}
+.nav-badge{display:inline-block;min-width:18px;padding:1px 5px;border-radius:999px;background:var(--danger);color:#fff;font-size:11px;font-weight:900;text-align:center;vertical-align:1px}
+.navbtn.active .nav-badge,.navbtn[aria-selected="true"] .nav-badge{background:#fff;color:var(--danger)}
+.wake-row{margin:10px 0 0;font-size:14px}
+.wake-row input{width:18px;height:18px;vertical-align:-3px;accent-color:#0f766e}
+.today-note{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}
+.today-note .button{margin:0}
+.route-map svg{width:100%;height:auto;display:block;margin-top:8px}
+.route-map .route-line{fill:none;stroke:var(--accent2);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.route-map .route-spur{fill:none;stroke:var(--accent);stroke-width:3.5;stroke-dasharray:2 7;stroke-linecap:round}
+.route-map .city-dot{fill:var(--accent);stroke:var(--panel);stroke-width:3}
+.route-map .spur-dot{fill:var(--warn)}
+.route-map text{font:700 13px system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;fill:var(--ink)}
+.route-map text.sub{font-weight:600;font-size:11px;fill:var(--muted)}
 /* Phone ergonomics */
 button,.button,.navbtn,a{touch-action:manipulation}
 html{-webkit-tap-highlight-color:transparent}
@@ -1529,7 +1544,15 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
     });
   }
 
-  function activateSection(sectionId, moveFocus) {
+  function validSectionId(value) {
+    var id = String(value || '').replace(/^#/, '');
+    return document.querySelector('main > section#' + (/^[a-z]+$/.test(id) ? id : 'x')) ? id : '';
+  }
+
+  function activateSection(sectionId, moveFocus, fromHistory) {
+    if (!fromHistory) {
+      try { history.pushState({ section: sectionId }, '', '#' + sectionId); } catch (error) {}
+    }
     var sections = Array.from(document.querySelectorAll('main > section'));
     sections.forEach(function (section) {
       var active = section.id === sectionId;
@@ -1593,6 +1616,31 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
     return { kpi: countdownCard, schedule: '<div class="card full"><h3>Countdown schedule — what to confirm when</h3><p class="small muted">Matches the checklist tab; check items off there as they get done.</p><ol class="milestone-list">' + rows + '</ol></div>' };
   }
 
+  function renderRouteMap() {
+    var dot = function (x, y, label, lx, ly, anchor, sub) {
+      return '<circle cx="' + x + '" cy="' + y + '" r="7" class="city-dot"/>' +
+        '<text x="' + lx + '" y="' + ly + '" text-anchor="' + (anchor || 'middle') + '">' + label + '</text>' +
+        (sub ? '<text class="sub" x="' + lx + '" y="' + (ly + 14) + '" text-anchor="' + (anchor || 'middle') + '">' + sub + '</text>' : '');
+    };
+    return [
+      '<div class="card full route-map"><h3>Route at a glance</h3>',
+      '<p class="small muted">Stylized, not to scale — works offline. Out Aug 7–10, back Aug 12–14 along the same corridor via Hopewell Rocks.</p>',
+      '<svg viewBox="0 0 720 300" role="img" aria-label="Stylized route map: Vaughan to Montréal, Québec City, Fredericton, Charlottetown, then back through Hopewell Rocks, Moncton, and Québec City">',
+      '<path class="route-line" d="M55,165 C130,190 190,175 255,125 C295,95 320,88 355,82 C400,74 430,80 448,102 C470,130 480,165 500,195 C540,210 560,200 588,186 C620,170 650,150 668,132"/>',
+      '<path class="route-spur" d="M588,186 C583,200 578,210 576,224"/>',
+      dot(55, 165, 'Vaughan', 14, 195, 'start', 'Start Aug 7 · home Aug 14'),
+      dot(255, 125, 'Montréal', 248, 94, 'middle', 'Aug 7'),
+      dot(355, 82, 'Québec City', 355, 62, 'middle', 'Aug 8 &amp; Aug 13'),
+      dot(500, 195, 'Fredericton', 500, 225, 'middle', 'Night of Aug 9'),
+      dot(668, 132, 'Charlottetown', 660, 112, 'end', 'Aug 10–11 · PEI'),
+      dot(588, 186, 'Moncton', 612, 175, 'start', 'Night of Aug 12'),
+      '<circle cx="576" cy="228" r="5" class="city-dot spur-dot"/>',
+      '<text x="576" y="252" text-anchor="middle">Hopewell Rocks</text>',
+      '<text class="sub" x="576" y="266" text-anchor="middle">Ocean floor 3:50–8 PM Aug 12</text>',
+      '</svg></div>'
+    ].join('');
+  }
+
   function renderOverview() {
     var section = document.getElementById('overview');
     var countdown = renderCountdown();
@@ -1603,6 +1651,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
       '<div class="card kpi"><div class="num">8</div><div class="label">Calendar days</div></div>',
       '<div class="card kpi"><div class="num">7</div><div class="label">Hotel nights</div></div>',
       '<div class="card kpi"><div class="num">~3,900</div><div class="label">Validated planning km, approximate</div></div>',
+      renderRouteMap(),
       countdown.schedule,
       '<div class="card full warn"><h3>Use this as an operational plan, not a promise</h3><p>The route now has one selected meal plan per day, explicit late-mode cutoffs, and a tide-anchored Hopewell day. Check live traffic, weather, hours, and reservations before every departure.</p></div>',
       '<div class="card full ok"><h3>New: pick your food &amp; attractions</h3><p>The <strong>Food</strong> and <strong>Attractions</strong> tabs now show 60+ rated ideas with photos, best ones on top. Tap <strong>☆ Pick</strong> to pin a favourite, <strong>✕ Remove</strong> to hide one — everything saves on this device and can be restored anytime.</p></div>',
@@ -2152,6 +2201,56 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
     ].join('');
   }
 
+  var wakeLockWanted = false;
+  var wakeLockSentinel = null;
+
+  function wakeLockSupported() {
+    return 'wakeLock' in navigator && typeof navigator.wakeLock.request === 'function';
+  }
+
+  function syncWakeCheckbox() {
+    var box = document.getElementById('wakeLockToggle');
+    if (box) box.checked = Boolean(wakeLockSentinel);
+  }
+
+  function acquireWakeLock() {
+    if (!wakeLockSupported()) return;
+    navigator.wakeLock.request('screen').then(function (sentinel) {
+      wakeLockSentinel = sentinel;
+      sentinel.addEventListener('release', function () {
+        wakeLockSentinel = null;
+        syncWakeCheckbox();
+      });
+      syncWakeCheckbox();
+      setStatus('Screen will stay awake while this page is open.');
+    }).catch(function () {
+      wakeLockWanted = false;
+      syncWakeCheckbox();
+      setStatus('This browser refused the screen wake lock (often low battery mode).');
+    });
+  }
+
+  function releaseWakeLock() {
+    if (wakeLockSentinel) wakeLockSentinel.release().catch(function () {});
+    wakeLockSentinel = null;
+    syncWakeCheckbox();
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && wakeLockWanted && !wakeLockSentinel) acquireWakeLock();
+  });
+
+  function renderWakeLockControl() {
+    if (!wakeLockSupported()) return '';
+    return '<p class="wake-row"><label><input type="checkbox" id="wakeLockToggle"' + (wakeLockWanted ? ' checked' : '') + '> Keep the screen awake (navigator/passenger phone)</label></p>';
+  }
+
+  function renderTodayBanner(day) {
+    var today = new Date().toISOString().slice(0, 10);
+    if (day.id === today || !operationalPlan.days.some(function (item) { return item.id === today; })) return '';
+    return '<div class="note today-note">It is a trip day — you are viewing ' + escapeHtml(day.label) + '. <button type="button" class="button primary" id="jumpToday">Switch to today’s plan</button></div>';
+  }
+
   function renderExpenseCard() {
     var totals = expenseTotals();
     var budget = expenseState.budget;
@@ -2227,6 +2326,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
     section.innerHTML = [
       '<h2 id="live-heading" class="section-heading">Trip control</h2>',
       '<p class="section-intro">Pick the active day and your delay mode. The plan changes only when you choose it; it does not guess from the clock.</p>',
+      renderTodayBanner(day),
       '<div class="control-grid" aria-label="Trip control settings">',
       '<label for="liveDay">Active day<select id="liveDay">', operationalPlan.days.map(function (item) { return '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(item.label) + '</option>'; }).join(''), '</select></label>',
       '<label for="liveMode">Travel mode<select id="liveMode"><option value="preview">Preview / pre-trip</option><option value="on-time">On time</option><option value="late30">30+ minutes late</option><option value="late60">60+ minutes late</option></select></label>',
@@ -2236,6 +2336,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
       next ? '<h3>Next: ' + escapeHtml(next.title) + '</h3><p class="muted">' + escapeHtml(next.time) + (next.zone ? ' ' + escapeHtml(next.zone) : '') + ' · ' + escapeHtml(next.city) + '</p><p>' + escapeHtml(next.notes) + '</p>' : '<h3>Day complete</h3><p class="muted">Every currently active stop is completed, skipped, or removed by your delay mode.</p>',
       '<div class="action-bar">', next ? externalLink(nextRoute, 'Navigate to next stop', 'button') : '', externalLink(dayRouteUrl(day), 'Open active-day route', 'button secondary'), '</div>',
       '<div class="trip-progress"><strong>', completed, '/', stops.length, ' active stops complete</strong><div class="progress-meter" aria-label="' + completed + ' of ' + stops.length + ' active stops complete"><span style="width:' + progress + '%"></span></div></div>',
+      renderWakeLockControl(),
       '</article>',
       '<article class="quick-card"><h3>Delay decision</h3><p><strong>At 30+ minutes late:</strong> ', escapeHtml(day.contingency), '</p><p><strong>Protect:</strong> ', escapeHtml(day.emergency), '</p><p class="small"><strong>Time zone:</strong> ', escapeHtml(day.timeZoneNote), '</p><div class="action-bar"><button type="button" class="button subtle" id="openDayPlan">Open this day’s plan</button>', dayWeatherLink(day.id), '<button type="button" class="button danger" id="quickMode">Switch to 30+ late mode</button></div></article>',
       '</div>',
@@ -2268,6 +2369,26 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
       renderDayContent();
       renderLive();
     });
+    var wakeToggle = document.getElementById('wakeLockToggle');
+    if (wakeToggle) {
+      wakeToggle.checked = Boolean(wakeLockSentinel);
+      wakeToggle.addEventListener('change', function () {
+        wakeLockWanted = wakeToggle.checked;
+        if (wakeLockWanted) acquireWakeLock();
+        else releaseWakeLock();
+      });
+    }
+    var jumpToday = document.getElementById('jumpToday');
+    if (jumpToday) {
+      jumpToday.addEventListener('click', function () {
+        var today = new Date().toISOString().slice(0, 10);
+        tripState.activeDate = today;
+        uiFilters.dayId = today;
+        persist();
+        renderDayContent();
+        renderLive();
+      });
+    }
     wireExpenseCard();
   }
 
@@ -2284,6 +2405,21 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
 
   function checklistProgress() {
     return checklistTasks.filter(function (item) { return taskState(item.id).done; }).length;
+  }
+
+  function overdueTaskCount() {
+    var today = new Date().toISOString().slice(0, 10);
+    return checklistTasks.filter(function (item) {
+      var state = taskState(item.id);
+      return item.dueDate && item.dueDate < today && !state.done && state.status !== 'Not applicable';
+    }).length;
+  }
+
+  function updateChecklistBadge() {
+    var tab = document.getElementById('tab-checklist');
+    if (!tab) return;
+    var overdue = overdueTaskCount();
+    tab.innerHTML = 'Checklist' + (overdue ? ' <span class="nav-badge" aria-label="' + overdue + ' overdue tasks">' + overdue + '</span>' : '');
   }
 
   function renderPackingSection() {
@@ -2358,6 +2494,7 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
     tripState.tasks[id] = current;
     persist();
     renderChecklist();
+    updateChecklistBadge();
   }
 
   function serializableState(redacted) {
@@ -2727,7 +2864,14 @@ initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); ren
     renderLive();
     renderChecklist();
     renderOffline();
-    activateSection('live', false);
+    updateChecklistBadge();
+    var initialSection = validSectionId(location.hash) || 'live';
+    activateSection(initialSection, false, true);
+    try { history.replaceState({ section: initialSection }, '', '#' + initialSection); } catch (error) {}
+    window.addEventListener('popstate', function (event) {
+      var id = (event.state && event.state.section) || validSectionId(location.hash) || 'live';
+      if (validSectionId(id)) activateSection(id, false, true);
+    });
     registerOfflineSupport();
     if (planValidationErrors.length) setStatus('The operational plan has ' + planValidationErrors.length + ' validation warning' + (planValidationErrors.length === 1 ? '' : 's') + '. Review the sources section before travel.');
   }

@@ -2,7 +2,7 @@
   "name": "PEI Foodie Road Trip 2026",
   "short_name": "PEI Road Trip",
   "description": "Private family road-trip itinerary with offline-ready operational details.",
-  "start_url": "./index.html",
+  "start_url": "./index.html#live",
   "display": "standalone",
   "background_color": "#f7f3eb",
   "theme_color": "#0f5b63",
@@ -12,6 +12,16 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
     }
+  ],
+  "shortcuts": [
+    { "name": "Trip control", "url": "./index.html#live" },
+    { "name": "Checklist", "url": "./index.html#checklist" },
+    { "name": "Offline pack", "url": "./index.html#offline" }
   ]
 }
