@@ -28,6 +28,9 @@ The Food and Attractions tabs show every idea as a photo card with an approximat
 - **Trip spend tracker** — quick expense log with optional budget on the Trip control tab, stored only in the browser.
 - **Offline photos** — an opt-in button on the Offline pack tab stores the Wikimedia card photos on-device so Food/Attraction cards keep photos with no signal (hosted HTTPS copy only).
 - **Emergency card** — offline-safe tap-to-call numbers (911, 811, CAA, and all five hotels) on the Offline pack tab.
+- **Route map** — a stylized offline SVG map of the loop (with the Hopewell tide window) on the Overview tab.
+- **Keep screen awake** — a wake-lock toggle on Trip control for the navigator's phone while driving.
+- **Tab deep links** — every tab has a `#hash` URL (back button works); the PWA exposes Trip control / Checklist / Offline pack shortcuts, and the Checklist tab shows a red badge when dated tasks are overdue.
 
 ## Before traveling
 

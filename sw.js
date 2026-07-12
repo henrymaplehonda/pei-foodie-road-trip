@@ -1,11 +1,12 @@
-const CACHE_NAME = 'pei-foodie-road-trip-v12';
+const CACHE_NAME = 'pei-foodie-road-trip-v13';
 const PHOTO_CACHE = 'pei-foodie-road-trip-photos-v1';
 const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './sw.js',
-  './icon.svg'
+  './icon.svg',
+  './apple-touch-icon.png'
 ];
 
 self.addEventListener('install', (event) => {
