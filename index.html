@@ -90,6 +90,7 @@ button,.button{min-height:44px;cursor:pointer;font:inherit}button:focus-visible,
 .stop{position:relative}.stop.is-complete{opacity:.68;border-left-color:var(--ok)}.stop.is-complete h3{text-decoration:line-through}.stop.is-skipped{display:none}.stop-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.stop-actions button{min-height:38px;padding:7px 10px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--accent2);font-weight:800}.stop-actions button[aria-pressed="true"]{background:#ecfdf5;border-color:#0f766e;color:#065f46}
 .meal-plan{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:14px 0}.meal-plan-card{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--surface)}.meal-plan-card .tag{margin-top:0}.meal-plan-card h3{margin:8px 0}.meal-plan-card p{margin:6px 0}
 .mobile-card-list{display:grid;gap:12px}.data-card{border:1px solid var(--line);border-radius:16px;padding:15px;background:var(--surface);box-shadow:0 3px 12px rgba(31,41,51,.04)}.data-card h3{margin:0 0 7px}.data-card dl{display:grid;grid-template-columns:minmax(100px,.45fr) 1fr;gap:8px 12px;margin:12px 0 0}.data-card dt{font-weight:800;color:#475569}.data-card dd{margin:0}.data-card .links{margin-top:8px}
+.hotel-backups{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}.hotel-backups h4{margin:0 0 4px;font-size:15px}.hotel-backups-intro{margin:0 0 10px;color:var(--muted);font-size:13px}.hotel-backup{padding:11px 0;border-top:1px solid var(--line)}.hotel-backup:first-of-type{border-top:0}.hotel-backup p{margin:4px 0;font-size:14px}.hotel-backup .tag{margin-left:0}.hotel-backup .links{margin-top:6px}
 .checklist-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin:0 0 14px}.checklist-row{display:grid;grid-template-columns:auto minmax(180px,1fr) minmax(340px,.9fr);gap:14px;align-items:start;padding:14px;border:1px solid var(--line);border-radius:15px;background:var(--surface);margin:0 0 10px}.checklist-row.is-done{background:#f0fdf4;border-color:#86efac}.checklist-row input[type="checkbox"]{width:22px;height:22px;margin:4px 0 0;accent-color:#0f766e}.checklist-row h3{margin:0 0 4px;font-size:16px}.checklist-row p{margin:5px 0;font-size:14px}.checklist-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}.checklist-fields label{font-size:12px;font-weight:800;display:grid;gap:4px;color:#475569}.checklist-fields input,.checklist-fields select{padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:#fff}
 .offline-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}.offline-grid .card{height:100%}.offline-grid h3{margin-top:0}.offline-list{padding-left:20px;margin:8px 0}.offline-list li{margin:7px 0}.road-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.road-link{display:block;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;text-decoration:none;color:var(--ink);font-weight:800}.road-link span{display:block;font-weight:400;color:var(--muted);font-size:13px;margin-top:3px}
 .note{padding:12px 14px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-size:14px}.empty-state{padding:24px;text-align:center;border:1px dashed var(--line);border-radius:16px;color:var(--muted);background:#fff}
@@ -526,6 +527,34 @@ setTimeout(function () {
 
   function mapSearchUrl(address) {
     return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address || '');
+  }
+
+  var hotelAlternatives = {
+    'Montréal': [
+      { name: 'Homewood Suites by Hilton Montréal Downtown', address: '985 Boulevard Saint-Laurent, Montréal, QC H2Z 1J4', fit: 'Suite-style backup with a kitchen, breakfast, and a seasonal rooftop pool; confirm paid parking before booking.', source: 'https://www.hilton.com/en/hotels/yulhwhw-homewood-suites-montreal-downtown/' },
+      { name: 'Embassy Suites by Hilton Montréal', address: '208 Saint-Antoine Ouest, Montréal, QC H2Y 0A6', fit: 'Roomier downtown option with breakfast; convenient for Old Montréal, but confirm parking cost and vehicle height.', source: 'https://www.hilton.com/en/hotels/yuldnes-embassy-suites-montreal/' }
+    ],
+    'Québec City': [
+      { name: 'Home2 Suites by Hilton Québec City', address: '7088 Boulevard Wilfrid-Hamel, Québec, QC G2G 1B5', fit: 'Closest match to the practical airport-area plan: suites, breakfast, free outdoor parking, and an indoor pool.', source: 'https://www.hilton.com/en/hotels/yqbwhht-home2-suites-quebec-city/' },
+      { name: 'Hôtel Must', address: "1345 Route de l'Aéroport, L'Ancienne-Lorette, QC G2G 1G5", fit: 'Kid-first fallback with breakfast, free parking, an indoor pool and waterslide, plus on-site family entertainment.', source: 'https://www.hotelsjaro.com/must/' }
+    ],
+    'Fredericton': [
+      { name: 'The Fredericton Inn', address: '1315 Regent Street, Fredericton, NB E3C 1A1', fit: 'Family-friendly replacement with an indoor pool and on-site dining; confirm the room rate’s breakfast terms.', source: 'https://frederictoninn.nb.ca/' },
+      { name: 'Holiday Inn Express & Suites Fredericton', address: '665 Prospect Street, Fredericton, NB E3B 6B8', fit: 'Easy highway-side backup with free breakfast and parking; no pool, so choose it for sleep and simplicity.', source: 'https://www.ihg.com/holidayinnexpress/hotels/us/en/fredericton/yfces/hoteldetail' }
+    ],
+    'Charlottetown': [
+      { name: 'Hampton Inn & Suites Charlottetown', address: '300 Capital Drive, Charlottetown, PE C1E 3N1', fit: 'Practical two-night alternative near the current base with breakfast and an indoor pool; confirm room configuration.', source: 'https://www.hilton.com/en/hotels/yqmchhx-hampton-suites-charlottetown/' },
+      { name: 'Quality Inn & Suites Downtown', address: '150 Euston Street, Charlottetown, PE C1A 1W5', fit: 'Central backup with free hot breakfast and parking; pool access is off-site, so prioritize it for location and value.', source: 'https://www.qualityinnonthehill.com/' }
+    ],
+    'Moncton': [
+      { name: 'Hampton Inn & Suites by Hilton Moncton', address: '700 Mapleton Road, Moncton, NB E1G 0L7', fit: 'Trans-Canada-accessible family fallback with breakfast and an indoor pool; farther from the airport-side original.', source: 'https://www.hilton.com/en/hotels/yqmnbhx-hampton-suites-moncton/' },
+      { name: 'Quality Inn Airport', address: '370 Dieppe Boulevard, Dieppe, NB E1A 8H4', fit: 'Airport-side substitute close to the planned route, with breakfast and an indoor pool; verify parking terms.', source: 'https://www.choicehotels.com/en-ca/new-brunswick/dieppe/quality-inn-hotels/cn942' }
+    ]
+  };
+
+  function alternativesForHotel(hotel) {
+    var key = hotel.Base === 'Québec City / Airport area' ? 'Québec City' : hotel.Base;
+    return hotelAlternatives[key] || [];
   }
 
   function safeExternalUrl(url) {
@@ -2163,15 +2192,22 @@ setTimeout(function () {
     var section = document.getElementById('hotels');
     section.innerHTML = [
       '<h2 id="hotels-heading" class="section-heading">Hotels</h2>',
-      '<p class="section-intro">Use the checklist to record confirmation numbers, parking instructions, and the cancellation deadline.</p>',
+      '<p class="section-intro">Book the preferred hotel first, but keep the two alternatives underneath ready in case it is sold out. Availability and rates are live, so use refundable bookings where possible and confirm parking, breakfast, pool hours, and cancellation terms before paying.</p>',
       '<div class="mobile-card-list">',
       rawData.hotels.map(function (hotel) {
+        var alternatives = alternativesForHotel(hotel);
         return [
           '<article class="data-card"><h3>', escapeHtml(hotel['Recommended hotel'] || ''), '</h3>',
+          '<p><span class="tag">Preferred stay</span></p>',
           '<p><strong>', escapeHtml(hotel['Date label'] || hotel.Date || ''), '</strong> · ', escapeHtml(hotel.Base || ''), '</p>',
           '<p>', escapeHtml(hotel['Why recommended'] || ''), '</p>',
           '<dl><dt>Address</dt><dd>', escapeHtml(hotel.Address || '—'), '</dd><dt>Booking</dt><dd>', escapeHtml(hotel['Booking instruction'] || 'Confirm parking and cancellation terms.'), '</dd></dl>',
-          '<div class="links">', externalLink(hotel['Map URL'], 'Map'), externalLink(hotel['Address/source'], 'Hotel source'), externalLink(hotel['Amenities/source'], 'Amenities'), '</div></article>'
+          '<div class="links">', externalLink(hotel['Map URL'], 'Map'), externalLink(hotel['Address/source'], 'Hotel source'), externalLink(hotel['Amenities/source'], 'Amenities'), '</div>',
+          '<div class="hotel-backups"><h4>Backup options</h4><p class="hotel-backups-intro">Check these in order if the preferred stay is unavailable.</p>',
+          alternatives.map(function (alternative, index) {
+            return '<div class="hotel-backup"><p><span class="tag">Backup ' + (index + 1) + '</span></p><h4>' + escapeHtml(alternative.name) + '</h4><p>' + escapeHtml(alternative.fit) + '</p><p class="small muted">' + escapeHtml(alternative.address) + '</p><div class="links">' + externalLink(mapSearchUrl(alternative.address), 'Map') + externalLink(alternative.source, 'Check rooms') + '</div></div>';
+          }).join(''),
+          '</div></article>'
         ].join('');
       }).join(''),
       '</div>'
