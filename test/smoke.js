@@ -155,6 +155,10 @@ function check(name, ok, detail) {
   // Deep link boot
   await page.goto(base + '/index.html#checklist', { waitUntil: 'networkidle' });
   check('deep link #checklist boots to checklist', await page.locator('#checklist').isVisible());
+  await page.goto(base + '/index.html#attractions', { waitUntil: 'networkidle' });
+  check('deep link #attractions shows cards', await page.locator('#attractions .day-group[data-day="2026-08-14"]').isVisible() && (await page.locator('#attractions .sugg-card').count()) === 30);
+  await page.goto(base + '/index.html#hotels', { waitUntil: 'networkidle' });
+  check('deep link #hotels shows cards', await page.locator('#hotels .day-group[data-day="2026-08-14"]').isVisible() && (await page.locator('#hotels .data-card').count()) === 7);
 
   // Theme toggle produces dark background
   await page.click('#themeToggle');
