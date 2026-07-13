@@ -561,24 +561,24 @@ setTimeout(function () {
 
   var hotelAlternatives = {
     'Montréal': [
-      { name: 'Homewood Suites by Hilton Montréal Downtown', address: '985 Boulevard Saint-Laurent, Montréal, QC H2Z 1J4', fit: 'Suite-style backup with a kitchen, breakfast, and a seasonal rooftop pool; confirm paid parking before booking.', source: 'https://www.hilton.com/en/hotels/yulhwhw-homewood-suites-montreal-downtown/' },
-      { name: 'Embassy Suites by Hilton Montréal', address: '208 Saint-Antoine Ouest, Montréal, QC H2Y 0A6', fit: 'Roomier downtown option with breakfast; convenient for Old Montréal, but confirm parking cost and vehicle height.', source: 'https://www.hilton.com/en/hotels/yuldnes-embassy-suites-montreal/' }
+      { name: 'Hampton Inn by Hilton Montréal East Anjou', address: '8100 Avenue de Neuville, Anjou, QC H1J 2T2', fit: 'Best highway-side option for a simple arrival and departure.', parking: 'Complimentary on-site outdoor parking; no covered or underground garage.', access: 'At Highways 40 and 25 in Anjou, about 15 km from the city centre.', source: 'https://www.hilton.com/en/hotels/ymqhxhx-hampton-montreal-east-anjou/hotel-location/' },
+      { name: 'Auberge Royal Versailles', address: '7200 Rue Sherbrooke Est, Montréal, QC H1N 1E7', fit: 'East-end alternative with straightforward vehicle access.', parking: 'Free on-site exterior parking.', access: 'Outside downtown with easy access to Highways 40, 25 and 20.', source: 'https://www.royalversailles.com/services' }
     ],
     'Québec City': [
-      { name: 'Home2 Suites by Hilton Québec City', address: '7088 Boulevard Wilfrid-Hamel, Québec, QC G2G 1B5', fit: 'Closest match to the practical airport-area plan: suites, breakfast, free outdoor parking, and an indoor pool.', source: 'https://www.hilton.com/en/hotels/yqbwhht-home2-suites-quebec-city/' },
-      { name: 'Hôtel Must', address: "1345 Route de l'Aéroport, L'Ancienne-Lorette, QC G2G 1G5", fit: 'Kid-first fallback with breakfast, free parking, an indoor pool and waterslide, plus on-site family entertainment.', source: 'https://www.hotelsjaro.com/must/' }
+      { name: 'Hôtel Sépia', address: '3135 Chemin Saint-Louis, Québec, QC G1W 1R9', fit: 'Low-friction bridge-side choice at the entrance to Québec City.', parking: 'Free outdoor parking on site.', access: 'Near the Québec and Pierre-Laporte bridges, away from busy Old Québec streets.', source: 'https://www.hotelsepia.ca/en/business-meetings/business-tourism/' },
+      { name: 'Best Western Premier Hôtel Aristocrate', address: '3100 Chemin Saint-Louis, Québec, QC G1W 1R8', fit: 'Practical gateway hotel for arriving or leaving by highway.', parking: 'Free on-site outdoor guest parking.', access: 'Beside the Québec and Pierre-Laporte bridge approaches, outside downtown.', source: 'https://www.hotelaristocrate.com/en/faq-about-the-hotel/' }
     ],
     'Fredericton': [
-      { name: 'The Fredericton Inn', address: '1315 Regent Street, Fredericton, NB E3C 1A1', fit: 'Family-friendly replacement with an indoor pool and on-site dining; confirm the room rate’s breakfast terms.', source: 'https://frederictoninn.nb.ca/' },
-      { name: 'Holiday Inn Express & Suites Fredericton', address: '665 Prospect Street, Fredericton, NB E3B 6B8', fit: 'Easy highway-side backup with free breakfast and parking; no pool, so choose it for sleep and simplicity.', source: 'https://www.ihg.com/holidayinnexpress/hotels/us/en/fredericton/yfces/hoteldetail' }
+      { name: 'Holiday Inn Express & Suites Fredericton', address: '665 Prospect Street, Fredericton, NB E3B 6B8', fit: 'Simple sleep-and-breakfast option near the highway.', parking: 'Complimentary outside self-parking on flat terrain.', access: 'Just off Highway 8 near Hanwell, west of the downtown core.', source: 'https://www.ihg.com/holidayinnexpress/hotels/us/en/fredericton/yfces/hoteldetail/directions' },
+      { name: 'Best Western Plus Fredericton Hotel & Suites', address: '333 Bishop Drive, Fredericton, NB E3C 2M6', fit: 'Easy-access Bishop Drive alternative with family facilities.', parking: 'Free on-site outdoor parking, including larger-vehicle spaces.', access: 'Immediate highway access in the Bishop Drive hotel area, outside downtown.', source: 'https://www.bestwestern.com/en_US/book/fredericton/hotel-rooms/best-western-plus-fredericton-hotel-suites/propertyCode.64011.html' }
     ],
     'Charlottetown': [
-      { name: 'Hampton Inn & Suites Charlottetown', address: '300 Capital Drive, Charlottetown, PE C1E 3N1', fit: 'Practical two-night alternative near the current base with breakfast and an indoor pool; confirm room configuration.', source: 'https://www.hilton.com/en/hotels/yqmchhx-hampton-suites-charlottetown/' },
-      { name: 'Quality Inn & Suites Downtown', address: '150 Euston Street, Charlottetown, PE C1A 1W5', fit: 'Central backup with free hot breakfast and parking; pool access is off-site, so prioritize it for location and value.', source: 'https://www.qualityinnonthehill.com/' }
+      { name: 'Hampton Inn & Suites Charlottetown', address: '300 Capital Drive, Charlottetown, PE C1E 3N1', fit: 'Strong two-night alternative with breakfast and an indoor pool.', parking: 'Complimentary on-site self-parking; covered parking is not available.', access: 'Easy-to-reach Capital Drive location, about 5 km from the city centre.', source: 'https://www.hilton.com/en/hotels/yqmchhx-hampton-suites-charlottetown/hotel-location/' },
+      { name: 'Holiday Inn Express & Suites Charlottetown', address: '200 Capital Drive, Charlottetown, PE C1E 2E8', fit: 'Practical family option with breakfast and an indoor pool.', parking: 'Large complimentary exterior lot wraps around the building.', access: 'On Capital Drive, about 3.8 km from downtown with straightforward airport access.', source: 'https://www.ihg.com/holidayinnexpress/hotels/us/en/charlottetown/yygca/hoteldetail/directions' }
     ],
     'Moncton': [
-      { name: 'Hampton Inn & Suites by Hilton Moncton', address: '700 Mapleton Road, Moncton, NB E1G 0L7', fit: 'Trans-Canada-accessible family fallback with breakfast and an indoor pool; farther from the airport-side original.', source: 'https://www.hilton.com/en/hotels/yqmnbhx-hampton-suites-moncton/' },
-      { name: 'Quality Inn Airport', address: '370 Dieppe Boulevard, Dieppe, NB E1A 8H4', fit: 'Airport-side substitute close to the planned route, with breakfast and an indoor pool; verify parking terms.', source: 'https://www.choicehotels.com/en-ca/new-brunswick/dieppe/quality-inn-hotels/cna72?pmf=canada' }
+      { name: 'Hampton Inn & Suites by Hilton Moncton', address: '700 Mapleton Road, Moncton, NB E1G 0L7', fit: 'Family-friendly highway option with breakfast and an indoor pool.', parking: 'Complimentary on-site parking lot; covered parking is not available.', access: 'Off the Trans-Canada Highway, about 7.5 km from the city centre.', source: 'https://www.hilton.com/en/hotels/yqmnbhx-hampton-suites-moncton/' },
+      { name: 'Holiday Inn Express & Suites Moncton', address: '777 Mapleton Road, Moncton, NB E1G 2K5', fit: 'Easy highway alternative with breakfast and an indoor pool.', parking: 'Complimentary exterior self-parking on flat terrain.', access: 'Directly on the Trans-Canada Highway, outside busy downtown.', source: 'https://www.ihg.com/holidayinnexpress/hotels/us/en/moncton/yqmnb/hoteldetail/directions' }
     ]
   };
 
@@ -2297,7 +2297,7 @@ setTimeout(function () {
     var section = document.getElementById('hotels');
     section.innerHTML = [
       '<h2 id="hotels-heading" class="section-heading">Hotels</h2>',
-      '<p class="section-intro">Hotels are grouped in overnight order, day by day. Book the preferred hotel first, but keep the two alternatives underneath ready in case it is sold out. Availability and rates are live, so use refundable bookings where possible and confirm parking, breakfast, pool hours, and cancellation terms before paying.</p>',
+      '<p class="section-intro">Hotels are grouped in overnight order, day by day. Every night includes two alternatives with verified on-site outdoor parking, easy road access, and a location outside busy downtown streets. Availability and rates are live, so use refundable bookings and reconfirm parking terms before paying.</p>',
       '<div class="mobile-card-list">',
       rawData.hotels.map(function (hotel) {
         var alternatives = alternativesForHotel(hotel);
@@ -2309,9 +2309,9 @@ setTimeout(function () {
           '<p>', escapeHtml(hotel['Why recommended'] || ''), '</p>',
           '<dl><dt>Address</dt><dd>', escapeHtml(hotel.Address || '—'), '</dd><dt>Booking</dt><dd>', escapeHtml(hotel['Booking instruction'] || 'Confirm parking and cancellation terms.'), '</dd></dl>',
           '<div class="links">', externalLink(hotel['Map URL'], 'Map'), externalLink(hotel['Address/source'], 'Hotel source'), externalLink(hotel['Amenities/source'], 'Amenities'), '</div>',
-          '<details class="hotel-backups"><summary>Show 2 backup hotels</summary><p class="hotel-backups-intro">Check these in order if the preferred stay is unavailable.</p>',
+          '<details class="hotel-backups"><summary>Show 2 easy-access hotels with outdoor parking</summary><p class="hotel-backups-intro">Both options avoid busy downtown streets and underground garages. Check availability and cancellation terms before booking.</p>',
           alternatives.map(function (alternative, index) {
-            return '<div class="hotel-backup"><p><span class="tag category-backup">Hotel backup ' + (index + 1) + '</span></p><h4>' + escapeHtml(alternative.name) + '</h4><p>' + escapeHtml(alternative.fit) + '</p><p class="small muted">' + escapeHtml(alternative.address) + '</p><div class="links">' + externalLink(mapSearchUrl(alternative.address), 'Map') + externalLink(alternative.source, 'Check rooms') + '</div></div>';
+            return '<div class="hotel-backup"><p><span class="tag category-hotel">Option ' + (index + 1) + '</span><span class="tag category-drive">Outdoor parking · easy access</span></p><h4>' + escapeHtml(alternative.name) + '</h4><p>' + escapeHtml(alternative.fit) + '</p><p><strong>Parking:</strong> ' + escapeHtml(alternative.parking) + '</p><p><strong>Access:</strong> ' + escapeHtml(alternative.access) + '</p><p class="small muted">' + escapeHtml(alternative.address) + '</p><div class="links">' + externalLink(mapSearchUrl(alternative.address), 'Map') + externalLink(alternative.source, 'Hotel / parking details') + '</div></div>';
           }).join(''),
           '</details></article></div>'
         ].join('');
