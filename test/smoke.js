@@ -25,6 +25,7 @@ function check(name, ok, detail) {
   const indexSource = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const fallbackBlock = (indexSource.match(/\/\/ Safe boot-failure fallback:[\s\S]*?<\/script>/) || [''])[0];
   check('boot fallback cannot render stale embedded routes', fallbackBlock.includes('renderLegacyFailureNotice') && !fallbackBlock.includes('initDayByDay();') && !fallbackBlock.includes('renderFuel();'));
+  check('boot fallback waits and preserves rendered navigation', fallbackBlock.includes('}, 3000);') && fallbackBlock.includes('interfaceReady') && !fallbackBlock.includes("nav.innerHTML = ''"));
 
   const server = http.createServer((req, res) => {
     const file = path.join(ROOT, decodeURIComponent(req.url.split('#')[0].split('?')[0]).replace(/^\/+/, '') || 'index.html');

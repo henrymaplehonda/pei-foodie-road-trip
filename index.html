@@ -490,15 +490,21 @@ function renderSources(){
 // Safe boot-failure fallback: never surface the older embedded schedule.
 // The operational app below is the only renderer allowed to use trip data.
 function renderLegacyFailureNotice() {
-  const nav = document.getElementById('nav');
-  if (nav) nav.innerHTML = '';
   const main = document.querySelector('main');
   if (!main || document.getElementById('tripBootFailure')) return;
   main.insertAdjacentHTML('afterbegin', '<div id="tripBootFailure" class="card full warn" role="alert"><h2>Trip controls did not start</h2><p>Reload this page before using the itinerary. The older embedded schedule is intentionally unavailable because its routes and safety rules have been replaced.</p></div>');
 }
 setTimeout(function () {
-  if (!window.__tripControlBooted) renderLegacyFailureNotice();
-}, 0);
+  if (window.__tripControlBooted) return;
+  var interfaceReady = document.querySelectorAll('#nav [data-section]').length >= 10
+    && document.querySelectorAll('#attractions .sugg-card').length > 0
+    && document.querySelectorAll('#hotels .data-card').length > 0;
+  if (interfaceReady) {
+    window.__tripControlBooted = true;
+    return;
+  }
+  renderLegacyFailureNotice();
+}, 3000);
 </script>
 <script id="trip-control-script">
 (function () {
