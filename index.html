@@ -2248,10 +2248,10 @@ setTimeout(function () {
     }) });
     document.getElementById('attrResult').innerHTML = rows.length
       ? attractionGroups.filter(function (group) { return group.items.length; }).map(function (group) {
-          return '<section class="day-group" data-day="' + escapeHtml(group.id) + '"><h3 class="day-group-heading">' + escapeHtml(group.label) + '</h3><div class="sugg-grid">' + group.items.map(function (item) {
+          return '<div class="day-group" data-day="' + escapeHtml(group.id) + '"><h3 class="day-group-heading">' + escapeHtml(group.label) + '</h3><div class="sugg-grid">' + group.items.map(function (item) {
             item.tags = ['Attraction', item.dayLabel, item.region].filter(Boolean);
             return suggestionCard(item, attractionCardDetails(item));
-          }).join('') + '</div></section>';
+          }).join('') + '</div></div>';
         }).join('')
       : '<div class="empty-state">' + (showRemoved ? 'Nothing removed with this search.' : 'No attractions match. Try another search.') + '</div>';
     wirePhotoFallbacks(document.getElementById('attrResult'));
@@ -2266,7 +2266,7 @@ setTimeout(function () {
       rawData.hotels.map(function (hotel) {
         var alternatives = alternativesForHotel(hotel);
         return [
-          '<section class="day-group" data-day="', escapeHtml(hotel.Date || ''), '"><h3 class="day-group-heading">', escapeHtml(hotel['Date label'] || hotel.Date || ''), ' — ', escapeHtml(hotel.Base || ''), '</h3>',
+          '<div class="day-group" data-day="', escapeHtml(hotel.Date || ''), '"><h3 class="day-group-heading">', escapeHtml(hotel['Date label'] || hotel.Date || ''), ' — ', escapeHtml(hotel.Base || ''), '</h3>',
           '<article class="data-card"><h3>', escapeHtml(hotel['Recommended hotel'] || ''), '</h3>',
           '<p><span class="tag category-hotel">Hotel · preferred stay</span></p>',
           '<p><strong>', escapeHtml(hotel['Date label'] || hotel.Date || ''), '</strong> · ', escapeHtml(hotel.Base || ''), '</p>',
@@ -2277,7 +2277,7 @@ setTimeout(function () {
           alternatives.map(function (alternative, index) {
             return '<div class="hotel-backup"><p><span class="tag category-backup">Hotel backup ' + (index + 1) + '</span></p><h4>' + escapeHtml(alternative.name) + '</h4><p>' + escapeHtml(alternative.fit) + '</p><p class="small muted">' + escapeHtml(alternative.address) + '</p><div class="links">' + externalLink(mapSearchUrl(alternative.address), 'Map') + externalLink(alternative.source, 'Check rooms') + '</div></div>';
           }).join(''),
-          '</details></article></section>'
+          '</details></article></div>'
         ].join('');
       }).join(''),
       '</div>'
