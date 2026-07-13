@@ -131,6 +131,11 @@ function check(name, ok, detail) {
   check('Aug 21 has a fatigue-based overnight checkpoint', aug21Missing.length === 0, 'missing=' + aug21Missing.join(', '));
   check('Aug 21 fallback stays westbound', aug21Text.includes('Brockville/Kingston') && !aug21Text.includes('Cornwall'));
   check('day cards expose clear plan badges and optional detail', (await page.locator('#dayResult .priority-badge').count()) > 0 && (await page.locator('#dayResult details.stop-more').count()) > 0);
+  check('stop categories use distinct colors', await page.evaluate(() => {
+    const badges = Array.from(document.querySelectorAll('#dayResult .kind-badge'));
+    const colors = new Set(badges.map((badge) => getComputedStyle(badge).backgroundColor));
+    return badges.some((badge) => badge.classList.contains('category-food')) && badges.some((badge) => badge.classList.contains('category-drive')) && colors.size >= 3;
+  }));
   check('day navigation buttons render', (await page.locator('#previousDay').count()) === 1 && (await page.locator('#nextDay').count()) === 1);
   await page.click('#previousDay');
   check('previous-day control changes the selected day', (await page.locator('#daySelectV2').inputValue()) === '2026-08-20');

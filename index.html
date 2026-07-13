@@ -44,6 +44,7 @@ input,select{border:1px solid var(--line);border-radius:12px;padding:10px 12px;b
 .meal{font-weight:900;color:#fff;background:var(--accent);border-radius:12px;text-align:center;padding:12px 8px;height:max-content}
 .food-card h3{margin:0}
 .tag{display:inline-block;font-size:12px;border-radius:999px;padding:4px 8px;background:var(--soft);margin:4px 4px 0 0}
+.category-food{background:#fef3c7!important;color:#854d0e!important;border-color:#facc15!important}.category-attraction{background:#dcfce7!important;color:#166534!important;border-color:#86efac!important}.category-hotel{background:#ede9fe!important;color:#5b21b6!important;border-color:#c4b5fd!important}.category-fuel{background:#fee2e2!important;color:#991b1b!important;border-color:#fca5a5!important}.category-drive{background:#dbeafe!important;color:#1e40af!important;border-color:#93c5fd!important}.category-break{background:#cffafe!important;color:#155e75!important;border-color:#67e8f9!important}.category-backup{background:#f1f5f9!important;color:#475569!important;border-color:#cbd5e1!important}
 .attr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
 .attr img{width:100%;height:170px;object-fit:cover;border-radius:14px;background:#eee;border:1px solid var(--line)}
 table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:14px;border:1px solid var(--line);background:#fff}
@@ -530,6 +531,18 @@ setTimeout(function () {
 
   function unique(values) {
     return Array.from(new Set(values.filter(Boolean)));
+  }
+
+  function categoryClass(value) {
+    var label = normalize(value);
+    if (/hotel|check in|overnight/.test(label)) return 'category-hotel';
+    if (/fuel|gas/.test(label)) return 'category-fuel';
+    if (/breakfast|brunch|lunch|dinner|food|meal|snack|restaurant/.test(label)) return 'category-food';
+    if (/attraction|park|beach|falls|gorge|scenic|photo|waterfront|tide/.test(label)) return 'category-attraction';
+    if (/drive|depart|start|finish|arrive|crossing/.test(label)) return 'category-drive';
+    if (/washroom|stretch|service|driver swap|movement/.test(label)) return 'category-break';
+    if (/backup|fallback|conditional|optional/.test(label)) return 'category-backup';
+    return '';
   }
 
   function sourceDay(dayId) {
@@ -1805,8 +1818,8 @@ setTimeout(function () {
       var state = stop ? stopStatus(stop.id) : 'pending';
       return [
         '<article class="meal-plan-card">',
-        '<span class="tag">', escapeHtml(meal.meal), '</span>',
-        meal.conditional ? '<span class="tag">Conditional</span>' : '',
+        '<span class="tag ', categoryClass(meal.meal), '">', escapeHtml(meal.meal), '</span>',
+        meal.conditional ? '<span class="tag category-backup">Conditional</span>' : '',
         '<h3>', escapeHtml(meal.title), '</h3>',
         '<p><strong>Plan A:</strong> ', escapeHtml(stop ? stop.title : 'Review plan'), '</p>',
         meal.backup ? '<p class="small"><strong>Backup:</strong> ' + escapeHtml(meal.backup) + '</p>' : '',
@@ -1825,7 +1838,7 @@ setTimeout(function () {
       '<article class="', classes, '">',
       '<div class="time">', escapeHtml(stop.time), stop.zone ? '<br><span class="type">' + escapeHtml(stop.zone) + '</span>' : '', '</div>',
       '<div>',
-      '<div class="stop-heading"><span class="priority-badge ', escapeHtml(stop.priority), '">', escapeHtml(priorityLabel), '</span><span class="kind-badge">', escapeHtml(stop.kind), '</span><h3>', escapeHtml(stop.title), '</h3></div>',
+      '<div class="stop-heading"><span class="priority-badge ', escapeHtml(stop.priority), '">', escapeHtml(priorityLabel), '</span><span class="kind-badge ', categoryClass(stop.kind), '">', escapeHtml(stop.kind), '</span><h3>', escapeHtml(stop.title), '</h3></div>',
       '<p><strong>', escapeHtml(stop.city), '</strong>', stop.address ? ' · ' + escapeHtml(stop.address) : '', '</p>',
       renderTicketGuidance(stop.ticket),
       '<p class="small"><strong>From prior stop:</strong> ', escapeHtml(stop.leg || '—'), stop.timeBudget ? ' · <strong>Time here:</strong> ' + escapeHtml(stop.timeBudget) : '', '</p>',
@@ -1959,7 +1972,7 @@ setTimeout(function () {
       '</div>',
       '<div class="sugg-body">',
       '<h3>' + escapeHtml(item.name) + '</h3>',
-      '<div class="sugg-meta">' + item.tags.map(function (tag) { return '<span class="tag">' + escapeHtml(tag) + '</span>'; }).join('') + '</div>',
+      '<div class="sugg-meta">' + item.tags.map(function (tag) { return '<span class="tag ' + categoryClass(tag) + '">' + escapeHtml(tag) + '</span>'; }).join('') + '</div>',
       '<p>' + escapeHtml(item.summary) + '</p>',
       detailsHtml || '',
       '</div>',
@@ -2230,7 +2243,7 @@ setTimeout(function () {
     document.getElementById('attrResult').innerHTML = rows.length
       ? attractionGroups.filter(function (group) { return group.items.length; }).map(function (group) {
           return '<section class="day-group" data-day="' + escapeHtml(group.id) + '"><h3 class="day-group-heading">' + escapeHtml(group.label) + '</h3><div class="sugg-grid">' + group.items.map(function (item) {
-            item.tags = [item.dayLabel, item.region].filter(Boolean);
+            item.tags = ['Attraction', item.dayLabel, item.region].filter(Boolean);
             return suggestionCard(item, attractionCardDetails(item));
           }).join('') + '</div></section>';
         }).join('')
@@ -2249,14 +2262,14 @@ setTimeout(function () {
         return [
           '<section class="day-group" data-day="', escapeHtml(hotel.Date || ''), '"><h3 class="day-group-heading">', escapeHtml(hotel['Date label'] || hotel.Date || ''), ' — ', escapeHtml(hotel.Base || ''), '</h3>',
           '<article class="data-card"><h3>', escapeHtml(hotel['Recommended hotel'] || ''), '</h3>',
-          '<p><span class="tag">Preferred stay</span></p>',
+          '<p><span class="tag category-hotel">Hotel · preferred stay</span></p>',
           '<p><strong>', escapeHtml(hotel['Date label'] || hotel.Date || ''), '</strong> · ', escapeHtml(hotel.Base || ''), '</p>',
           '<p>', escapeHtml(hotel['Why recommended'] || ''), '</p>',
           '<dl><dt>Address</dt><dd>', escapeHtml(hotel.Address || '—'), '</dd><dt>Booking</dt><dd>', escapeHtml(hotel['Booking instruction'] || 'Confirm parking and cancellation terms.'), '</dd></dl>',
           '<div class="links">', externalLink(hotel['Map URL'], 'Map'), externalLink(hotel['Address/source'], 'Hotel source'), externalLink(hotel['Amenities/source'], 'Amenities'), '</div>',
           '<details class="hotel-backups"><summary>Show 2 backup hotels</summary><p class="hotel-backups-intro">Check these in order if the preferred stay is unavailable.</p>',
           alternatives.map(function (alternative, index) {
-            return '<div class="hotel-backup"><p><span class="tag">Backup ' + (index + 1) + '</span></p><h4>' + escapeHtml(alternative.name) + '</h4><p>' + escapeHtml(alternative.fit) + '</p><p class="small muted">' + escapeHtml(alternative.address) + '</p><div class="links">' + externalLink(mapSearchUrl(alternative.address), 'Map') + externalLink(alternative.source, 'Check rooms') + '</div></div>';
+            return '<div class="hotel-backup"><p><span class="tag category-backup">Hotel backup ' + (index + 1) + '</span></p><h4>' + escapeHtml(alternative.name) + '</h4><p>' + escapeHtml(alternative.fit) + '</p><p class="small muted">' + escapeHtml(alternative.address) + '</p><div class="links">' + externalLink(mapSearchUrl(alternative.address), 'Map') + externalLink(alternative.source, 'Check rooms') + '</div></div>';
           }).join(''),
           '</details></article></section>'
         ].join('');
