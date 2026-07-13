@@ -2137,6 +2137,42 @@ setTimeout(function () {
   }
 
   function attractionSuggestionList() {
+    var sundayDriveAttractions = [
+      {
+        id: 'xattr-nb-botanical-garden', name: 'New Brunswick Botanical Garden', rating: 4.6,
+        fits: 'Optional Aug 16 Edmundston break', region: 'Edmundston, NB', best: 'Early afternoon; confirm Sunday hours',
+        desc: 'Twelve themed gardens beside the Madawaska River, including colourful mosaiculture. Use only if the family wants a longer break on this high-drive day.',
+        kid: 'Flowers and large living sculptures make this more playful than a formal garden; cap the visit at 45–60 minutes.',
+        address: '15 Boulevard Isidore-Boucher, Edmundston, NB E7B 1V6', source: 'https://jardinnbgarden.com/',
+        mapUrl: mapSearchUrl('15 Boulevard Isidore-Boucher, Edmundston, NB E7B 1V6')
+      }
+    ];
+    var operationalScenicAttractions = [];
+    operationalPlan.days.forEach(function (day) {
+      (day.stops || []).forEach(function (stop) {
+        if (!/(photo|scenic)/i.test(stop.kind || '')) return;
+        var cleanName = String(stop.title || '').replace(/\s+(photo stop|river-view (stretch|reset))$/i, '').trim();
+        operationalScenicAttractions.push({
+          id: 'attr-plan-' + day.id + '-' + stop.id,
+          name: cleanName || stop.title,
+          rating: 4.7,
+          dayId: day.id,
+          dayLabel: day.label,
+          dayShort: '',
+          best: [stop.time, stop.timeBudget].filter(Boolean).join(' · '),
+          summary: stop.notes || 'Short on-route scenery stop from the operational itinerary.',
+          kid: stop.kidPlan || '',
+          foodWash: stop.food || '',
+          address: stop.address || '',
+          mapUrl: stop.mapUrl || mapSearchUrl(stop.address || stop.title),
+          source: stop.sourceUrl || '',
+          planned: true,
+          planLabel: 'Plan stop',
+          region: stop.city || '',
+          photo: '', photoNote: '', icon: 'ðŸ—ºï¸'
+        });
+      });
+    });
     var planned = rawData.attractions.map(function (attraction) {
       var attractionName = normalize(attraction.Attraction);
       var isGrandFalls = attractionName.indexOf('grand falls gorge') !== -1;
@@ -2162,7 +2198,7 @@ setTimeout(function () {
         icon: '🗺️'
       };
     });
-    var extras = (rawData.attractionExtras || []).map(function (attraction) {
+    var extras = (rawData.attractionExtras || []).concat(sundayDriveAttractions).map(function (attraction) {
       var dayMatch = String(attraction.fits || '').match(/Aug\s+(\d{1,2})/i);
       var dayId = dayMatch ? '2026-08-' + String(dayMatch[1]).padStart(2, '0') : '';
       var tripDay = sourceDay(dayId);
@@ -2182,7 +2218,7 @@ setTimeout(function () {
         icon: '🗺️'
       };
     });
-    return planned.concat(extras);
+    return planned.concat(operationalScenicAttractions, extras);
   }
 
   function mountAttractionsSection() {

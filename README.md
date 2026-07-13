@@ -16,7 +16,7 @@ Live public site: https://henrymaplehonda.github.io/pei-foodie-road-trip/
 
 ## Food & attraction picker
 
-The Food and Attractions tabs show every idea as a photo card with an approximate Google rating, ranked best-first. Alongside the 17 planned meals and 13 routed attractions, there are 14 extra food ideas and 17 extra attraction ideas along the route (Montréal, Québec City, Bay of Fundy, and PEI). Use **☆ Pick** to pin favourites to the top and **✕ Remove** to hide anything you are not doing — both are stored only in the browser and can be undone anytime via *View removed* / *Restore all*. Photos load from Wikimedia Commons when online; the offline photo mode hides them without losing any addresses or links.
+The Food and Attractions tabs show every idea as a photo card with an approximate Google rating, ranked best-first. Alongside the 17 planned meals and routed attractions, there are 14 extra food ideas and 18 extra attraction ideas along the route (Montréal, Québec City, the Aug 16 New Brunswick drive, Bay of Fundy, and PEI). Operational photo and scenery stops are also mirrored automatically into the Attractions tab on each applicable day. Use **☆ Pick** to pin favourites to the top and **✕ Remove** to hide anything you are not doing — both are stored only in the browser and can be undone anytime via *View removed* / *Restore all*. Photos load from Wikimedia Commons when online; the offline photo mode hides them without losing any addresses or links.
 
 ## Trip tools
 

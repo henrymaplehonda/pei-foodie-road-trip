@@ -81,6 +81,8 @@ function check(name, ok, detail) {
   await page.click('#nav [data-section=attractions]');
   check('attractions are grouped by trip day', (await page.locator('#attractions .day-group[data-day^="2026-08-"]').count()) >= 6);
   check('attraction day groups are visible', await page.locator('#attractions .day-group[data-day="2026-08-14"]').isVisible());
+  check('Aug 16 offers multiple on-route attractions', (await page.locator('#attractions .day-group[data-day="2026-08-16"] .sugg-card').count()) >= 4);
+  check('photo and scenic plan stops appear as attractions', (await page.locator('#attractions .sugg-card').filter({ hasText: 'Hartland Covered Bridge' }).count()) >= 2 && (await page.locator('#attractions .sugg-card').filter({ hasText: 'Kamouraska' }).count()) >= 2);
   const magneticCard = page.locator('#attractions .sugg-card:has(h3:text-is("Magnetic Hill Illusion"))').first();
   check('Magnetic Hill card uses the official address', (await magneticCard.textContent()).includes('2846 Mountain Road') && (await magneticCard.locator('a[href*="2846"]').count()) >= 1);
   const grandFallsCard = page.locator('#attractions .sugg-card').filter({ hasText: 'Grand Falls Gorge' }).first();
@@ -156,7 +158,7 @@ function check(name, ok, detail) {
   await page.goto(base + '/index.html#checklist', { waitUntil: 'networkidle' });
   check('deep link #checklist boots to checklist', await page.locator('#checklist').isVisible());
   await page.goto(base + '/index.html#attractions', { waitUntil: 'networkidle' });
-  check('deep link #attractions shows cards', await page.locator('#attractions .day-group[data-day="2026-08-14"]').isVisible() && (await page.locator('#attractions .sugg-card').count()) === 30);
+  check('deep link #attractions shows cards', await page.locator('#attractions .day-group[data-day="2026-08-14"]').isVisible() && (await page.locator('#attractions .sugg-card').count()) === 35);
   await page.goto(base + '/index.html#hotels', { waitUntil: 'networkidle' });
   check('deep link #hotels shows cards', await page.locator('#hotels .day-group[data-day="2026-08-14"]').isVisible() && (await page.locator('#hotels .data-card').count()) === 7);
 
