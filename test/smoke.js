@@ -78,12 +78,14 @@ function check(name, ok, detail) {
   check('New Glasgow card shows the walk-in rule', newGlasgowText.includes('Walk-in for a family of three') && !newGlasgowText.includes('Check/confirm ahead'));
 
   await page.click('#nav [data-section=attractions]');
-  const magneticCard = page.locator('#attractions .sugg-card').filter({ has: page.getByRole('heading', { name: 'Magnetic Hill Illusion', exact: true }) }).first();
+  check('attractions are grouped by trip day', (await page.locator('#attractions .day-group[data-day^="2026-08-"]').count()) >= 6);
+  const magneticCard = page.locator('#attractions .sugg-card:has(h3:text-is("Magnetic Hill Illusion"))').first();
   check('Magnetic Hill card uses the official address', (await magneticCard.textContent()).includes('2846 Mountain Road') && (await magneticCard.locator('a[href*="2846"]').count()) >= 1);
   const grandFallsCard = page.locator('#attractions .sugg-card').filter({ hasText: 'Grand Falls Gorge' }).first();
   check('Grand Falls is clearly a backup, not Plan A', (await grandFallsCard.textContent()).includes('Backup only') && !(await grandFallsCard.textContent()).includes('In plan'));
 
   await page.click('#nav [data-section=hotels]');
+  check('hotel nights are grouped day by day', (await page.locator('#hotels .day-group[data-day^="2026-08-"]').count()) === 7);
   check('every hotel night has two backups', (await page.locator('#hotels .hotel-backup').count()) === 14);
   check('hotel backups include booking links', (await page.locator('#hotels .hotel-backup a').count()) === 28);
   check('hotel backups are collapsed by default', (await page.locator('#hotels details.hotel-backups:not([open])').count()) === 7);

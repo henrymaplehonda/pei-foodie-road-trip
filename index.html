@@ -106,6 +106,7 @@ button,.button{min-height:44px;cursor:pointer;font:inherit}button:focus-visible,
 .sugg-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 14px}
 .sugg-toolbar .status-line{margin:0}
 .sugg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:16px}
+.day-group{margin:22px 0 0}.day-group:first-child{margin-top:0}.day-group-heading{margin:0 0 10px;font-size:20px;letter-spacing:-.02em}
 .sugg-card{position:relative;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;box-shadow:0 4px 18px rgba(31,41,51,.06)}
 .sugg-card.is-picked{border-color:#0f766e;box-shadow:0 0 0 2px rgba(15,118,110,.25),0 6px 20px rgba(15,118,110,.16)}
 .sugg-card.is-removed{opacity:.7;border-style:dashed}
@@ -2123,12 +2124,15 @@ setTimeout(function () {
       var isMagneticHill = attractionName.indexOf('magnetic hill illusion') !== -1;
       var isHopewell = attractionName.indexOf('hopewell rocks') !== -1;
       var correctedAddress = isMagneticHill ? '2846 Mountain Road, Moncton, NB E1G 2W7' : (attraction.Address || '');
+      var dayMatch = String(attraction.Day || '').match(/Aug\s+(\d{1,2})/i);
+      var dayId = dayMatch ? '2026-08-' + String(dayMatch[1]).padStart(2, '0') : '';
+      var tripDay = sourceDay(dayId);
       return {
         id: 'attr-' + slug(attraction.Attraction),
         name: attraction.Attraction,
         rating: Number(attraction.Rating || 0),
         photo: attraction['Photo URL'] || '', photoNote: attraction['Photo note'] || '',
-        dayLabel: isGrandFalls ? 'Backup only — not in Plan A' : (attraction.Day || ''), dayShort: isGrandFalls ? '' : (attraction.Day || ''),
+        dayId: dayId, dayLabel: isGrandFalls ? 'Backup only — not in Plan A' : (tripDay ? tripDay.dateLabel : (attraction.Day || '')), dayShort: isGrandFalls ? '' : (attraction.Day || ''),
         best: isHopewell ? 'Predicted access about 9:00 AM–2:45 PM; target stairs 10:45 and confirm with park staff.' : (attraction['Best time'] || ''),
         summary: isGrandFalls ? 'Scenic gorge retained only as a future-trip idea; the Aug 16 Plan A uses Edmundston and Hartland service breaks instead.' : (attraction.Description || ''),
         kid: isHopewell ? 'Timing-sensitive: use closed-toe grippy shoes, consider the shuttle, and treat 60–90 minutes on the floor as enough.' : (attraction['Kid fit'] || ''), foodWash: attraction['Food / Washroom'] || '',
@@ -2140,12 +2144,15 @@ setTimeout(function () {
       };
     });
     var extras = (rawData.attractionExtras || []).map(function (attraction) {
+      var dayMatch = String(attraction.fits || '').match(/Aug\s+(\d{1,2})/i);
+      var dayId = dayMatch ? '2026-08-' + String(dayMatch[1]).padStart(2, '0') : '';
+      var tripDay = sourceDay(dayId);
       return {
         id: attraction.id,
         name: attraction.name,
         rating: Number(attraction.rating || 0),
         photo: attraction.photo || '', photoNote: attraction.photoNote || '',
-        dayLabel: attraction.fits || attraction.region || 'Flexible', dayShort: '',
+        dayId: dayId, dayLabel: tripDay ? tripDay.dateLabel : (attraction.fits || attraction.region || 'Flexible'), dayShort: '',
         best: attraction.best || '',
         summary: attraction.desc || '',
         kid: attraction.kid || '', foodWash: '',
@@ -2162,11 +2169,11 @@ setTimeout(function () {
   function mountAttractionsSection() {
     var section = document.getElementById('attractions');
     section.innerHTML = [
-      '<h2 id="attractions-heading" class="section-heading">Attractions — best picks first</h2>',
-      '<p class="section-intro">Route attractions plus new nearby ideas, ranked with the highest-rated on top. <strong>☆ Pick</strong> pins a card to the top; <strong>✕ Remove</strong> hides it. Both save in this browser and are reversible anytime. Ratings are approximate Google scores. Photos load from Wikimedia Commons when online.</p>',
+      '<h2 id="attractions-heading" class="section-heading">Attractions — day by day</h2>',
+      '<p class="section-intro">Route attractions plus new nearby ideas, grouped in trip-day order and ranked within each day. <strong>☆ Pick</strong> pins a card within its day; <strong>✕ Remove</strong> hides it. Both save in this browser and are reversible anytime. Ratings are approximate Google scores. Photos load from Wikimedia Commons when online.</p>',
       '<div class="control-grid"><label for="attrSearchV2">Search attractions<input id="attrSearchV2" type="search" placeholder="Attraction, area, or detail" autocomplete="off"></label></div>',
       '<div class="sugg-toolbar"><div id="attrResultStatus" class="status-line" role="status" aria-live="polite"></div><div class="action-bar" style="margin:0" id="attrRemovedControls"></div></div>',
-      '<div id="attrResult" class="sugg-grid"></div>'
+      '<div id="attrResult"></div>'
     ].join('');
     document.getElementById('attrSearchV2').addEventListener('input', function (event) {
       uiFilters.attractionSearch = event.target.value;
@@ -2214,10 +2221,18 @@ setTimeout(function () {
       ? 'Viewing ' + rows.length + ' removed attraction' + (rows.length === 1 ? '' : 's') + '.'
       : 'Showing ' + rows.length + ' of ' + all.length + ' attractions · ' + pickedCount + ' picked · ' + removedAll.length + ' removed.';
     document.getElementById('attrRemovedControls').innerHTML = removedControlsHtml(removedAll.length, showRemoved);
+    var attractionGroups = operationalPlan.days.map(function (day) {
+      return { id: day.id, label: day.label, items: rows.filter(function (item) { return item.dayId === day.id; }) };
+    });
+    attractionGroups.push({ id: 'flexible', label: 'Flexible and backup ideas', items: rows.filter(function (item) {
+      return !item.dayId || !sourceDay(item.dayId);
+    }) });
     document.getElementById('attrResult').innerHTML = rows.length
-      ? rows.map(function (item) {
-          item.tags = [item.dayLabel, item.region].filter(Boolean);
-          return suggestionCard(item, attractionCardDetails(item));
+      ? attractionGroups.filter(function (group) { return group.items.length; }).map(function (group) {
+          return '<section class="day-group" data-day="' + escapeHtml(group.id) + '"><h3 class="day-group-heading">' + escapeHtml(group.label) + '</h3><div class="sugg-grid">' + group.items.map(function (item) {
+            item.tags = [item.dayLabel, item.region].filter(Boolean);
+            return suggestionCard(item, attractionCardDetails(item));
+          }).join('') + '</div></section>';
         }).join('')
       : '<div class="empty-state">' + (showRemoved ? 'Nothing removed with this search.' : 'No attractions match. Try another search.') + '</div>';
     wirePhotoFallbacks(document.getElementById('attrResult'));
@@ -2227,11 +2242,12 @@ setTimeout(function () {
     var section = document.getElementById('hotels');
     section.innerHTML = [
       '<h2 id="hotels-heading" class="section-heading">Hotels</h2>',
-      '<p class="section-intro">Book the preferred hotel first, but keep the two alternatives underneath ready in case it is sold out. Availability and rates are live, so use refundable bookings where possible and confirm parking, breakfast, pool hours, and cancellation terms before paying.</p>',
+      '<p class="section-intro">Hotels are grouped in overnight order, day by day. Book the preferred hotel first, but keep the two alternatives underneath ready in case it is sold out. Availability and rates are live, so use refundable bookings where possible and confirm parking, breakfast, pool hours, and cancellation terms before paying.</p>',
       '<div class="mobile-card-list">',
       rawData.hotels.map(function (hotel) {
         var alternatives = alternativesForHotel(hotel);
         return [
+          '<section class="day-group" data-day="', escapeHtml(hotel.Date || ''), '"><h3 class="day-group-heading">', escapeHtml(hotel['Date label'] || hotel.Date || ''), ' — ', escapeHtml(hotel.Base || ''), '</h3>',
           '<article class="data-card"><h3>', escapeHtml(hotel['Recommended hotel'] || ''), '</h3>',
           '<p><span class="tag">Preferred stay</span></p>',
           '<p><strong>', escapeHtml(hotel['Date label'] || hotel.Date || ''), '</strong> · ', escapeHtml(hotel.Base || ''), '</p>',
@@ -2242,7 +2258,7 @@ setTimeout(function () {
           alternatives.map(function (alternative, index) {
             return '<div class="hotel-backup"><p><span class="tag">Backup ' + (index + 1) + '</span></p><h4>' + escapeHtml(alternative.name) + '</h4><p>' + escapeHtml(alternative.fit) + '</p><p class="small muted">' + escapeHtml(alternative.address) + '</p><div class="links">' + externalLink(mapSearchUrl(alternative.address), 'Map') + externalLink(alternative.source, 'Check rooms') + '</div></div>';
           }).join(''),
-          '</details></article>'
+          '</details></article></section>'
         ].join('');
       }).join(''),
       '</div>'
