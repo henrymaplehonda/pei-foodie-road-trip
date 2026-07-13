@@ -57,7 +57,7 @@ function check(name, ok, detail) {
   check('countdown card renders', (await page.locator('.countdown-card').count()) === 1);
   check('header uses the minimum octane requirement', (await page.locator('header').innerText()).includes('91 AKI minimum'));
 
-  const tabs = ['live', 'overview', 'daybyday', 'food', 'attractions', 'hotels', 'fuel', 'sanity', 'checklist', 'offline', 'sources'];
+  const tabs = ['live', 'overview', 'daybyday', 'food', 'attractions', 'hotels', 'sanity', 'checklist', 'offline'];
   for (const tab of tabs) {
     await page.click(`#nav [data-section=${tab}]`);
     await page.waitForTimeout(100);
@@ -65,6 +65,10 @@ function check(name, ok, detail) {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     check('tab ' + tab + ' visible, no overflow', visible && overflow <= 0, 'overflow=' + overflow + 'px');
   }
+  check('board hides Sources, Fuel, and the travel-mode selector',
+    (await page.locator('#nav [data-section=sources]').count()) === 0 &&
+    (await page.locator('#nav [data-section=fuel]').count()) === 0 &&
+    (await page.locator('#liveMode').count()) === 0);
 
   check('route map renders 7 stops', (await page.locator('.route-map .city-dot').count()) === 7);
   check('route map labels Hopewell as estimated and staff-controlled', (await page.locator('.route-map').textContent()).includes('Estimated 9 AM–2:45 PM · confirm with staff'));
@@ -93,9 +97,9 @@ function check(name, ok, detail) {
   check('hotel day groups are visible', await page.locator('#hotels .day-group[data-day="2026-08-14"]').isVisible());
   check('every hotel night has two backups', (await page.locator('#hotels .hotel-backup').count()) === 14);
   check('hotel backups include booking links', (await page.locator('#hotels .hotel-backup a').count()) === 28);
+  check('hotel options state outdoor parking and easy access', (await page.locator('#hotels .hotel-backup .category-drive').count()) === 14 && (await page.locator('#hotels .hotel-backup').allTextContents()).every((text) => text.includes('Parking:') && text.includes('Access:')));
   check('hotel backups are collapsed by default', (await page.locator('#hotels details.hotel-backups:not([open])').count()) === 7);
 
-  await page.click('#nav [data-section=fuel]');
   const fuelText = await page.locator('#fuel').innerText();
   check('fuel plan uses family-safe quarter-tank trigger', fuelText.includes('25%') && fuelText.includes('91 AKI minimum') && fuelText.includes('120–150 km'));
   check('fuel plan removed old low-fuel rule', !fuelText.includes('10%') && !fuelText.includes('conservative 800'));
@@ -148,11 +152,6 @@ function check(name, ok, detail) {
   await page.click('#nav [data-section=sanity]');
   check('high-risk drive cards start expanded', (await page.locator('#sanity details.warn[open]').count()) >= 1);
   check('lower-risk drive cards start collapsed', (await page.locator('#sanity details:not(.warn):not([open])').count()) >= 1);
-
-  await page.click('#nav [data-section=sources]');
-  const sourcesText = await page.locator('#sources').innerText();
-  check('Sources tab matches the safer fuel rule', sourcesText.includes('refuel by 25%') && !sourcesText.includes('10%') && !sourcesText.includes('Sackville'));
-  check('Sources tab labels Hopewell access as staff-controlled', sourcesText.includes('staff discretion'));
 
   // Deep link boot
   await page.goto(base + '/index.html#checklist', { waitUntil: 'networkidle' });

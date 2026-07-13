@@ -1612,11 +1612,9 @@ setTimeout(function () {
       ['food', 'Food picks'],
       ['attractions', 'Attractions'],
       ['hotels', 'Hotels'],
-      ['fuel', 'Fuel'],
       ['sanity', 'Drive sanity'],
       ['checklist', 'Checklist'],
-      ['offline', 'Offline pack'],
-      ['sources', 'Sources']
+      ['offline', 'Offline pack']
     ];
     var nav = document.getElementById('nav');
     nav.innerHTML = tabs.map(function (tab, index) {
@@ -1644,7 +1642,7 @@ setTimeout(function () {
 
   function validSectionId(value) {
     var id = String(value || '').replace(/^#/, '');
-    return document.querySelector('main > section#' + (/^[a-z]+$/.test(id) ? id : 'x')) ? id : '';
+    return document.querySelector('#nav [data-section="' + (/^[a-z]+$/.test(id) ? id : 'x') + '"]') ? id : '';
   }
 
   function activateSection(sectionId, moveFocus, fromHistory) {
@@ -2526,11 +2524,10 @@ setTimeout(function () {
     var tideDetails = day.id === operationalPlan.tidePlan.date ? '<div class="mode-note safe"><strong>Hopewell tide plan:</strong> ' + escapeHtml(operationalPlan.tidePlan.status) + '.<br>' + escapeHtml(operationalPlan.tidePlan.tides) + '<br><strong>' + escapeHtml(operationalPlan.tidePlan.accessWindow) + '.</strong> Park hours ' + escapeHtml(operationalPlan.tidePlan.parkHours) + '. Re-verify on ' + escapeHtml(operationalPlan.tidePlan.verifyAfter) + '.<div class="action-bar">' + externalLink(operationalPlan.tidePlan.sourceUrl, 'Official tide table', 'button subtle') + externalLink(operationalPlan.tidePlan.chsUrl, 'CHS predictions', 'button subtle') + '</div></div>' : '';
     section.innerHTML = [
       '<h2 id="live-heading" class="section-heading">Trip control</h2>',
-      '<p class="section-intro">Pick the active day and your delay mode. The plan changes only when you choose it; it does not guess from the clock.</p>',
+      '<p class="section-intro">Pick the active day to see the next stop, route, and progress.</p>',
       renderTodayBanner(day),
       '<div class="control-grid" aria-label="Trip control settings">',
       '<label for="liveDay">Active day<select id="liveDay">', operationalPlan.days.map(function (item) { return '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(item.label) + '</option>'; }).join(''), '</select></label>',
-      '<label for="liveMode">Travel mode<select id="liveMode"><option value="preview">Preview / pre-trip</option><option value="on-time">On time</option><option value="late30">30+ minutes late</option><option value="late60">60+ minutes late</option></select></label>',
       '</div>',
       '<div class="trip-control-grid">',
       '<article class="next-stop"><p class="route-label">', escapeHtml(modeName), ' · ', escapeHtml(day.risk), ' risk</p>',
@@ -2545,16 +2542,9 @@ setTimeout(function () {
       renderExpenseCard()
     ].join('');
     document.getElementById('liveDay').value = day.id;
-    document.getElementById('liveMode').value = mode;
     document.getElementById('liveDay').addEventListener('change', function (event) {
       tripState.activeDate = event.target.value;
       uiFilters.dayId = event.target.value;
-      persist();
-      renderDayContent();
-      renderLive();
-    });
-    document.getElementById('liveMode').addEventListener('change', function (event) {
-      tripState.modes[day.id] = event.target.value;
       persist();
       renderDayContent();
       renderLive();
