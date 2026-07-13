@@ -35,7 +35,7 @@ section.active{display:block}
 .controls{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
 input,select{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;min-width:200px}
 .timeline{display:grid;gap:12px}
-.stop{display:grid;grid-template-columns:90px 1fr;gap:12px;border-left:4px solid var(--accent2);background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}
+.stop{display:grid;grid-template-columns:90px 1fr;gap:12px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:16px;padding:12px}
 .stop .time{font-weight:900;color:var(--accent)}
 .stop .type{display:inline-block;font-size:12px;padding:3px 8px;border-radius:999px;background:var(--soft);margin-left:8px}
 .links a,.button{display:inline-block;margin:6px 6px 0 0;padding:8px 10px;border-radius:10px;background:#fff;border:1px solid var(--line);color:var(--accent2);font-weight:700;text-decoration:none}
@@ -87,17 +87,18 @@ button,.button{min-height:44px;cursor:pointer;font:inherit}button:focus-visible,
 .ticket-alert{border-left:5px solid #0f5b63;background:#ecfeff;border-radius:12px;padding:12px 14px;margin:12px 0}.ticket-alert.required{border-color:var(--warn);background:#fff7ed}.ticket-alert h4{margin:0 0 6px;font-size:15px}.ticket-alert p{margin:6px 0}.ticket-alert .action-bar{margin-top:8px}
 .attraction-quality{border-left:5px solid var(--ok);background:#ecfdf5;border-radius:12px;padding:12px 14px;margin:12px 0}.attraction-quality h4{margin:0 0 6px;font-size:15px}.attraction-quality p{margin:6px 0}.attraction-quality .action-bar{margin-top:8px}
 .day-summary{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start}.day-summary h2{margin:0 0 8px}.day-summary .summary-actions{min-width:190px}.route-label{font-size:12px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
-.stop{position:relative}.stop.is-complete{opacity:.68;border-left-color:var(--ok)}.stop.is-complete h3{text-decoration:line-through}.stop.is-skipped{display:none}.stop-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.stop-actions button{min-height:38px;padding:7px 10px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--accent2);font-weight:800}.stop-actions button[aria-pressed="true"]{background:#ecfdf5;border-color:#0f766e;color:#065f46}
+.stop{position:relative}.stop.priority-optional{border-left-color:#94a3b8}.stop.priority-conditional{border-left-color:var(--warn)}.stop.is-complete{opacity:.68;border-left-color:var(--ok)}.stop.is-complete h3{text-decoration:line-through}.stop.is-skipped{display:none}.stop-heading{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 7px}.stop-heading h3{margin:0}.priority-badge,.kind-badge{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:900;letter-spacing:.02em;text-transform:uppercase}.priority-badge{background:#dff6f3;color:#0f5b63}.priority-badge.optional{background:#eef2f6;color:#475569}.priority-badge.conditional{background:#fff0d5;color:#92400e}.kind-badge{background:var(--soft);color:#475569}.stop-more{margin:10px 0 0;border-top:1px dashed var(--line);padding-top:8px}.stop-more summary{cursor:pointer;font-weight:800;color:var(--accent2);min-height:32px;display:flex;align-items:center}.stop-more[open] summary{margin-bottom:8px}.stop-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.stop-actions button{min-height:44px;padding:8px 11px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--accent2);font-weight:800}.stop-actions button[data-stop-action="toggle"]{background:#ecfdf5;border-color:#86efac;color:#065f46}.stop-actions button[data-stop-action="skip"]{background:var(--surface-alt);color:var(--muted)}.stop-actions button[aria-pressed="true"]{background:#ecfdf5;border-color:#0f766e;color:#065f46}
 .meal-plan{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:14px 0}.meal-plan-card{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--surface)}.meal-plan-card .tag{margin-top:0}.meal-plan-card h3{margin:8px 0}.meal-plan-card p{margin:6px 0}
 .mobile-card-list{display:grid;gap:12px}.data-card{border:1px solid var(--line);border-radius:16px;padding:15px;background:var(--surface);box-shadow:0 3px 12px rgba(31,41,51,.04)}.data-card h3{margin:0 0 7px}.data-card dl{display:grid;grid-template-columns:minmax(100px,.45fr) 1fr;gap:8px 12px;margin:12px 0 0}.data-card dt{font-weight:800;color:#475569}.data-card dd{margin:0}.data-card .links{margin-top:8px}
-.hotel-backups{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}.hotel-backups h4{margin:0 0 4px;font-size:15px}.hotel-backups-intro{margin:0 0 10px;color:var(--muted);font-size:13px}.hotel-backup{padding:11px 0;border-top:1px solid var(--line)}.hotel-backup:first-of-type{border-top:0}.hotel-backup p{margin:4px 0;font-size:14px}.hotel-backup .tag{margin-left:0}.hotel-backup .links{margin-top:6px}
+.hotel-backups{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)}.hotel-backups summary{cursor:pointer;font-weight:900;color:var(--accent2);min-height:40px;display:flex;align-items:center}.hotel-backups h4{margin:0 0 4px;font-size:15px}.hotel-backups-intro{margin:0 0 10px;color:var(--muted);font-size:13px}.hotel-backup{padding:11px 0;border-top:1px solid var(--line)}.hotel-backup:first-of-type{border-top:0}.hotel-backup p{margin:4px 0;font-size:14px}.hotel-backup .tag{margin-left:0}.hotel-backup .links{margin-top:6px}
+.safety-fallback{border-left:5px solid var(--warn);background:#fff7ed;border-radius:12px;padding:12px 14px;margin:10px 0 14px}.safety-fallback strong{color:#92400e}.day-nav-actions{display:flex;justify-content:space-between;gap:8px;margin-top:16px}.day-nav-actions button{min-height:44px}
 .checklist-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin:0 0 14px}.checklist-row{display:grid;grid-template-columns:auto minmax(180px,1fr) minmax(340px,.9fr);gap:14px;align-items:start;padding:14px;border:1px solid var(--line);border-radius:15px;background:var(--surface);margin:0 0 10px}.checklist-row.is-done{background:#f0fdf4;border-color:#86efac}.checklist-row input[type="checkbox"]{width:22px;height:22px;margin:4px 0 0;accent-color:#0f766e}.checklist-row h3{margin:0 0 4px;font-size:16px}.checklist-row p{margin:5px 0;font-size:14px}.checklist-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}.checklist-fields label{font-size:12px;font-weight:800;display:grid;gap:4px;color:#475569}.checklist-fields input,.checklist-fields select{padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:#fff}
 .offline-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}.offline-grid .card{height:100%}.offline-grid h3{margin-top:0}.offline-list{padding-left:20px;margin:8px 0}.offline-list li{margin:7px 0}.road-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.road-link{display:block;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;text-decoration:none;color:var(--ink);font-weight:800}.road-link span{display:block;font-weight:400;color:var(--muted);font-size:13px;margin-top:3px}
 .note{padding:12px 14px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-size:14px}.empty-state{padding:24px;text-align:center;border:1px dashed var(--line);border-radius:16px;color:var(--muted);background:#fff}
 .external-note{font-size:12px;color:var(--muted);margin:6px 0 0}.copy-address{font-size:13px}
 .print-only{display:none}
-@media(max-width:800px){main{padding:18px 12px max(34px,env(safe-area-inset-bottom))}.privacy-banner{margin:10px 12px 0}.navwrap{padding:9px 12px;scroll-snap-type:x proximity;scroll-padding-inline:12px;scrollbar-width:none;-ms-overflow-style:none}.navwrap::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}.navbtn{min-height:44px;padding:9px 13px;scroll-snap-align:start}.trip-control-grid{grid-template-columns:1fr}.day-summary{grid-template-columns:1fr}.day-summary .summary-actions{min-width:0}.checklist-row{grid-template-columns:auto 1fr}.checklist-fields{grid-column:2;grid-template-columns:1fr 1fr}.data-card dl{grid-template-columns:1fr}.data-card dt{margin-top:4px}.small{font-size:14px}.stop .time{font-size:16px}.controls{display:block}.controls>*{margin:0 0 9px;width:100%;min-width:0}.source-list{columns:1}}
-@media(max-width:480px){header{padding:24px 16px 18px}h1{font-size:clamp(30px,10vw,40px);line-height:1}.sub{margin-top:12px;font-size:15px;line-height:1.4;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}.pills{gap:7px;margin-top:16px}.pill{padding:7px 10px;font-size:12px}.privacy-banner{padding:10px 12px;font-size:13px;line-height:1.4}.section-heading{font-size:28px;margin-bottom:10px}.section-intro{margin-bottom:15px}.card,.quick-card,.next-stop,.data-card{border-radius:15px;padding:14px}.next-stop{padding:18px}.next-stop h3{font-size:21px}.action-bar{display:grid;grid-template-columns:1fr;gap:8px}.action-bar .button,.action-bar button{width:100%;margin:0;text-align:center}.stop-actions{display:grid;grid-template-columns:1fr 1fr}.stop-actions button{width:100%;min-height:42px}.meal{padding:8px;text-align:left}.checklist-toolbar{align-items:stretch}.checklist-toolbar .action-bar{width:100%}.checklist-fields{grid-template-columns:1fr}.checklist-fields{grid-column:1/-1}.checklist-row{grid-template-columns:auto 1fr;gap:10px}.checklist-row>div:not(.checklist-fields){min-width:0}.offline-grid{grid-template-columns:1fr}.road-grid{grid-template-columns:1fr}.attr-grid{grid-template-columns:1fr}input,select{font-size:16px}}
+@media(max-width:800px){main{padding:18px 12px max(34px,env(safe-area-inset-bottom))}.privacy-banner{margin:10px 12px 0}.navwrap{padding:9px 12px;scroll-snap-type:x proximity;scroll-padding-inline:12px;scrollbar-width:none;-ms-overflow-style:none}.navwrap::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}.navbtn{min-height:44px;padding:9px 13px;scroll-snap-align:start}.trip-control-grid{grid-template-columns:1fr}.day-summary{grid-template-columns:1fr}.day-summary .summary-actions{min-width:0}.checklist-row{grid-template-columns:auto 1fr}.checklist-fields{grid-column:2;grid-template-columns:1fr 1fr}.data-card dl{grid-template-columns:1fr}.data-card dt{margin-top:4px}.small{font-size:14px}.stop .time{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:16px}.stop .time br{display:none}.stop .type{margin-left:0}.controls{display:block}.controls>*{margin:0 0 9px;width:100%;min-width:0}.source-list{columns:1}}
+@media(max-width:480px){header{padding:24px 16px 18px}h1{font-size:clamp(30px,10vw,40px);line-height:1}.sub{margin-top:12px;font-size:15px;line-height:1.4;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}.pills{gap:7px;margin-top:16px}.pill{padding:7px 10px;font-size:12px}.privacy-banner{padding:10px 12px;font-size:13px;line-height:1.4}.section-heading{font-size:28px;margin-bottom:10px}.section-intro{margin-bottom:15px}.card,.quick-card,.next-stop,.data-card{border-radius:15px;padding:14px}.next-stop{padding:18px}.next-stop h3{font-size:21px}.action-bar{display:grid;grid-template-columns:1fr;gap:8px}.action-bar .button,.action-bar button{width:100%;margin:0;text-align:center}.stop-actions{display:grid;grid-template-columns:1fr 1fr}.stop-actions button{width:100%;min-height:44px}.stop-actions .copy-address{grid-column:1/-1}.meal{padding:8px;text-align:left}.checklist-toolbar{align-items:stretch}.checklist-toolbar .action-bar{width:100%}.checklist-fields{grid-template-columns:1fr}.checklist-fields{grid-column:1/-1}.checklist-row{grid-template-columns:auto 1fr;gap:10px}.checklist-row>div:not(.checklist-fields){min-width:0}.offline-grid{grid-template-columns:1fr}.road-grid{grid-template-columns:1fr}.attr-grid{grid-template-columns:1fr}.day-nav-actions{display:grid;grid-template-columns:1fr 1fr}input,select{font-size:16px}}
 @media(max-width:360px){header{padding-top:20px}.sub{-webkit-line-clamp:3}.pills .pill:nth-child(n+3){display:none}}
 @media print{header{padding:16px;background:#fff;color:#111827}.privacy-banner,.skip-link,nav,.controls,.action-bar,.stop-actions,.checklist-toolbar,.checklist-fields,.links,.external-note{display:none!important}section,section.active{display:block!important}.print-only{display:block}.trip-control-grid{display:block}.next-stop{background:#fff;color:#111827;border:1px solid #111;box-shadow:none}.next-stop .muted{color:#374151}.card,.data-card,.checklist-row,.stop{box-shadow:none;break-inside:avoid}.checklist-row{grid-template-columns:auto 1fr}.checklist-row input{display:block}.source-list{columns:1}}
 </style>
@@ -208,6 +209,8 @@ body{overflow-x:clip}
 :root[data-theme="dark"] td,:root[data-theme="dark"] th{border-color:var(--line)}
 :root[data-theme="dark"] .privacy-banner,:root[data-theme="dark"] .mode-note,:root[data-theme="dark"] .warn,:root[data-theme="dark"] .ticket-alert.required{background:#33261380;border-color:#7c5a2b;color:#f5d9ac}
 :root[data-theme="dark"] .mode-note{background:#332613}
+:root[data-theme="dark"] .safety-fallback{background:#332613;border-color:#7c5a2b;color:#f5d9ac}
+:root[data-theme="dark"] .safety-fallback strong{color:#f0b25e}
 :root[data-theme="dark"] .warn{background:#2c2210}
 :root[data-theme="dark"] .mode-note strong,:root[data-theme="dark"] .privacy-banner strong{color:#f0b25e}
 :root[data-theme="dark"] .mode-note.safe,:root[data-theme="dark"] .attraction-quality{background:#11291f;border-color:#1f5c40;color:#c7ecd9}
@@ -223,6 +226,7 @@ body{overflow-x:clip}
 :root[data-theme="dark"] .plan-flag.new{color:#67e8f9;border-color:#164e63}
 :root[data-theme="dark"] .progress-meter{background:#324049}
 :root[data-theme="dark"] .mr-pos{background:var(--soft);color:var(--ink)}
+:root[data-theme="dark"] .priority-badge{background:#153a3d;color:#8ce3e8}:root[data-theme="dark"] .priority-badge.optional{background:#2a3441;color:#c2cbd6}:root[data-theme="dark"] .priority-badge.conditional{background:#4a3517;color:#f5d9ac}:root[data-theme="dark"] .kind-badge{background:#2a3441;color:#c2cbd6}:root[data-theme="dark"] .stop-more{border-color:var(--line)}
 :root[data-theme="dark"] .skip-link{background:var(--panel);color:var(--ink)}
 :root[data-theme="dark"] .attr img{background:var(--soft)}
 :root[data-theme="dark"] .card,:root[data-theme="dark"] .quick-card,:root[data-theme="dark"] .data-card,:root[data-theme="dark"] .meal-plan-card,:root[data-theme="dark"] .milestone,:root[data-theme="dark"] .tel-link{background:var(--panel);border-color:var(--line);color:var(--ink)}
@@ -240,12 +244,12 @@ button,textarea,.theme-toggle,.action-bar,.stop-actions,.expense-form,.checklist
 <header>
   <div class="wrap">
     <h1>Henry Family Foodie Road Trip</h1>
-    <p class="sub">Vaughan → Montréal → Québec City → Fredericton → PEI → Moncton → Québec City → Vaughan. Built for a wife, 6-year-old son, 6:30 AM wake-ups, two-driver rhythm, foodie lunches/dinners, minimized premium-fuel stops, washroom breaks, hotel rhythm, and realistic drive-time pressure.</p>
+    <p class="sub">Vaughan → Montréal → Québec City → Fredericton → PEI → Moncton → Québec City → Vaughan. Built for a wife, 6-year-old son, early wake-ups, two-driver rhythm, foodie lunches/dinners, family-safe premium-fuel stops, washroom breaks, hotel rhythm, and realistic drive-time pressure.</p>
     <div class="pills">
       <span class="pill">Aug 14–21, 2026</span>
       <span class="pill">8 calendar days / 7 nights</span>
-      <span class="pill">2025 Volvo XC60 · 91 AKI recommended</span>
-      <span class="pill">Minimal fuel stops · 10% trigger</span>
+      <span class="pill">2025 Volvo XC60 · 91 AKI minimum</span>
+      <span class="pill">Family-safe fuel · 25% trigger</span>
     </div>
   </div>
 </header>
@@ -268,7 +272,7 @@ button,textarea,.theme-toggle,.action-bar,.stop-actions,.expense-form,.checklist
     </div>
     <div class="card half">
       <h2>Fuel strategy</h2>
-      <p>Start with a full tank, then minimize fuel stops: aim to refuel only when the dash is near 10% remaining, about 80 km on the conservative 800 km range. Treat this as a low-fuel trigger, not a comfort top-up habit, especially in rural NB / PEI or after hours.</p>
+      <p>Start with a full tank, then refuel by a quarter tank remaining—or sooner when the display approaches 120–150 km, weather is poor, or the next reliable 91 AKI station is uncertain. Never let a fuel target compete with the Hopewell tide window.</p>
     </div>
   </div>
 </section>
@@ -290,7 +294,7 @@ button,textarea,.theme-toggle,.action-bar,.stop-actions,.expense-form,.checklist
   </div>
   <div class="card full ok">
     <h2>Reservation priority</h2>
-    <p>Book or confirm the dinners that drive the trip: <b>La Bûche</b>, <b>Wolastoq Wharf</b>, <b>New Glasgow Lobster Suppers</b>, <b>Slaymaker & Nichols</b>, and <b>Tide & Boar</b>. For lunch, protect speed unless the day is light.</p>
+    <p>Book or confirm the dinners that drive the trip: <b>La Bûche</b>, <b>Wolastoq Wharf</b>, <b>Slaymaker & Nichols</b>, and <b>Tide & Boar</b>. <b>New Glasgow Lobster Suppers is walk-in for a family of three</b>, so arrive early and expect a queue.</p>
   </div>
   <div id="foodContainer" class="timeline" style="margin-top:16px"></div>
 </section>
@@ -307,7 +311,7 @@ button,textarea,.theme-toggle,.action-bar,.stop-actions,.expense-form,.checklist
 </section>
 
 <section id="fuel">
-  <div class="card full"><h2>Minimal fuel plan</h2><p class="muted">Based on 2025 Volvo XC60, premium recommended 91 AKI, ~71 L tank, conservative 800 km highway range, and a 10% / ~80 km remaining trigger.</p></div>
+  <div class="card full"><h2>Family-safe fuel plan</h2><p class="muted">Based on a 2025 Volvo XC60 with a ~71 L tank and 91 AKI minimum. Refuel by 25% remaining; the live range display and the next reliable station override any fixed-distance estimate.</p></div>
   <div id="fuelContainer" style="margin-top:16px"></div>
 </section>
 
@@ -481,11 +485,17 @@ function renderSources(){
   const all=[...baseSources,...foodSources].filter(s=>s.url);
   document.getElementById('sourceContainer').innerHTML = all.map(s=>`<li><b>${esc(s.name || '')}</b>: ${esc(s.fact || '')}<br><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url)}</a></li>`).join('');
 }
-// Fallback renderers only: the trip-control script below rebuilds every
-// section, so skip this pass unless that script failed to boot.
+// Safe boot-failure fallback: never surface the older embedded schedule.
+// The operational app below is the only renderer allowed to use trip data.
+function renderLegacyFailureNotice() {
+  const nav = document.getElementById('nav');
+  if (nav) nav.innerHTML = '';
+  const main = document.querySelector('main');
+  if (!main || document.getElementById('tripBootFailure')) return;
+  main.insertAdjacentHTML('afterbegin', '<div id="tripBootFailure" class="card full warn" role="alert"><h2>Trip controls did not start</h2><p>Reload this page before using the itinerary. The older embedded schedule is intentionally unavailable because its routes and safety rules have been replaced.</p></div>');
+}
 setTimeout(function () {
-  if (window.__tripControlBooted) return;
-  try { initDayByDay(); initFood(); initAttractions(); renderHotels(); renderFuel(); renderSanity(); renderSources(); } catch (error) { console.warn('Legacy fallback render failed:', error); }
+  if (!window.__tripControlBooted) renderLegacyFailureNotice();
 }, 0);
 </script>
 <script id="trip-control-script">
@@ -548,7 +558,7 @@ setTimeout(function () {
     ],
     'Moncton': [
       { name: 'Hampton Inn & Suites by Hilton Moncton', address: '700 Mapleton Road, Moncton, NB E1G 0L7', fit: 'Trans-Canada-accessible family fallback with breakfast and an indoor pool; farther from the airport-side original.', source: 'https://www.hilton.com/en/hotels/yqmnbhx-hampton-suites-moncton/' },
-      { name: 'Quality Inn Airport', address: '370 Dieppe Boulevard, Dieppe, NB E1A 8H4', fit: 'Airport-side substitute close to the planned route, with breakfast and an indoor pool; verify parking terms.', source: 'https://www.choicehotels.com/en-ca/new-brunswick/dieppe/quality-inn-hotels/cn942' }
+      { name: 'Quality Inn Airport', address: '370 Dieppe Boulevard, Dieppe, NB E1A 8H4', fit: 'Airport-side substitute close to the planned route, with breakfast and an indoor pool; verify parking terms.', source: 'https://www.choicehotels.com/en-ca/new-brunswick/dieppe/quality-inn-hotels/cna72?pmf=canada' }
     ]
   };
 
@@ -734,12 +744,12 @@ setTimeout(function () {
       required: true
     },
     hopewell: {
-      label: 'Tide window set — buy admission now',
+      label: 'Tide window set — admission can wait',
       cta: 'Buy Hopewell tickets',
       url: 'https://www.pxw1.snb.ca/SNB9000/product.aspx?ProductID=A001PHR0001&l=e',
       secondaryCta: 'Tide table',
       secondaryUrl: 'https://www.parcsnbparks.ca/en/parks/33/hopewell-rocks-provincial-park/26/tide-tables',
-      note: 'The Aug 19 access window is confirmed (ocean floor ~9:00 AM-2:45 PM around the 11:52 AM low tide), so buy official admission now. NB Parks says 2026 tickets are valid for any two consecutive days.',
+      note: 'CHS predicts low tide at 11:52 AM. Actual ocean-floor access is controlled by park staff and may vary; advance admission does not improve access, so recheck 24–48 hours before and follow staff direction.',
       required: true
     },
     greenGables: {
@@ -768,7 +778,7 @@ setTimeout(function () {
   var ticketGuidanceList = [
     { name: 'Montmorency Falls tickets', fact: 'Sépaq strongly recommends buying daily access online before arrival.', url: ticketGuidance.montmorency.url },
     { name: 'Montmorency cable car tickets', fact: 'Cable car tickets are separate from daily access if you want the easier family route.', url: ticketGuidance.montmorency.secondaryUrl },
-    { name: 'Hopewell Rocks tickets', fact: 'Official 2026 admission is valid for any two consecutive days.', url: ticketGuidance.hopewell.url },
+    { name: 'Hopewell Rocks tickets', fact: 'Advance admission does not improve ocean-floor access; park staff control the actual access window.', url: ticketGuidance.hopewell.url },
     { name: 'Green Gables Canada Strong Pass', fact: 'Admission is free June 19 to September 7, 2026, with very high visitation expected.', url: ticketGuidance.greenGables.url },
     { name: 'PEI National Park Canada Strong Pass', fact: 'Cavendish Beach / PEI National Park admission is free during the Aug 18 visit window.', url: ticketGuidance.cavendish.url }
   ];
@@ -886,15 +896,15 @@ setTimeout(function () {
   var operationalPlan = {
     schemaVersion: 2,
     generatedOn: '2026-07-10',
-    roughTotalKm: 3907,
+    roughTotalKm: 3855,
     tidePlan: {
       date: '2026-08-19',
       timeZone: 'America/Moncton',
-      status: 'confirmed — CHS predictions, re-verify 24-48h before the visit',
+      status: 'CHS prediction confirmed; actual floor access remains at park staff discretion',
       verifyAfter: '2026-08-17',
       parkHours: '08:00–20:00 Atlantic',
       tides: 'Aug 19 (ADT): high 5:23 AM (11.33 m) · low 11:52 AM (2.48 m) · high 5:45 PM (11.32 m)',
-      accessWindow: 'Ocean floor roughly 9:00 AM–2:45 PM; be at the beach stairs by 11:00 AM',
+      accessWindow: 'Target park entrance 10:15–10:30 and beach stairs by 10:45; never rely on the estimated 2:45 PM cutoff without staff confirmation',
       sourceUrl: 'https://www.parcsnbparks.ca/en/parks/33/hopewell-rocks-provincial-park/26/tide-tables',
       chsUrl: 'https://www.tides.gc.ca/en/stations/00170',
       arrivalBufferMin: 45,
@@ -917,16 +927,17 @@ setTimeout(function () {
         emergency: 'Hotel check-in and Time Out Market are the no-friction finish.',
         stops: [
           sourceStop('2026-08-14', 'Depart Vaughan', { id: 'd1-depart', time: '06:45', zone: 'ET', leg: '0 km', priority: 'required', notes: 'Wake 06:30, load final bags, bathroom, and roll before traffic builds.' }),
-          sourceStop('2026-08-14', 'Esso Circle K Maple', { id: 'd1-fuel', time: '06:55', zone: 'ET', priority: 'required', notes: 'Start-full exception to the 10% rule. Fill with 91 AKI premium and reset the trip odometer; after this, do not top up by habit.' }),
+          sourceStop('2026-08-14', 'Esso Circle K Maple', { id: 'd1-fuel', time: '06:55', zone: 'ET', priority: 'required', notes: 'Start full with 91 AKI minimum and reset the trip odometer. Refuel by a quarter tank remaining, sooner if the live range approaches 120–150 km or the next reliable station is uncertain.' }),
           sourceStop('2026-08-14', 'The Big Apple', { id: 'd1-big-apple', time: '08:10', zone: 'ET', leg: 'About 105 km / 1 h 15', priority: 'optional', skipAt: 20, saves: '45 min', notes: 'Corrected order: stop here before Napanee. Keep it short if traffic builds.' }),
-          sourceStop('2026-08-14', 'ONroute Napanee', { id: 'd1-napanee', time: '09:50', zone: 'ET', leg: 'About 120 km / 1 h 10', priority: 'required', notes: 'Canonical quick lunch, washroom, and stretch stop. This replaces the off-route lunch recommendation.' }),
+          sourceStop('2026-08-14', 'ONroute Napanee', { id: 'd1-napanee', time: '09:50', zone: 'ET', kind: 'Morning snack / washroom', leg: 'About 120 km / 1 h 10', priority: 'required', notes: 'Quick snack, washroom and stretch—not lunch. Keep a proper packed lunch ready for Morrisburg.' }),
           sourceStop('2026-08-14', 'Brockville Railway Tunnel', { id: 'd1-brockville', time: '12:35', zone: 'ET', leg: 'About 185 km / 1 h 50', priority: 'optional', skipAt: 20, saves: '45 min', notes: 'Only if the family needs a real movement break and you are on schedule.' }),
-          customStop({ id: 'd1-prehistoric', dayId: '2026-08-14', time: '13:50', zone: 'ET', title: 'Prehistoric World dinosaur stretch', kind: 'Kids attraction / stretch', priority: 'required', address: '5446 Upper Canada Rd, Morrisburg, ON K0C 1X0', city: 'Morrisburg, ON', leg: 'About 70 km / 45 min from Brockville; about 170 km / 1 h 45 to Montreal', timeBudget: '35-45 min', notes: 'From the original plan. This is the mandatory before-Montreal cadence stop so no final driving stretch runs past two hours. If closed, do a short Upper Canada / Morrisburg waterfront walk instead.', food: 'No concessions expected; use packed snacks and washroom before/after.', kidPlan: 'High-value dinosaur walk for a 6-year-old after highway time.', mapUrl: mapSearchUrl('5446 Upper Canada Rd, Morrisburg, ON K0C 1X0'), sourceUrl: 'https://prehistoricworld.ca/' }),
+          customStop({ id: 'd1-prehistoric', dayId: '2026-08-14', time: '13:30–14:00', zone: 'ET', title: 'Morrisburg packed lunch + Prehistoric World', kind: 'Lunch / kids attraction', priority: 'conditional', conditional: true, skipAt: 20, saves: '60 min', address: '5446 Upper Canada Rd, Morrisburg, ON K0C 1X0', city: 'Morrisburg, ON', leg: 'About 70 km / 45 min from Brockville; about 170 km / 1 h 45 to Montréal', timeBudget: '50-60 min', notes: 'Choose this as the major kid stop only if The Big Apple was brief or skipped. The official trail takes 45–60 minutes, is cash-only, and has no concessions. If closed or behind schedule, eat the packed lunch at the Morrisburg waterfront and continue.', food: 'Proper packed lunch, water and snacks; no concessions on site.', kidPlan: 'Dinosaurs, fossil sandbox, bug spray and a real movement break.', mapUrl: mapSearchUrl('5446 Upper Canada Rd, Morrisburg, ON K0C 1X0'), sourceUrl: 'https://prehistoricworld.ca/' }),
           sourceStop('2026-08-14', 'Check in: Le Square Phillips', { id: 'd1-hotel', time: '16:15', zone: 'ET', leg: 'About 170 km / 1 h 45 from Morrisburg', priority: 'required' }),
           sourceStop('2026-08-14', 'Easy dinner: Time Out Market', { id: 'd1-dinner', time: '17:45', zone: 'ET', kind: 'Dinner', priority: 'required', notes: 'Canonical dinner: closest low-friction choice after a long drive. Ma Poule Mouillée is an alternate only if you arrive early and want the detour.' })
         ],
         meals: [
-          mealSlot({ id: 'd1-lunch', meal: 'Lunch', title: 'ONroute Napanee — fast family lunch', selectedStopId: 'd1-napanee', backup: 'Dianne’s Fish Shack only if you intentionally add a Kingston detour.' }),
+          mealSlot({ id: 'd1-snack', meal: 'Morning snack', title: 'ONroute Napanee — quick stop', selectedStopId: 'd1-napanee', backup: 'Packed snack in the car.' }),
+          mealSlot({ id: 'd1-lunch', meal: 'Lunch', title: 'Packed Morrisburg lunch', selectedStopId: 'd1-prehistoric', backup: 'Packed picnic at Brockville waterfront if Prehistoric World is skipped.' }),
           mealSlot({ id: 'd1-dinner', meal: 'Dinner', title: 'Time Out Market Montréal', selectedStopId: 'd1-dinner', backup: 'Ma Poule Mouillée if you arrive early and want a detour.' })
         ]
       }),
@@ -946,16 +957,17 @@ setTimeout(function () {
         emergency: 'Use the airport-area hotel dinner if city parking or energy becomes the constraint.',
         stops: [
           sourceStop('2026-08-15', 'Depart Montréal', { id: 'd2-depart', time: '07:30', zone: 'ET', priority: 'required', notes: 'Wake 06:30, breakfast and pack, then leave before the late-morning Montréal slowdown.' }),
-          sourceStop('2026-08-15', 'Trois-Rivières stretch', { id: 'd2-lunch', time: '09:15', zone: 'ET', kind: 'Lunch / washroom', priority: 'required', notes: 'Canonical light lunch; Fairmount and Schwartz are optional Montréal detours, not routed stops.' }),
-          customStop({ id: 'd2-low-fuel', dayId: '2026-08-15', time: '10:15', zone: 'ET', title: 'Low-fuel decision: Trois-Rivières / A-40 Québec approach', kind: 'Fuel decision', priority: 'required', address: 'Trois-Rivières to Deschambault-Grondines, QC', city: 'Trois-Rivières / A-40 Québec approach, QC', leg: 'About 700-730 km since the Maple full tank; target is 10% / about 80 km remaining', timeBudget: '0-15 min', notes: 'Minimal-fuel strategy decision. Fill full only when the dash is near 10%; if it is still clearly above 10%, continue to the next premium-capable A-40 station and do not top up by habit.', food: 'Fuel only if needed; use the earlier Trois-Rivières stop for food/washroom.', kidPlan: 'Keep child in road-trip mode; this is not a play stop.', mapUrl: mapSearchUrl('premium gas near Trois-Rivières QC Autoroute 40') }),
-          sourceStop('2026-08-15', 'Montmorency Falls', { id: 'd2-falls', time: '11:30', zone: 'ET', priority: 'required', ticket: ticketGuidance.montmorency }),
+          sourceStop('2026-08-15', 'Trois-Rivières stretch', { id: 'd2-snack', time: '09:15', zone: 'ET', kind: 'Morning snack / washroom', priority: 'required', notes: 'Coffee, snack and washroom only. Save the real lunch for Montmorency around noon.' }),
+          customStop({ id: 'd2-low-fuel', dayId: '2026-08-15', time: '10:15', zone: 'ET', title: 'Quarter-tank fuel decision: A-40 Québec approach', kind: 'Fuel decision', priority: 'required', address: 'Trois-Rivières to Deschambault-Grondines, QC', city: 'Trois-Rivières / A-40 Québec approach, QC', timeBudget: '0-15 min', notes: 'Fill with 91 AKI by a quarter tank remaining, sooner if the live range approaches 120–150 km or the next reliable station is uncertain.', food: 'Fuel only if needed; use the earlier Trois-Rivières stop for food/washroom.', kidPlan: 'Keep this practical and quick.', mapUrl: mapSearchUrl('premium gas near Trois-Rivières QC Autoroute 40') }),
+          sourceStop('2026-08-15', 'Montmorency Falls', { id: 'd2-falls', time: '11:30', zone: 'ET', priority: 'required', notes: 'Allow a 20–30 minute construction/parking buffer. Eat a packed or on-site lunch around noon before the main walk; choose the parking sector before arrival.', food: 'Packed or on-site lunch, washrooms/café and water.', ticket: ticketGuidance.montmorency }),
           sourceStop('2026-08-15', 'Check in: Hôtel Cofortel', { id: 'd2-hotel', time: '14:30', zone: 'ET', priority: 'required' }),
           sourceStop('2026-08-15', 'Old Québec / Dufferin', { id: 'd2-old-quebec', time: '16:15–17:25', zone: 'ET', priority: 'optional', skipAt: 30, saves: '60 min', notes: 'End the walk by 17:25 to preserve a calmer 18:15 dinner.' }),
           foodStop('2026-08-15', 'La Bûche', { id: 'd2-dinner', time: '18:15', zone: 'ET', kind: 'Dinner', priority: 'required', notes: 'Canonical Old Québec dinner. Reserve in advance; Cochon Dingue is the fallback.' })
         ],
         meals: [
           mealSlot({ id: 'd2-breakfast', meal: 'Breakfast', title: 'Hotel breakfast', selectedStopId: 'd2-depart', backup: 'Fairmount Bagel only if picked up before the scheduled departure.' }),
-          mealSlot({ id: 'd2-lunch', meal: 'Lunch', title: 'Trois-Rivières light lunch', selectedStopId: 'd2-lunch', backup: 'Simple hotel-area food if the departure slips.' }),
+          mealSlot({ id: 'd2-snack', meal: 'Morning snack', title: 'Trois-Rivières quick stop', selectedStopId: 'd2-snack', backup: 'Packed snack.' }),
+          mealSlot({ id: 'd2-lunch', meal: 'Lunch', title: 'Montmorency lunch', selectedStopId: 'd2-falls', backup: 'Packed picnic before entering the park.' }),
           mealSlot({ id: 'd2-dinner', meal: 'Dinner', title: 'La Bûche', selectedStopId: 'd2-dinner', backup: 'Cochon Dingue Champlain.', reserve: 'High priority', reservationTaskId: 'reserve-d2-la-buche' })
         ]
       }),
@@ -963,29 +975,28 @@ setTimeout(function () {
         id: '2026-08-16',
         label: 'Sun, Aug 16, 2026',
         routeFocus: 'Québec City → Rivière-du-Loup → Edmundston → Fredericton',
-        driveKm: 672,
-        pureDriveTime: 'About 6.5–7.5 h with Grand Falls',
+        driveKm: 620,
+        pureDriveTime: 'About 7.5–8.5 h before meal and movement stops',
         risk: 'High',
         lateThresholdMin: 30,
         wakeTime: '06:30',
         departTarget: '07:00',
-        driverPlan: 'Two-driver day: first driver handles Québec City to Rivière-du-Loup, second driver takes the New Brunswick stretch; swap again near Hartland if needed.',
+        driverPlan: 'Two-driver day: first driver handles Québec City to Rivière-du-Loup, swap before the New Brunswick stretch, and swap again at Edmundston or Hartland if needed.',
         timeZoneNote: 'Start in America/Toronto (ET). New Brunswick stops use America/Moncton (AT), one hour ahead.',
-        contingency: 'If the Grand Falls/Woodstock/Hartland 10% fuel trigger slips, shorten Hartland and protect hotel arrival. If hotel arrival slips, use the Swiss Chalet fallback instead of a reservation chase.',
-        emergency: 'Go straight to the hotel/pool and use the low-friction dinner backup.',
+        contingency: 'Grand Falls is not in Plan A. Keep the Edmundston service break and shorten Hartland to a drive-through if the hotel arrival slips.',
+        emergency: 'Go straight to the hotel and use hotel-area food. Wolastoq Wharf is optional only after Sunday hours and arrival time are confirmed.',
         stops: [
           sourceStop('2026-08-16', 'Depart Québec City', { id: 'd3-depart', time: '07:00', zone: 'ET', priority: 'required', notes: 'Wake 06:30 and leave before this long day starts feeling crowded.' }),
-          customStop({ id: 'd3-kamouraska', dayId: '2026-08-16', time: '08:45', zone: 'ET', title: 'Kamouraska river-view stretch', kind: 'Park / scenic break', priority: 'required', address: 'Av. LeBlanc, Kamouraska, QC G0L 1M0', city: 'Kamouraska, QC', leg: 'About 165 km / 1 h 45 from Quebec City; about 55 km / 40 min to Riviere-du-Loup', timeBudget: '15-20 min', notes: 'From the original plan. Quick St. Lawrence view and leg stretch before lunch so the first drive block stays under two hours.', food: 'Use packed snacks; lunch remains in Riviere-du-Loup.', kidPlan: 'Short waterfront look-around, then back in the car.', mapUrl: mapSearchUrl('Av. LeBlanc, Kamouraska, QC G0L 1M0'), sourceUrl: 'https://www.tourismekamouraska.com/en/' }),
-          foodStop('2026-08-16', 'L’Estaminet', { id: 'd3-brunch', time: '09:45', zone: 'ET', kind: 'Brunch / early lunch', priority: 'required', notes: 'Canonical Sunday stop. Keep it efficient before the New Brunswick stretch.' }),
-          sourceStop('2026-08-16', 'Grand Falls Gorge', { id: 'd3-grand-falls', time: '13:20', zone: 'AT', priority: 'optional', skipAt: 30, saves: '60 min', notes: 'Skip if the day is slipping; the low-fuel decision is now based on the 10% trigger, not an Edmundston comfort top-up.' }),
-          customStop({ id: 'd3-hartland', dayId: '2026-08-16', time: '14:50', zone: 'AT', title: 'Hartland Covered Bridge photo stop', kind: 'Photo stop / stretch', priority: 'required', address: '365 Main St, Hartland, NB E7P 2N1', city: 'Hartland, NB', leg: 'About 115 km / 1 h 20 from Grand Falls; about 120 km / 1 h 20 to Fredericton', timeBudget: '15-20 min', notes: 'From the original plan. Keeps the Grand Falls to Fredericton leg from becoming a two-plus-hour grind.', food: 'No meal plan; use it as a quick stretch/photo stop.', kidPlan: 'Drive through or walk near the long covered bridge.', mapUrl: mapSearchUrl('365 Main St, Hartland, NB E7P 2N1'), sourceUrl: 'https://tourismnewbrunswick.ca/listing/hartland-covered-bridge' }),
-          customStop({ id: 'd3-low-fuel', dayId: '2026-08-16', time: '15:15', zone: 'AT', title: 'Low-fuel fill: Grand Falls / Woodstock-Hartland corridor', kind: 'Fuel', priority: 'required', address: 'Grand Falls to Woodstock/Hartland, NB', city: 'Grand Falls / Woodstock-Hartland, NB', leg: 'About 700-730 km since the A-40 Québec approach fill; target is 10% / about 80 km remaining', timeBudget: '10-15 min', notes: 'Minimal-fuel strategy stop paired with the Grand Falls/Hartland movement breaks. Fill full only when the dash is near the 10% trigger; use the first premium-capable station once the trigger appears before Fredericton.', food: 'Fuel only; dinner is after hotel check-in.', kidPlan: 'Short practical stop only.', mapUrl: mapSearchUrl('premium gas near Grand Falls Woodstock NB') }),
-          sourceStop('2026-08-16', 'Check in: Château Fredericton', { id: 'd3-hotel', time: '17:00', zone: 'AT', priority: 'required' }),
-          foodStop('2026-08-16', 'Wolastoq Wharf', { id: 'd3-dinner', time: '18:00', zone: 'AT', kind: 'Dinner', priority: 'conditional', conditional: true, skipAt: 30, saves: '90 min', notes: 'Hours checked Jul 12: Sunday listings conflict — some show 4:00-9:00 PM, others closed Sundays. Book only after confirming by phone (506-449-0100) that they are open Sun Aug 16. Swiss Chalet is the canonical low-friction fallback.' })
+          customStop({ id: 'd3-kamouraska', dayId: '2026-08-16', time: '09:10', zone: 'ET', title: 'Kamouraska river-view stretch', kind: 'Park / scenic break', priority: 'required', address: 'Av. LeBlanc, Kamouraska, QC G0L 1M0', city: 'Kamouraska, QC', leg: 'About 185 km / 2 h 10 from Québec City; about 55 km / 40 min to Rivière-du-Loup', timeBudget: '15-20 min', notes: 'Quick St. Lawrence view and leg stretch before brunch.', food: 'Use packed snacks; brunch remains in Rivière-du-Loup.', kidPlan: 'Short waterfront look-around, then back in the car.', mapUrl: mapSearchUrl('Av. LeBlanc, Kamouraska, QC G0L 1M0'), sourceUrl: 'https://www.tourismekamouraska.com/en/' }),
+          foodStop('2026-08-16', 'L’Estaminet', { id: 'd3-brunch', time: '10:15', zone: 'ET', kind: 'Brunch / early lunch', priority: 'required', timeBudget: '45-60 min', notes: 'Canonical Sunday stop. Allow the meal time before calculating the New Brunswick arrival.' }),
+          customStop({ id: 'd3-edmundston', dayId: '2026-08-16', time: '14:30', zone: 'AT', title: 'Edmundston service + driver swap', kind: 'Fuel / washroom / driver swap', priority: 'required', address: 'Edmundston, NB', city: 'Edmundston, NB', leg: 'About 220 km / 2 h 15 from Rivière-du-Loup; Atlantic Time is one hour ahead', timeBudget: '20 min', notes: 'Required movement and driver-swap break. Fill with 91 AKI if at or below a quarter tank or if the live range is approaching 120–150 km.', food: 'Washroom, water and road snack.', kidPlan: 'Walk for 10 minutes before the next driving block.', mapUrl: mapSearchUrl('premium gas near Edmundston NB') }),
+          customStop({ id: 'd3-hartland', dayId: '2026-08-16', time: '16:20', zone: 'AT', title: 'Hartland Covered Bridge photo stop', kind: 'Photo stop / stretch', priority: 'required', address: '365 Main St, Hartland, NB E7P 2N1', city: 'Hartland, NB', leg: 'About 170 km / 1 h 45 from Edmundston; about 120 km / 1 h 20 to Fredericton', timeBudget: '15-20 min', notes: 'Keep this short; use it as the second movement break, not another attraction visit.', food: 'No meal plan.', kidPlan: 'Drive through or take a short riverside walk.', mapUrl: mapSearchUrl('365 Main St, Hartland, NB E7P 2N1'), sourceUrl: 'https://tourismnewbrunswick.ca/listing/hartland-covered-bridge' }),
+          sourceStop('2026-08-16', 'Check in: Château Fredericton', { id: 'd3-hotel', time: '17:50–18:15', zone: 'AT', priority: 'required', leg: 'About 120 km / 1 h 20 from Hartland', notes: 'This arrival already includes the brunch, Edmundston service break and short Hartland stop. Use the pool and hotel-area dinner; do not add downtown sightseeing.' }),
+          foodStop('2026-08-16', 'Wolastoq Wharf', { id: 'd3-dinner', time: '18:45 only if confirmed', zone: 'AT', kind: 'Dinner', priority: 'conditional', conditional: true, skipAt: 1, saves: '90 min', notes: 'Sunday hours remain uncertain. Use only after confirming by phone (506-449-0100) and only if the family reaches the hotel on time. Hotel-area food is Plan A.' })
         ],
         meals: [
           mealSlot({ id: 'd3-brunch', meal: 'Brunch', title: 'Resto-Pub L’Estaminet', selectedStopId: 'd3-brunch', backup: 'A quick Rivière-du-Loup stop if timing changes.' }),
-          mealSlot({ id: 'd3-dinner', meal: 'Dinner', title: 'Wolastoq Wharf — conditional', selectedStopId: 'd3-dinner', backup: 'Swiss Chalet Fredericton after hotel check-in.', reserve: 'Sunday hours conflict across listings (checked Jul 12) — call 506-449-0100 to confirm they are open Sun Aug 16 before booking', reservationTaskId: 'reserve-d3-wolastoq', conditional: true })
+          mealSlot({ id: 'd3-dinner', meal: 'Dinner', title: 'Hotel-area dinner', selectedStopId: 'd3-hotel', backup: 'Wolastoq Wharf only after Sunday hours and arrival timing are confirmed.', conditional: false })
         ]
       }),
       makeDay({
@@ -1004,17 +1015,16 @@ setTimeout(function () {
         emergency: 'Wally’s or hotel-area food is the late-arrival fallback.',
         stops: [
           sourceStop('2026-08-17', 'Depart Fredericton', { id: 'd4-depart', time: '07:30', zone: 'AT', priority: 'required', notes: 'Wake 06:30, breakfast, and use the early start to make the PEI arrival less rushed.' }),
-          customStop({ id: 'd4-oromocto', dayId: '2026-08-17', time: '08:00', zone: 'AT', title: 'Oromocto / NB Military History Museum stretch', kind: 'Museum / park stretch', priority: 'required', address: '119 Walnut St Building A5, Oromocto, NB E2V 4J5', city: 'Oromocto, NB', leg: 'About 25 km / 20 min from Fredericton; about 145 km / 1 h 35 to Magnetic Hill', timeBudget: '20-30 min', notes: 'Borrowed from the original plan as the first eastbound movement stop. If the museum is not open, use the area as a quick walk/stretch and keep rolling.', food: 'No meal plan; keep snacks in the car.', kidPlan: 'Short museum or outdoor leg stretch before the Moncton block.', mapUrl: mapSearchUrl('119 Walnut St Building A5, Oromocto, NB E2V 4J5'), sourceUrl: 'https://nbmhm-mhmnb.ca/' }),
-          sourceStop('2026-08-17', 'Magnetic Hill', { id: 'd4-magnetic', time: '09:45', zone: 'AT', priority: 'optional', skipAt: 30, saves: '45 min', ticket: ticketGuidance.magneticHill }),
+          sourceStop('2026-08-17', 'Magnetic Hill', { id: 'd4-magnetic', time: '09:45', zone: 'AT', priority: 'optional', skipAt: 30, saves: '45 min', address: '2846 Mountain Road, Moncton, NB E1G 2W7', city: 'Moncton, NB', leg: 'About 170 km / 1 h 50 from Fredericton', notes: 'Official Magnetic Hill Illusion address. Skip if timing or energy is tight.', mapUrl: mapSearchUrl('2846 Mountain Road, Moncton, NB E1G 2W7'), sourceUrl: 'https://www.moncton.ca/en/magnetic-hill-illusion', ticket: ticketGuidance.magneticHill }),
           foodStop('2026-08-17', 'Tony’s Bistro', { id: 'd4-lunch', time: '11:15', zone: 'AT', kind: 'Lunch', priority: 'required', notes: 'Canonical Moncton lunch. Hours checked Jul 12: Monday 8:00 AM-3:00 PM, so the 11:15 arrival fits — do not slip past 2:00 PM.' }),
           sourceStop('2026-08-17', 'Cape Jourimain', { id: 'd4-cape', time: '13:45', zone: 'AT', priority: 'optional', skipAt: 45, saves: '45 min', notes: 'Shorten to washroom and bridge viewpoint if running late.' }),
           sourceStop('2026-08-17', 'Check in: Rodd Royalty', { id: 'd4-hotel', time: '16:00', zone: 'AT', priority: 'required' }),
-          foodStop('2026-08-17', 'New Glasgow Lobster Suppers', { id: 'd4-dinner', time: '17:30', zone: 'AT', kind: 'Dinner', priority: 'required', notes: 'Canonical PEI-arrival dinner. Hours checked Jul 12: serving daily 4:00-7:30 PM through Oct 10, so the 5:30 arrival fits.' }),
+          foodStop('2026-08-17', 'New Glasgow Lobster Suppers', { id: 'd4-dinner', time: '17:15 walk-in target', zone: 'AT', kind: 'Dinner', priority: 'required', timeBudget: '90-120 min including queue', notes: 'Walk-in only for a family of three; reservations are limited to groups of 8+. Arrive as early as practical, expect a queue, and use Wally’s if the wait threatens bedtime.', reservation: 'No family reservation; groups of 8+ only.' }),
           customStop({ id: 'd4-victoria', dayId: '2026-08-17', time: '19:45', zone: 'AT', title: 'Victoria Row evening stroll (optional)', kind: 'Optional attraction', priority: 'optional', skipAt: 30, saves: '45 min', address: 'Richmond St (Victoria Row), Charlottetown, PE', city: 'Charlottetown, PE', leg: 'About 25 km / 25 min back from New Glasgow', timeBudget: '30-45 min', notes: 'Moved here from Aug 19, whose midday tide window removed the free Charlottetown morning. Pedestrian block with buskers and ice cream on summer evenings; Lobster on the Wharf nearby stays the Aug 18 dinner backup.', food: 'Ice cream / dessert only after the lobster supper.', kidPlan: 'Short stroll with buskers and treats; skip freely if the kid is done for the day.', mapUrl: mapSearchUrl('Victoria Row, Charlottetown, PE'), sourceUrl: 'https://www.discovercharlottetown.com/' })
         ],
         meals: [
           mealSlot({ id: 'd4-lunch', meal: 'Lunch', title: 'Tony’s Bistro & Pâtisserie', selectedStopId: 'd4-lunch', backup: 'Quick Moncton food only if Tony’s timing fails.' }),
-          mealSlot({ id: 'd4-dinner', meal: 'Dinner', title: 'New Glasgow Lobster Suppers', selectedStopId: 'd4-dinner', backup: 'Wally’s Restaurant & Lounge after hotel check-in.', reserve: 'Confirm ahead', reservationTaskId: 'reserve-d4-new-glasgow' })
+          mealSlot({ id: 'd4-dinner', meal: 'Dinner', title: 'New Glasgow Lobster Suppers', selectedStopId: 'd4-dinner', backup: 'Wally’s Restaurant & Lounge after hotel check-in.', reserve: 'Walk-in for a family of three; reservations only for groups of 8+. Arrive early and expect a queue.' })
         ]
       }),
       makeDay({
@@ -1032,9 +1042,9 @@ setTimeout(function () {
         contingency: 'If beach weather or energy is poor, protect Blue Mussel and Slaymaker; make Green Gables or the beach shorter.',
         emergency: 'Lobster on the Wharf is the easier dinner fallback.',
         stops: [
-          sourceStop('2026-08-18', 'Green Gables', { id: 'd5-green-gables', time: '08:45', zone: 'AT', priority: 'optional', skipAt: 30, saves: '60 min', ticket: ticketGuidance.greenGables }),
-          foodStop('2026-08-18', 'Blue Mussel', { id: 'd5-lunch', time: '11:30', zone: 'AT', kind: 'Lunch', priority: 'required', notes: 'Canonical seafood lunch. Join the waitlist or check the same day.' }),
-          sourceStop('2026-08-18', 'Cavendish Beach', { id: 'd5-beach', time: '13:00', zone: 'AT', priority: 'optional', skipAt: 30, saves: '90 min', ticket: ticketGuidance.cavendish }),
+          sourceStop('2026-08-18', 'Green Gables', { id: 'd5-green-gables', time: '08:45 queue · 09:00 opening', zone: 'AT', priority: 'optional', skipAt: 30, saves: '60 min', notes: 'Park and queue at 08:45; official entry begins at 09:00. Keep the early strategy because 2026 visitation is expected to be very high.', sourceUrl: 'https://parks.canada.ca/lhn-nhs/pe/greengables/visit/heures-hours', ticket: ticketGuidance.greenGables }),
+          foodStop('2026-08-18', 'Blue Mussel', { id: 'd5-lunch', time: '11:30', zone: 'AT', kind: 'Lunch', priority: 'required', timeBudget: '75-90 min including wait', notes: 'Check or join the live same-day waitlist around 10:45–11:00. It is not an advance reservation.' }),
+          sourceStop('2026-08-18', 'Cavendish Beach', { id: 'd5-beach', time: '14:30–15:00', zone: 'AT', priority: 'optional', skipAt: 30, saves: '90 min', notes: 'Later arrival may reduce peak parking pressure. Check PEI Now surf and parking conditions after lunch. Swim only in the supervised area and between flags; red flag, severe-weather warning or no supervision means no swimming. Keep the child within arm’s reach and do not use pool floaties.', sourceUrl: 'https://parks.canada.ca/pn-np/pe/pei-ipe/activ/natation-swim/plages-beaches', ticket: ticketGuidance.cavendish }),
           sourceStop('2026-08-18', 'Return to Rodd Royalty', { id: 'd5-hotel', time: '17:30', zone: 'AT', priority: 'required' }),
           foodStop('2026-08-18', 'Slaymaker', { id: 'd5-dinner', time: '18:30', zone: 'AT', kind: 'Dinner', priority: 'required', notes: 'Canonical Charlottetown dinner. Hours checked Jul 12: Tuesday 11:30 AM-9:00 PM, so 6:30 works. Book early; this is a drive from the hotel, so leave the beach on time.' })
         ],
@@ -1052,21 +1062,18 @@ setTimeout(function () {
         risk: 'High',
         lateThresholdMin: 30,
         wakeTime: '06:30',
-        departTarget: '07:45 from Charlottetown (tide-anchored)',
+        departTarget: '07:30 from Charlottetown (tide-anchored)',
         driverPlan: 'Two adults can drive; assign one adult to the tide/route clock and the other to parking, snacks, and kid reset so Hopewell stays protected.',
         timeZoneNote: 'All times are Atlantic Time (America/Moncton). Tide window confirmed from CHS predictions: low tide 11:52 AM, ocean floor roughly 9:00 AM–2:45 PM. Re-verify 24–48h before.',
-        contingency: 'Protect the 10:45 AM Hopewell arrival. If departure slips past 08:30, drop the Sackville boardwalk; past 09:30, go straight to the park — the floor stays walkable until about 2:45 PM.',
-        emergency: 'Go directly to Hopewell before the midday window closes, then check in early. Do not trade the tide window for stops or restaurants.',
+        contingency: 'There are no Plan A stops between Charlottetown and Hopewell. Target the entrance by 10:15–10:30 and the beach stairs by 10:45; follow park staff if actual access changes.',
+        emergency: 'Fuel the evening before or before departure if at/below a quarter tank. Never trade the tide window for a boardwalk, restaurant or fuel target.',
         stops: [
-          customStop({ id: 'd6-morning-ready', dayId: '2026-08-19', time: '06:30', zone: 'AT', title: 'Wake, tide re-check, and pack PEI checkout', kind: 'Start / tide check', priority: 'required', address: 'Rodd Royalty, Charlottetown, PE', city: 'Charlottetown, PE', timeBudget: '60-75 min', notes: 'Wake at 06:30. The tide window is midday (ocean floor ~9:00 AM-2:45 PM), so this is an early roll-out: re-check the official table once, quick hotel breakfast, wheels rolling by 07:45.', food: 'Hotel breakfast / packed breakfast — keep it quick.', kidPlan: 'Bathroom, snacks, and car toys ready the night before.', mapUrl: mapSearchUrl('Rodd Royalty Charlottetown PE'), sourceUrl: 'https://www.roddvacations.com/rodd-royalty' }),
-          sourceStop('2026-08-19', 'Victoria Row', { id: 'd6-victoria', time: 'Moved to Aug 17/18', zone: 'AT', priority: 'conditional', conditional: true, skipAt: 1, saves: '45 min', notes: 'The midday tide window removed the free Aug 19 morning. Slot this walk into the Aug 17 evening or Aug 18 instead.' }),
-          customStop({ id: 'd6-bridge', dayId: '2026-08-19', time: '08:40', zone: 'AT', title: 'Confederation Bridge crossing', kind: 'Drive', priority: 'required', address: 'Confederation Bridge, Borden-Carleton, PE', city: 'Borden-Carleton, PE', leg: 'About 60 km / 50 min from Charlottetown', notes: 'Check toll payment readiness before leaving PEI. Depart Charlottetown by 07:45 to protect the 10:45 AM Hopewell arrival.', mapUrl: mapSearchUrl('Confederation Bridge, Borden-Carleton, PE'), sourceUrl: 'https://www.confederationbridge.com/tolls-fees/' }),
-          customStop({ id: 'd6-sackville', dayId: '2026-08-19', time: '09:45', zone: 'AT', title: 'Sackville Waterfowl Park boardwalk stretch', kind: 'Park / boardwalk', priority: 'optional', skipAt: 15, saves: '20 min', address: '34 Mallard Dr, Sackville, NB E4L 4C3', city: 'Sackville, NB', leg: 'About 100 km / 1 h 05 from Confederation Bridge; about 45 km / 40 min to Hopewell Rocks', timeBudget: '15-20 min', notes: 'Quick stretch only if the 10:45 AM Hopewell arrival is safe. Skip at the first sign of slippage — the floor is best around the 11:52 AM low.', food: 'Visitor area / nearby services; do not make it a meal stop.', kidPlan: 'Quick boardwalk walk and bird spotting.', mapUrl: mapSearchUrl('Sackville Waterfowl Park, Sackville, NB'), sourceUrl: 'https://tourismnewbrunswick.ca/listing/sackville-waterfowl-park' }),
-          customStop({ id: 'd6-low-fuel', dayId: '2026-08-19', time: '10:05', zone: 'AT', title: 'Low-fuel fill: Sackville corridor', kind: 'Fuel', priority: 'required', address: 'Sackville, NB', city: 'Sackville, NB', leg: 'About 700-730 km since the Grand Falls/Woodstock-Hartland fill; target is 10% / about 80 km remaining', timeBudget: '10-15 min', notes: 'Minimal-fuel strategy stop paired with the Sackville boardwalk buffer. Skip the old Charlottetown top-up unless the dash is already near 10% before leaving PEI.', food: 'Fuel only; preserve the Hopewell tide window.', kidPlan: 'Keep this quick so the tide window stays protected.', mapUrl: mapSearchUrl('premium gas near Sackville NB') }),
-          sourceStop('2026-08-19', 'Hopewell Rocks', { id: 'd6-hopewell', time: '10:45', zone: 'AT', kind: 'Tide-dependent attraction', priority: 'required', timeBudget: '2.5-3 h', notes: 'Confirmed CHS predictions for Aug 19 (ADT): high 5:23 AM (11.33 m), low 11:52 AM (2.48 m), high 5:45 PM (11.32 m). Ocean floor roughly 9:00 AM-2:45 PM — be at the beach stairs by 11:00 AM and off the beach by 2:00 PM. Re-verify the table 24-48h before.', sourceUrl: 'https://www.parcsnbparks.ca/en/parks/33/hopewell-rocks-provincial-park/26/tide-tables', ticket: ticketGuidance.hopewell }),
+          customStop({ id: 'd6-morning-ready', dayId: '2026-08-19', time: '06:15', zone: 'AT', title: 'Wake, tide re-check and quarter-tank check', kind: 'Start / tide / fuel check', priority: 'required', address: 'Rodd Royalty, Charlottetown, PE', city: 'Charlottetown, PE', timeBudget: '75 min', notes: 'Re-check the official tide table and park notice. Wheels rolling by 07:30. If fuel is at/below a quarter tank, fill in Charlottetown before departure; there is no planned tide-day fuel stop afterward.', food: 'Packed or quick hotel breakfast.', kidPlan: 'Bathroom, snacks, dry clothes and car toys ready the night before.', mapUrl: mapSearchUrl('Rodd Royalty Charlottetown PE'), sourceUrl: 'https://www.roddvacations.com/rodd-royalty' }),
+          customStop({ id: 'd6-bridge', dayId: '2026-08-19', time: '08:25', zone: 'AT', title: 'Confederation Bridge crossing', kind: 'Drive', priority: 'required', address: 'Confederation Bridge, Borden-Carleton, PE', city: 'Borden-Carleton, PE', leg: 'About 60 km / 50 min from Charlottetown', notes: 'Toll is collected while leaving PEI. Continue directly to Hopewell after the crossing; no Sackville detour.', mapUrl: mapSearchUrl('Confederation Bridge, Borden-Carleton, PE'), sourceUrl: 'https://www.confederationbridge.com/tolls-fees/' }),
+          sourceStop('2026-08-19', 'Hopewell Rocks', { id: 'd6-hopewell', time: '10:15–10:30 entrance · 10:45 stairs', zone: 'AT', kind: 'Tide-dependent attraction', priority: 'required', leg: 'About 145 km / 1 h 50 directly from Confederation Bridge', timeBudget: '2.5-3 h', notes: 'CHS predicts low tide at 11:52 AM ADT. Target the entrance by 10:15–10:30 and the beach stairs by 10:45. Estimated access is roughly 9:00 AM–2:45 PM, but actual ocean-floor access is always at park staff discretion. Use closed-toe grippy footwear and recheck 24–48 hours before.', kidPlan: 'Use the shuttle if energy is marginal; 60–90 minutes on the floor is enough. Expect about 99 stairs down and 101 back up on the main route.', sourceUrl: 'https://www.parcsnbparks.ca/en/parks/33/hopewell-rocks-provincial-park/26/tide-tables', ticket: ticketGuidance.hopewell }),
           customStop({ id: 'd6-lunch', dayId: '2026-08-19', time: '13:45', zone: 'AT', title: 'Late lunch: Hopewell Rocks café / packed picnic', kind: 'Lunch', priority: 'required', skipAt: 60, saves: '30 min', address: '131 Discovery Rd, Hopewell Cape, NB E4H 4Z5', city: 'Hopewell Cape, NB', timeBudget: '30-45 min', notes: 'Eat after the floor walk — the tide window matters more than lunch timing. Lobster on the Wharf no longer fits this day; it moves to Aug 17/18 in Charlottetown.', food: 'Park café in season, plus packed backup snacks in the car.', kidPlan: 'Lunch after the beach: wipes, dry shoes, and a change of clothes first.', mapUrl: mapSearchUrl('Hopewell Rocks Provincial Park NB'), sourceUrl: 'https://www.parcsnbparks.ca/en/parks/33/hopewell-rocks-provincial-park' }),
-          sourceStop('2026-08-19', 'Check in: Fairfield', { id: 'd6-hotel', time: '15:15', zone: 'AT', priority: 'required', leg: 'About 40 km / 35 min from Hopewell Rocks', notes: 'Early arrival thanks to the midday tide window: pool reset for the kid, laundry, easy evening.' }),
-          customStop({ id: 'd6-magnetic', dayId: '2026-08-19', time: '16:30', zone: 'AT', title: 'Magnetic Hill illusion (optional)', kind: 'Optional attraction', priority: 'optional', skipAt: 1, saves: '45 min', address: 'Magnetic Hill, Moncton, NB', city: 'Moncton, NB', leg: 'About 15 min from the hotel', timeBudget: '30-40 min', notes: 'Optional afternoon add-on now that Hopewell is midday. $10/car in summer; skip freely if pool time is winning.', food: 'Nearby services; keep it light before dinner.', kidPlan: 'Novelty backwards-rolling car moment; Magnetic Hill Zoo next door is the bigger backup.', mapUrl: mapSearchUrl('Magnetic Hill, Moncton, NB'), sourceUrl: 'https://www.moncton.ca/en/magnetic-hill-illusion', ticket: ticketGuidance.magneticHill }),
+          sourceStop('2026-08-19', 'Check in: Fairfield', { id: 'd6-hotel', time: '15:00–15:30', zone: 'AT', priority: 'required', leg: 'About 40 km / 35 min from Hopewell Rocks', notes: 'Pool reset, laundry and an easy evening. Arrival depends on park access and lunch timing.' }),
+          customStop({ id: 'd6-magnetic', dayId: '2026-08-19', time: '16:30 only if rested', zone: 'AT', title: 'Magnetic Hill illusion', kind: 'Optional attraction', priority: 'optional', skipAt: 1, saves: '45 min', address: '2846 Mountain Road, Moncton, NB E1G 2W7', city: 'Moncton, NB', leg: 'About 25 min from the hotel', timeBudget: '30-40 min', notes: 'Optional after Hopewell; skip by default if pool or recovery time is winning.', food: 'Nearby services; keep it light before dinner.', kidPlan: 'Novelty backwards-rolling car moment.', mapUrl: mapSearchUrl('2846 Mountain Road, Moncton, NB E1G 2W7'), sourceUrl: 'https://www.moncton.ca/en/magnetic-hill-illusion', ticket: ticketGuidance.magneticHill }),
           foodStop('2026-08-19', 'Tide & Boar', { id: 'd6-dinner', time: '18:00', zone: 'AT', kind: 'Dinner', priority: 'required', skipAt: 60, saves: '90 min', notes: 'Relaxed dinner — the midday tide window means no evening squeeze. Fall back to hotel/quick food only if the afternoon ran long.' })
         ],
         meals: [
@@ -1082,25 +1089,25 @@ setTimeout(function () {
         pureDriveTime: 'About 8–9 h with essential breaks',
         risk: 'High',
         lateThresholdMin: 30,
-        wakeTime: '06:30',
+        wakeTime: '05:30',
         departTarget: '06:45-07:00',
         driverPlan: 'Two-driver day: leave with one adult fresh for Moncton-Fredericton, swap near Fredericton/Hartland, then swap again before the Québec City push if needed.',
         timeZoneNote: 'Start in America/Moncton (AT); Québec stops use America/Toronto (ET), one hour behind.',
-        contingency: 'Leave by 06:45-07:00 Atlantic. At 30 minutes late, use only essential breaks. At 60 minutes late, surface the Rivière-du-Loup overnight safety valve.',
+        contingency: '06:45 means wheels moving after breakfast and checkout. Keep the Edmundston lunch/driver swap; shorten Hartland or Kamouraska before cutting a fatigue break.',
         emergency: 'Hotel/airport-area takeout is the canonical dinner; Le Chic Shack is an early-arrival optional only.',
         stops: [
-          sourceStop('2026-08-20', 'Depart Moncton', { id: 'd7-depart', time: '06:45', zone: 'AT', priority: 'required', notes: 'Wake 06:30 and leave by 06:45-07:00 Atlantic if keeping the Québec City overnight.' }),
-          customStop({ id: 'd7-oromocto', dayId: '2026-08-20', time: '08:30', zone: 'AT', title: 'Oromocto / NB Military History Museum stretch', kind: 'Museum / park stretch', priority: 'required', address: '119 Walnut St Building A5, Oromocto, NB E2V 4J5', city: 'Oromocto, NB', leg: 'About 155 km / 1 h 45 from Moncton; about 25 km / 20 min to Fredericton', timeBudget: '15-20 min', notes: 'From the original plan. Use it as the first drive-cadence stop before Fredericton.', food: 'No meal plan; keep it quick.', kidPlan: 'Short walk or quick museum peek if open.', mapUrl: mapSearchUrl('119 Walnut St Building A5, Oromocto, NB E2V 4J5'), sourceUrl: 'https://nbmhm-mhmnb.ca/' }),
-          sourceStop('2026-08-20', 'Fredericton service', { id: 'd7-fredericton', time: '09:15', zone: 'AT', kind: 'Washroom / stretch', priority: 'required', notes: 'Quick break only; 540/Picaroons is not a core lunch because it opens too late for this schedule.' }),
-          customStop({ id: 'd7-hartland', dayId: '2026-08-20', time: '10:40', zone: 'AT', title: 'Hartland Covered Bridge photo stop', kind: 'Photo stop / stretch', priority: 'required', address: '365 Main St, Hartland, NB E7P 2N1', city: 'Hartland, NB', leg: 'About 120 km / 1 h 15 from Fredericton; about 150 km / 1 h 35 to Edmundston', timeBudget: '15 min', notes: 'Original-plan photo stop that prevents the Fredericton-to-Edmundston block from becoming too long.', food: 'No meal plan.', kidPlan: 'Quick bridge photo and leg stretch.', mapUrl: mapSearchUrl('365 Main St, Hartland, NB E7P 2N1'), sourceUrl: 'https://tourismnewbrunswick.ca/listing/hartland-covered-bridge' }),
-          sourceStop('2026-08-20', 'Rivière-du-Loup stretch', { id: 'd7-rdl', time: '13:45', zone: 'ET', kind: 'Washroom / stretch', priority: 'required', notes: 'Québec time begins after the border. Do not turn this into a long lunch.' }),
-          customStop({ id: 'd7-low-fuel', dayId: '2026-08-20', time: '14:30', zone: 'ET', title: 'Low-fuel fill: Rivière-du-Loup / Kamouraska corridor', kind: 'Fuel', priority: 'required', address: 'Rivière-du-Loup, QC', city: 'Rivière-du-Loup / Kamouraska, QC', leg: 'About 700-730 km since the Sackville fill; target is 10% / about 80 km remaining', timeBudget: '10-15 min', notes: 'Minimal-fuel strategy stop. Use the RDL/Kamouraska corridor before the final Québec City push; do not top up earlier in Edmundston unless the dash is already near 10%.', food: 'Fuel only; use packed food or the RDL stretch.', kidPlan: 'Quick practical stop, then the Kamouraska view reset.', mapUrl: mapSearchUrl('premium gas near Rivière-du-Loup QC') }),
+          sourceStop('2026-08-20', 'Depart Moncton', { id: 'd7-depart', time: '06:45', zone: 'AT', priority: 'required', notes: 'Wake 05:30–05:45, eat when breakfast opens at 06:00, preload most luggage the night before, and make 06:45 the actual wheels-moving time.' }),
+          sourceStop('2026-08-20', 'Fredericton service', { id: 'd7-fredericton', time: '08:45', zone: 'AT', kind: 'Washroom / stretch', priority: 'required', leg: 'About 180 km / 2 h from Moncton', notes: 'Quick washroom, coffee and movement break.' }),
+          customStop({ id: 'd7-hartland', dayId: '2026-08-20', time: '10:30', zone: 'AT', title: 'Hartland Covered Bridge photo stop', kind: 'Photo stop / stretch', priority: 'optional', skipAt: 30, saves: '15 min', address: '365 Main St, Hartland, NB E7P 2N1', city: 'Hartland, NB', leg: 'About 120 km / 1 h 15 from Fredericton; about 150 km / 1 h 35 to Edmundston', timeBudget: '10-15 min', notes: 'Short photo/stretch only. The required longer break is Edmundston.', food: 'No meal plan.', kidPlan: 'Quick bridge photo.', mapUrl: mapSearchUrl('365 Main St, Hartland, NB E7P 2N1'), sourceUrl: 'https://tourismnewbrunswick.ca/listing/hartland-covered-bridge' }),
+          customStop({ id: 'd7-edmundston', dayId: '2026-08-20', time: '12:20', zone: 'AT', title: 'Edmundston cooler lunch + driver swap', kind: 'Lunch / fuel / movement break', priority: 'required', address: 'Edmundston, NB', city: 'Edmundston, NB', leg: 'About 150 km / 1 h 35 from Hartland', timeBudget: '25-30 min', notes: 'Required real break before the Québec stretch. Eat the packed cooler lunch, walk, swap drivers and fill with 91 AKI if at/below a quarter tank or the live range approaches 120–150 km.', food: 'Packed cooler lunch, washroom and water.', kidPlan: 'At least 15 minutes out of the booster.', mapUrl: mapSearchUrl('premium gas near Edmundston NB') }),
+          sourceStop('2026-08-20', 'Rivière-du-Loup stretch', { id: 'd7-rdl', time: '13:45', zone: 'ET', kind: 'Fuel / washroom check', priority: 'required', notes: 'Québec time begins after the border. Make this a quick fuel/washroom check; the proper lunch happened in Edmundston.' }),
+          customStop({ id: 'd7-low-fuel', dayId: '2026-08-20', time: '14:00', zone: 'ET', title: 'Quarter-tank fuel check: Rivière-du-Loup', kind: 'Fuel decision', priority: 'conditional', conditional: true, address: 'Rivière-du-Loup, QC', city: 'Rivière-du-Loup, QC', timeBudget: '0-15 min', notes: 'Fill only if still needed after Edmundston. Use 91 AKI and do not continue below a quarter tank when the next reliable stop is uncertain.', food: 'Fuel only.', kidPlan: 'Remain in road-trip mode.', mapUrl: mapSearchUrl('premium gas near Rivière-du-Loup QC') }),
           customStop({ id: 'd7-kamouraska', dayId: '2026-08-20', time: '14:50', zone: 'ET', title: 'Kamouraska river-view reset', kind: 'Park / scenic break', priority: 'required', address: 'Av. LeBlanc, Kamouraska, QC G0L 1M0', city: 'Kamouraska, QC', leg: 'About 55 km / 40 min from Riviere-du-Loup; about 165 km / 1 h 45 to Quebec City', timeBudget: '15-20 min', notes: 'From the original plan. This keeps the final Quebec City leg under two hours and gives everyone one last outside reset.', food: 'No meal plan; use packed snacks.', kidPlan: 'River view and a quick walk.', mapUrl: mapSearchUrl('Av. LeBlanc, Kamouraska, QC G0L 1M0'), sourceUrl: 'https://www.tourismekamouraska.com/en/' }),
           sourceStop('2026-08-20', 'Check in: Hôtel Cofortel', { id: 'd7-hotel', time: '17:15', zone: 'ET', priority: 'required' }),
           foodStop('2026-08-20', 'Le Chic Shack', { id: 'd7-dinner', time: 'Early-arrival optional', zone: 'ET', kind: 'Dinner', priority: 'optional', skipAt: 30, saves: '90 min', notes: 'Optional only if you arrive early. Otherwise eat near the hotel and protect sleep.' })
         ],
         meals: [
-          mealSlot({ id: 'd7-lunch', meal: 'Lunch', title: 'Rivière-du-Loup / cooler lunch', selectedStopId: 'd7-rdl', backup: 'Carry a cooler meal for the car; skip the old Edmundston fuel-lunch top-up unless the dash is near 10%.' }),
+          mealSlot({ id: 'd7-lunch', meal: 'Lunch', title: 'Edmundston cooler lunch', selectedStopId: 'd7-edmundston', backup: 'Fast highway food in Edmundston if the cooler meal fails.' }),
           mealSlot({ id: 'd7-dinner', meal: 'Dinner', title: 'Hotel-area takeout', selectedStopId: 'd7-hotel', backup: 'Le Chic Shack only if arriving early.', conditional: true })
         ]
       }),
@@ -1112,26 +1119,26 @@ setTimeout(function () {
         pureDriveTime: 'About 8.5–9.5 h with essential breaks',
         risk: 'High',
         lateThresholdMin: 30,
-        wakeTime: '06:30',
+        wakeTime: '05:30',
         departTarget: '06:45-07:00',
         driverPlan: 'Two-driver day: one adult handles Québec-to-Montréal/South Shore, then swap for the Ontario 401/GTA push. Use the off-duty adult to watch fatigue and call the overnight safety valve.',
         timeZoneNote: 'All times are Eastern Time (America/Toronto).',
-        contingency: 'At 30 minutes late, keep the Mallorytown/Brockville 10% fuel decision fast. At 60 minutes late, choose a Kingston/Cornwall overnight rather than forcing a fatigued final push.',
-        emergency: 'The Noshery is only for a deliberate return split, not a same-day dinner plan.',
+        contingency: 'At Mallorytown around 14:00, make the overnight decision using driver fatigue, child condition, weather and traffic—not lateness. Skip Brockville or The Big Apple before shortening a needed rest.',
+        emergency: 'Use the preselected refundable Brockville/Kingston option immediately for yawning, lane drift, missed signs, poor recall of recent kilometres, illness or either driver requesting a stop.',
         stops: [
-          sourceStop('2026-08-21', 'Depart Québec City', { id: 'd8-depart', time: '06:45', zone: 'ET', priority: 'required', notes: 'Wake 06:30, load up, and leave early for the long return. Use two-driver rotation from the start.' }),
+          sourceStop('2026-08-21', 'Depart Québec City', { id: 'd8-depart', time: '06:45 wheels moving', zone: 'ET', priority: 'required', notes: 'Wake 05:30–05:45, use the hotel breakfast that starts at 05:00, and preload the car the night before. Swap drivers every 90–120 minutes or sooner for fatigue.' }),
           foodStop('2026-08-21', 'Fromagerie Lemaire', { id: 'd8-lemaire', time: '09:15', zone: 'ET', kind: 'Morning food stop', priority: 'required', notes: 'Canonical morning food stop, not lunch. Pick up curds/snacks and keep moving.' }),
           customStop({ id: 'd8-south-shore-park', dayId: '2026-08-21', time: '11:05', zone: 'ET', title: 'South Shore Montreal lunch + park walk', kind: 'Lunch / park stretch', priority: 'required', address: 'Parc Marie-Victorin, Longueuil, QC', city: 'Longueuil, QC', leg: 'About 150 km / 1 h 35 from Fromagerie Lemaire; about 55 km / 45 min to Vaudreuil', timeBudget: '35-45 min', notes: 'Based on the original plan South Shore Montreal lunch idea, upgraded into a real park/stretch stop so the return day keeps the two-hour cadence.', food: 'Fast lunch on the south shore; avoid downtown Montreal.', kidPlan: 'Short waterfront/park walk before the Ontario push.', mapUrl: mapSearchUrl('Parc Marie-Victorin, Longueuil, QC'), sourceUrl: 'https://longueuil.quebec/fr/parc-marie-victorin' }),
-          sourceStop('2026-08-21', 'ONroute Mallorytown', { id: 'd8-lunch', time: '14:00', zone: 'ET', kind: 'Lunch / washroom / fuel decision', priority: 'required', notes: 'Canonical lunch and rest break. Also make the final fuel decision here: fill only if the dash is near 10%; otherwise continue to the Brockville corridor and skip any comfort top-up.' }),
-          customStop({ id: 'd8-brockville-waterfront', dayId: '2026-08-21', time: '15:05', zone: 'ET', title: 'Brockville waterfront / St. Lawrence Park', kind: 'Park / waterfront break', priority: 'required', address: '525 King St W, Brockville, ON K6V 3T3', city: 'Brockville, ON', leg: 'About 35 km / 25 min from Mallorytown; about 120 km / 1 h 10 to The Big Apple', timeBudget: '20-30 min', notes: 'From the original plan Brockville waterfront break. Use the river park instead of adding a sit-down meal.', food: 'Washrooms/canteen may vary; keep snacks handy.', kidPlan: 'Waterfront walk, playground/beach energy if conditions allow.', mapUrl: mapSearchUrl('St. Lawrence Park, 525 King St W, Brockville, ON'), sourceUrl: 'https://brockville.com/things-to-do/parks-trails/' }),
-          customStop({ id: 'd8-big-apple', dayId: '2026-08-21', time: '17:20', zone: 'ET', title: 'The Big Apple final stretch stop', kind: 'Attraction / snack', priority: 'required', address: '262 Orchard Rd, Colborne, ON K0K 1S0', city: 'Colborne, ON', leg: 'About 120 km / 1 h 10 from Brockville; about 130 km / 1 h 25 to Vaughan', timeBudget: '20-30 min', notes: 'Original-plan-style final fun stop. Even if you visited outbound, use this as the last kid-friendly stretch before the GTA.', food: 'Pie/snack/washroom stop.', kidPlan: 'One last fun stretch before the home push.', mapUrl: mapSearchUrl('262 Orchard Rd, Colborne, ON K0K 1S0'), sourceUrl: 'https://thebigapple.ca/' }),
-          foodStop('2026-08-21', 'The Noshery', { id: 'd8-noshery', time: 'Return-split only', zone: 'ET', kind: 'Dinner', priority: 'optional', skipAt: 1, saves: '90 min', notes: 'Use only if you decide to stop overnight in Kingston/Cornwall. It is not a same-day Vaughan dinner.' }),
-          customStop({ id: 'd8-home', dayId: '2026-08-21', time: 'Late evening', zone: 'ET', title: 'Arrive Vaughan', kind: 'Finish', priority: 'required', address: 'Vaughan, ON', city: 'Vaughan, ON', notes: 'If fatigue wins, use the safety overnight option instead of forcing the final stretch.', mapUrl: mapSearchUrl('Vaughan, ON') })
+          sourceStop('2026-08-21', 'ONroute Mallorytown', { id: 'd8-lunch', time: '14:00 overnight checkpoint', zone: 'ET', kind: 'Lunch / rest / fuel / safety decision', priority: 'required', timeBudget: '35-45 min', notes: 'Eat, walk and assess both drivers and the child. Choose the preselected overnight now if anyone is struggling. Fill with 91 AKI by a quarter tank remaining or sooner if the live range approaches 120–150 km.' }),
+          customStop({ id: 'd8-brockville-waterfront', dayId: '2026-08-21', time: '15:05', zone: 'ET', title: 'Brockville waterfront / St. Lawrence Park', kind: 'Park / waterfront break', priority: 'optional', skipAt: 30, saves: '25 min', address: '525 King St W, Brockville, ON K6V 3T3', city: 'Brockville, ON', leg: 'About 35 km / 25 min from Mallorytown; about 200 km / 2–2.5 h to The Big Apple', timeBudget: '20-30 min', notes: 'Use only if a movement break is useful; skip it if the Mallorytown break was sufficient or the family chose an overnight.', food: 'Washrooms/canteen may vary; keep snacks handy.', kidPlan: 'Waterfront walk or playground energy.', mapUrl: mapSearchUrl('St. Lawrence Park, 525 King St W, Brockville, ON'), sourceUrl: 'https://brockville.com/things-to-do/parks-trails/' }),
+          customStop({ id: 'd8-big-apple', dayId: '2026-08-21', time: '17:45–18:15 if continuing', zone: 'ET', title: 'The Big Apple final stretch stop', kind: 'Attraction / snack', priority: 'optional', skipAt: 30, saves: '25 min', address: '262 Orchard Rd, Colborne, ON K0K 1S0', city: 'Colborne, ON', leg: 'About 200 km / 2 h to 2 h 30 from Brockville; about 130 km / 1 h 25 plus GTA traffic to Vaughan', timeBudget: '20-30 min', notes: 'Optional final movement stop only if continuing to Vaughan. Skip for fatigue, traffic or an overnight split.', food: 'Pie/snack/washroom stop.', kidPlan: 'One last stretch before the GTA.', mapUrl: mapSearchUrl('262 Orchard Rd, Colborne, ON K0K 1S0'), sourceUrl: 'https://thebigapple.ca/' }),
+          foodStop('2026-08-21', 'The Noshery', { id: 'd8-noshery', time: 'Return-split only', zone: 'ET', kind: 'Dinner', priority: 'optional', skipAt: 1, saves: '90 min', notes: 'Use only if you decide to stop overnight in Brockville/Kingston. It is not a same-day Vaughan dinner.' }),
+          customStop({ id: 'd8-home', dayId: '2026-08-21', time: '20:00–21:00+ realistic', zone: 'ET', title: 'Arrive Vaughan', kind: 'Finish', priority: 'required', address: 'Vaughan, ON', city: 'Vaughan, ON', notes: 'Friday Montréal/GTA traffic can push this later. An overnight split is a successful safety decision, not a failed schedule.', mapUrl: mapSearchUrl('Vaughan, ON') })
         ],
         meals: [
           mealSlot({ id: 'd8-morning', meal: 'Morning food', title: 'Fromagerie Lemaire', selectedStopId: 'd8-lemaire', backup: 'Vaudreuil / ONroute snacks if timing is off.' }),
           mealSlot({ id: 'd8-lunch', meal: 'Lunch', title: 'ONroute Mallorytown South', selectedStopId: 'd8-lunch', backup: 'Fast food near the highway only if needed.' }),
-          mealSlot({ id: 'd8-dinner', meal: 'Dinner', title: 'At home or on a planned return split', selectedStopId: 'd8-home', backup: 'The Noshery only after choosing a Kingston/Cornwall overnight.', conditional: true })
+          mealSlot({ id: 'd8-dinner', meal: 'Dinner', title: 'At home or on a planned return split', selectedStopId: 'd8-home', backup: 'The Noshery only after choosing a Brockville/Kingston overnight.', conditional: true })
         ]
       })
     ]
@@ -1139,10 +1146,8 @@ setTimeout(function () {
 
   var fuelMath = {
     tankLitres: 71,
-    conservativeRangeKm: 800,
-    triggerPercent: 10,
-    triggerRemainingKm: 80,
-    targetSinceLastFillKm: 720
+    triggerPercent: 25,
+    triggerRemainingKm: 150
   };
 
   var minimalFuelPlan = [
@@ -1151,54 +1156,54 @@ setTimeout(function () {
       stop: 'Start full: Esso Circle K Maple',
       address: '3100 Major Mackenzie Dr W, Maple, ON L6A 1S1',
       tank: 'Start-full exception',
-      action: 'Fill full with 91 AKI and reset trip odometer.',
-      reason: 'Begin full, then stop using non-trigger top-ups. Next target is about 720 km later, when the dash is near 10% / ~80 km remaining.',
+      action: 'Fill full with 91 AKI minimum and reset the trip odometer.',
+      reason: 'After this, refuel by a quarter tank remaining—or sooner when the live range approaches 120–150 km or the next reliable station is uncertain.',
       mapUrl: mapSearchUrl('3100 Major Mackenzie Dr W, Maple, ON L6A 1S1'),
       sourceUrl: 'https://www.esso.ca/en-ca/find-station/maple-on-esso-200302605'
     },
     {
       dateLabel: 'Sat, Aug 15',
-      stop: 'Low-fuel fill: Trois-Rivières / A-40 Québec approach',
+      stop: 'Quarter-tank decision: Trois-Rivières / A-40 Québec approach',
       address: 'Trois-Rivières to Deschambault-Grondines, QC',
-      tank: '~10%',
-      action: 'Fill full only when the dash is near 10%; otherwise continue to the next premium-capable A-40 station.',
-      reason: 'This is the first realistic low-fuel point after the Maple full tank, before Montmorency / Québec City.',
+      tank: 'Refuel by 25%',
+      action: 'Fill with 91 AKI if at/below a quarter tank or the live range is approaching 120–150 km.',
+      reason: 'This corridor has reliable services before the Québec City activities.',
       mapUrl: mapSearchUrl('premium gas near Trois-Rivières QC Autoroute 40')
     },
     {
       dateLabel: 'Sun, Aug 16',
-      stop: 'Low-fuel fill: Grand Falls / Woodstock-Hartland corridor',
-      address: 'Grand Falls to Woodstock/Hartland, NB',
-      tank: '~10%',
-      action: 'Fill full near the Hartland covered bridge stretch.',
-      reason: 'Avoids the old non-trigger Edmundston top-up and lands much closer to the 720 km low-fuel target.',
-      mapUrl: mapSearchUrl('premium gas near Grand Falls Woodstock NB')
+      stop: 'Quarter-tank decision: Edmundston / Hartland corridor',
+      address: 'Edmundston to Hartland, NB',
+      tank: 'Refuel by 25%',
+      action: 'Fill with 91 AKI at the Edmundston driver-swap stop when needed.',
+      reason: 'Combines fuel with a required movement break before the rural New Brunswick stretch.',
+      mapUrl: mapSearchUrl('premium gas near Edmundston NB')
     },
     {
-      dateLabel: 'Wed, Aug 19',
-      stop: 'Low-fuel fill: Sackville corridor',
-      address: 'Sackville, NB',
-      tank: '~10%',
-      action: 'Fill full while using the Sackville buffer stop.',
-      reason: 'Replaces the Charlottetown non-trigger top-up. This is closer to the true low-fuel point after PEI local driving and the bridge.',
-      mapUrl: mapSearchUrl('premium gas near Sackville NB')
+      dateLabel: 'Tue, Aug 18 / Wed, Aug 19',
+      stop: 'Tide-day readiness: Charlottetown',
+      address: 'Charlottetown, PE',
+      tank: 'Start Aug 19 above 25%',
+      action: 'Check fuel the evening of Aug 18; fill then or before the 07:30 departure if at/below a quarter tank.',
+      reason: 'There is no planned Sackville fuel stop. The drive from PEI to Hopewell must remain direct.',
+      mapUrl: mapSearchUrl('premium gas near Rodd Royalty Charlottetown PE')
     },
     {
       dateLabel: 'Thu, Aug 20',
-      stop: 'Low-fuel fill: Rivière-du-Loup / Kamouraska corridor',
-      address: 'Rivière-du-Loup, QC',
-      tank: '~10%',
-      action: 'Fill full before the final Québec City push.',
-      reason: 'Replaces the old Edmundston return fill; the RDL/Kamouraska corridor is the math-aligned low-fuel point.',
-      mapUrl: mapSearchUrl('premium gas near Rivière-du-Loup QC')
+      stop: 'Quarter-tank decision: Edmundston / Rivière-du-Loup',
+      address: 'Edmundston, NB or Rivière-du-Loup, QC',
+      tank: 'Refuel by 25%',
+      action: 'Prefer the Edmundston lunch/driver-swap stop; use Rivière-du-Loup if still needed.',
+      reason: 'Do not extend a rural driving block merely to reach a mathematically tidy fuel point.',
+      mapUrl: mapSearchUrl('premium gas near Edmundston NB')
     },
     {
       dateLabel: 'Fri, Aug 21',
-      stop: 'Final low-fuel fill: Mallorytown / Brockville corridor',
+      stop: 'Final quarter-tank decision: Mallorytown / Brockville corridor',
       address: 'Mallorytown / Brockville, ON',
-      tank: '~10%',
-      action: 'Fill during the existing Mallorytown lunch or Brockville stretch window only when the dash is near 10%; skip Napanee unless the trigger has not appeared yet.',
-      reason: 'Replaces the separate Napanee comfort stop and keeps the return day to the fewest fuel-only stops.',
+      tank: 'Refuel by 25%',
+      action: 'Fill during the Mallorytown lunch when at/below a quarter tank or the live range approaches 120–150 km.',
+      reason: 'Fuel and the overnight safety decision happen at the same required rest stop.',
       mapUrl: mapSearchUrl('premium gas near Mallorytown Brockville ON')
     }
   ];
@@ -1217,9 +1222,11 @@ setTimeout(function () {
     { title: 'Québec City forecast', detail: 'Nights of Aug 15 and Aug 20', url: 'https://weather.gc.ca/city/pages/qc-133_metric_e.html' },
     { title: 'Fredericton forecast', detail: 'Night of Aug 16', url: 'https://weather.gc.ca/city/pages/nb-29_metric_e.html' },
     { title: 'Charlottetown forecast', detail: 'Nights of Aug 17-18, beach days', url: 'https://weather.gc.ca/city/pages/pe-5_metric_e.html' },
-    { title: 'Moncton forecast', detail: 'Night of Aug 19, Hopewell tide day', url: 'https://weather.gc.ca/city/pages/nb-36_metric_e.html' },
+    { title: 'Hopewell Cape forecast', detail: 'Local weather for the Aug 19 tide visit', url: 'https://weather.gc.ca/en/location/index.html?coords=45.850%2C-64.583' },
+    { title: 'Moncton forecast', detail: 'Night of Aug 19', url: 'https://weather.gc.ca/city/pages/nb-36_metric_e.html' },
     { title: 'Hurricane & tropical outlook', detail: 'August is Maritimes hurricane-remnant season', url: 'https://weather.gc.ca/hurricane/index_e.html' },
-    { title: 'All weather alerts', detail: 'Active watches and warnings across Canada', url: 'https://weather.gc.ca/warnings/index_e.html' }
+    { title: 'All weather alerts', detail: 'Active watches and warnings across Canada', url: 'https://weather.gc.ca/warnings/index_e.html' },
+    { title: 'Air quality & wildfire smoke', detail: 'Move activities indoors when smoke or AQHI is high', url: 'https://www.canada.ca/en/environment-climate-change/services/air-quality-health-index/wildfire-smoke.html' }
   ];
 
   var dayWeatherUrls = {
@@ -1228,7 +1235,7 @@ setTimeout(function () {
     '2026-08-16': 'https://weather.gc.ca/city/pages/nb-29_metric_e.html',
     '2026-08-17': 'https://weather.gc.ca/city/pages/pe-5_metric_e.html',
     '2026-08-18': 'https://weather.gc.ca/city/pages/pe-5_metric_e.html',
-    '2026-08-19': 'https://weather.gc.ca/city/pages/nb-36_metric_e.html',
+    '2026-08-19': 'https://weather.gc.ca/en/location/index.html?coords=45.850%2C-64.583',
     '2026-08-20': 'https://weather.gc.ca/city/pages/qc-133_metric_e.html',
     '2026-08-21': 'https://weather.gc.ca/city/pages/on-143_metric_e.html'
   };
@@ -1241,6 +1248,11 @@ setTimeout(function () {
   var emergencyContacts = [
     { name: 'Emergency (police / fire / ambulance)', phone: '911', detail: 'Works in ON, QC, NB, and PEI.' },
     { name: 'Health advice line', phone: '811', detail: 'Free 24/7 nurse line in all four provinces on the route.' },
+    { name: 'Poison Centre (outside Québec)', phone: '1-844-764-7669', detail: 'National POISON-X line for Ontario, New Brunswick and PEI.' },
+    { name: 'Québec Poison Control Centre', phone: '1-800-463-5060', detail: 'Use while in Québec.' },
+    { name: 'Parks Canada emergency dispatch', phone: '1-877-852-3100', detail: 'For emergencies in Parks Canada places.' },
+    { name: 'Hopewell Rocks park', phone: '877-734-3429', detail: 'Call for current ocean-floor access direction.' },
+    { name: 'Confederation Bridge conditions', phone: '902-437-7300', detail: 'Check restrictions before both crossings.' },
     { name: 'CAA / AAA roadside assistance', phone: '1-800-222-4357', detail: 'Or dial *222 from a mobile phone.' },
     { name: 'Le Square Phillips Hôtel & Suites (Montréal, Aug 14)', phone: '514-393-1193', detail: '1193 Place Phillips, Montréal' },
     { name: 'Hôtel Cofortel (Québec City, Aug 15 & 20)', phone: '418-877-4777', detail: '6500 Boul. Wilfrid-Hamel, Québec' },
@@ -1270,11 +1282,11 @@ setTimeout(function () {
   }
 
   var packingGroups = [
-    { name: 'Documents & money', items: ['Driver licences (both adults)', 'Health cards', 'Vehicle registration & insurance slip', 'Hotel confirmation numbers (also in checklist)', 'Credit/debit cards + some cash for tolls & seasonal stands', 'CAA membership card'] },
-    { name: 'Kid comfort (6-year-old)', items: ['Booster seat checked & installed', 'Car snacks restocked daily', 'Water bottles', 'Car toys / activity bag', 'Tablet + headphones, charged', 'Comfort item for hotels', 'Motion sickness plan (bags, wipes, meds if used)'] },
-    { name: 'Beach & tide days', items: ['Swimsuits & towels', 'Water shoes / backup shoes for the Hopewell ocean floor', 'Sunscreen & hats', 'Bug spray (Sackville boardwalk, dusk stops)', 'Change of clothes reachable in the car'] },
-    { name: 'Car & tech', items: ['Phone chargers + car adapter', 'Offline maps downloaded (see checklist)', 'Dashcam / phone mounts', 'First-aid kit', 'Flashlight', 'Jumper cables or booster pack', 'Windshield washer fluid topped up'] },
-    { name: 'Health & weather', items: ['Medications + kid pain/fever meds', 'Rain jackets (Fundy fog & showers)', 'Light sweaters for evening coastal wind', 'Hand sanitizer & wipes'] }
+    { name: 'Documents & money', items: ['Driver licences (both adults)', 'Health cards', 'Vehicle registration & insurance slip', 'Hotel confirmation numbers (also in checklist)', 'Credit/debit cards + some cash for tolls & seasonal stands', 'CAA membership card', 'Non-travelling contact has the itinerary and hotel details'] },
+    { name: 'Kid comfort (6-year-old)', items: ['Booster limits, expiry, recalls & belt fit checked; secure it when empty', 'Car snacks restocked daily', 'Water bottles', 'Car toys / activity bag', 'Tablet + headphones, charged', 'Comfort item for hotels', 'Motion sickness plan (bags, wipes, meds if used)'] },
+    { name: 'Beach & tide days', items: ['Swimsuits & towels', 'Closed-toe grippy shoes, dry socks & mud bag for Hopewell', 'Sunscreen & hats', 'Bug spray for wooded and dusk stops', 'Change of clothes reachable in the car'] },
+    { name: 'Car & tech', items: ['Phone chargers + car adapter', 'Offline maps downloaded (see checklist)', 'Dashcam / phone mounts', 'First-aid kit', 'Flashlight', 'Jumper cables or booster pack', 'Windshield washer fluid topped up', 'Cold tire pressure & tread checked', 'Wheel-lock key packed', 'Spare or mobility kit present; sealant not expired'] },
+    { name: 'Health & weather', items: ['Medications in original containers + kid pain/fever meds', 'Allergy/medical card and prescribed rescue medication if applicable', 'Fine-point tweezers or tick remover; nightly tick checks', 'Rain jackets (Fundy fog & showers)', 'Light sweaters for evening coastal wind', 'Hand sanitizer & wipes'] }
   ];
 
   var PACKING_KEY = 'pei-foodie-road-trip/packing/v1';
@@ -1373,15 +1385,15 @@ setTimeout(function () {
   }
 
   var checklistTasks = [
-    task({ id: 'hopewell-window', category: 'Tide', title: 'Re-verify the confirmed Hopewell tide window 24-48h before', description: 'Window is set from CHS predictions: Aug 19 low tide 11:52 AM, ocean floor ~9:00 AM-2:45 PM, depart Charlottetown 07:45. Re-check the official table Aug 17-18 and confirm access with park staff on arrival.', dueDate: '2026-08-17', url: operationalPlan.tidePlan.sourceUrl, priority: 'Critical' }),
+    task({ id: 'hopewell-window', category: 'Tide', title: 'Re-verify Hopewell access 24-48h before', description: 'CHS predicts Aug 19 low tide at 11:52 AM. Depart Charlottetown 07:30, target the entrance 10:15-10:30 and stairs 10:45; actual floor access remains at park staff discretion.', dueDate: '2026-08-17', url: operationalPlan.tidePlan.sourceUrl, priority: 'Critical' }),
     task({ id: 'ticket-montmorency', category: 'Tickets', title: 'Buy Montmorency Falls daily access online', description: 'Buy official Sépaq daily access before Aug 15. Decide separately whether the family wants cable car tickets.', dueDate: '2026-07-31', url: ticketGuidance.montmorency.url, priority: 'Critical' }),
-    task({ id: 'ticket-hopewell', category: 'Tickets', title: 'Buy Hopewell Rocks admission — tide plan is set', description: 'The Aug 19 window is confirmed (ocean floor ~9:00 AM-2:45 PM), so buy official admission now. 2026 tickets are valid for any two consecutive days.', dueDate: '2026-07-22', url: ticketGuidance.hopewell.url, priority: 'Critical' }),
+    task({ id: 'ticket-hopewell', category: 'Tickets', title: 'Save the Hopewell admission and tide links', description: 'Advance purchase does not improve access and attendance is not capped. Buy when convenient, then recheck the official access notice 24-48 hours before.', dueDate: '2026-07-22', url: ticketGuidance.hopewell.url, priority: 'Normal' }),
     task({ id: 'green-gables-plan-ahead', category: 'Admission', title: 'Plan Green Gables arrival for Canada Strong Pass crowds', description: 'No ticket purchase is needed for Aug 18, but Parks Canada expects very high visitation in 2026. Keep the visit early and flexible.', dueDate: '2026-08-13', url: ticketGuidance.greenGables.url, priority: 'High' }),
     task({ id: 'road-checks', category: 'Roads', title: 'Save provincial 511 links and check them every drive morning', description: 'Check construction, closures, cameras, weather alerts, and traffic before leaving.', dueDate: '2026-08-13', url: 'https://511on.ca/roadconditions', priority: 'High' }),
-    task({ id: 'morning-driver-rhythm', category: 'Daily rhythm', title: 'Set 6:30 AM wake-up and two-driver rotation', description: 'Use 6:30 AM as the standard wake time. On 500+ km days, agree on the first driver and first swap point before leaving the hotel.', dueDate: '2026-08-13', priority: 'High' }),
+    task({ id: 'morning-driver-rhythm', category: 'Daily rhythm', title: 'Set wake times and two-driver rotation', description: 'Use 6:30 AM normally; use 05:30-05:45 on Aug 20-21 so 06:45 is the real wheels-moving time. Agree on swap points before leaving.', dueDate: '2026-08-13', priority: 'High' }),
     task({ id: 'offline-maps', category: 'Offline', title: 'Download offline map areas and save this trip pack', description: 'Maps and restaurant pages require connectivity; keep an offline copy and route downloads ready.', dueDate: '2026-08-13', priority: 'High' }),
-    task({ id: 'fuel-readiness', category: 'Fuel', title: 'Confirm low-fuel premium-gas corridors', description: 'Before travel, verify 91 AKI availability around each 10% trigger zone: Trois-Rivières/A-40 Québec approach, Grand Falls/Woodstock-Hartland, Sackville, Rivière-du-Loup/Kamouraska, and Mallorytown/Brockville.', dueDate: '2026-08-13', priority: 'High' }),
-    task({ id: 'return-safety', category: 'Safety', title: 'Choose a cancellable Kingston/Cornwall safety overnight option', description: 'Use it if Aug 21 is 60+ minutes behind or anyone is too tired for the final push.', dueDate: '2026-08-08', priority: 'High' })
+    task({ id: 'fuel-readiness', category: 'Fuel', title: 'Confirm quarter-tank 91-AKI corridors', description: 'Verify 91 AKI near the A-40 Québec approach, Edmundston/Hartland, Charlottetown, Rivière-du-Loup and Mallorytown. Refuel by 25%, sooner near 120-150 km displayed range or uncertain services.', dueDate: '2026-08-13', priority: 'High' }),
+    task({ id: 'return-safety', category: 'Safety', title: 'Choose a cancellable Brockville/Kingston safety overnight option', description: 'Make the decision at Mallorytown around 14:00 using driver fatigue, child condition, weather and traffic—not lateness alone. Both choices remain ahead on the westbound route.', dueDate: '2026-08-08', priority: 'High' })
   ];
 
   operationalPlan.days.forEach(function (day) {
@@ -1653,10 +1665,10 @@ setTimeout(function () {
   }
 
   var prepMilestones = [
-    { date: '2026-07-22', title: 'Buy Hopewell Rocks admission', detail: 'Tide window is confirmed: ocean floor roughly 9:00 AM–2:45 PM on Aug 19 (low tide 11:52 AM). Tickets cover two consecutive days.' },
-    { date: '2026-07-31', title: 'Buy Montmorency daily access + book restaurants', detail: 'Sépaq online daily access before Aug 15, then reserve La Bûche, Wolastoq Wharf, New Glasgow Lobster Suppers, Slaymaker & Nichols, and Tide & Boar (~6:00 PM, Aug 19).' },
+    { date: '2026-07-22', title: 'Save Hopewell admission + tide links', detail: 'Low tide is predicted for 11:52 AM on Aug 19. Advance admission has no access advantage; park staff control actual ocean-floor access.' },
+    { date: '2026-07-31', title: 'Buy Montmorency daily access + book restaurants', detail: 'Sépaq online daily access before Aug 15, then reserve La Bûche, confirm Wolastoq Wharf Sunday hours, and book Slaymaker & Nichols and Tide & Boar. New Glasgow is walk-in for this family.' },
     { date: '2026-08-07', title: 'Confirm all five hotels', detail: 'Parking, check-in timing, pool hours, and cancellation terms for Montréal, Québec City ×2, Fredericton, Charlottetown, and Moncton.' },
-    { date: '2026-08-08', title: 'Pick the cancellable Kingston/Cornwall safety overnight', detail: 'A refundable option for the Aug 21 return in case the final push is too much.' },
+    { date: '2026-08-08', title: 'Pick the cancellable Brockville/Kingston safety overnight', detail: 'A refundable westbound option for the Aug 21 return in case the final push is too much.' },
     { date: '2026-08-11', title: 'Week-before verification sweep', detail: 'Seasonal restaurant hours (Richard’s, Malpeque Oyster Barn, Point Prim Chowder House), premium-fuel corridors, and the packing checklist.' },
     { date: '2026-08-13', title: 'Offline prep day', detail: 'Download map areas, cache photos, export a sync code to the second phone, and save the emergency text pack (Offline pack tab).' },
     { date: '2026-08-17', title: 'Re-verify Hopewell tides + trip weather', detail: 'Official tide table 24–48h out, plus Environment Canada forecasts and the hurricane outlook for every overnight city.' }
@@ -1702,7 +1714,7 @@ setTimeout(function () {
       dot(588, 186, 'Moncton', 612, 175, 'start', 'Night of Aug 19'),
       '<circle cx="576" cy="228" r="5" class="city-dot spur-dot"/>',
       '<text x="576" y="252" text-anchor="middle">Hopewell Rocks</text>',
-      '<text class="sub" x="576" y="266" text-anchor="middle">Ocean floor 9 AM–2:45 PM Aug 19</text>',
+      '<text class="sub" x="576" y="266" text-anchor="middle">Estimated 9 AM–2:45 PM · confirm with staff</text>',
       '</svg></div>'
     ].join('');
   }
@@ -1806,21 +1818,22 @@ setTimeout(function () {
 
   function renderStopCard(day, stop) {
     var currentStatus = stopStatus(stop.id);
-    var classes = 'stop ' + (currentStatus === 'done' ? 'is-complete' : '') + (currentStatus === 'skipped' ? ' is-skipped' : '');
-    var label = stop.priority === 'optional' ? 'Optional' : stop.priority === 'conditional' ? 'Conditional' : stop.kind;
+    var classes = 'stop priority-' + stop.priority + ' ' + (currentStatus === 'done' ? 'is-complete' : '') + (currentStatus === 'skipped' ? ' is-skipped' : '');
+    var priorityLabel = stop.priority === 'optional' ? 'Optional' : stop.priority === 'conditional' ? 'Fallback' : 'Plan A';
     return [
       '<article class="', classes, '">',
-      '<div class="time">', escapeHtml(stop.time), stop.zone ? '<br><span class="type">' + escapeHtml(stop.zone) + '</span>' : '', '<br><span class="type">', escapeHtml(label), '</span></div>',
+      '<div class="time">', escapeHtml(stop.time), stop.zone ? '<br><span class="type">' + escapeHtml(stop.zone) + '</span>' : '', '</div>',
       '<div>',
-      '<h3>', escapeHtml(stop.title), '</h3>',
+      '<div class="stop-heading"><span class="priority-badge ', escapeHtml(stop.priority), '">', escapeHtml(priorityLabel), '</span><span class="kind-badge">', escapeHtml(stop.kind), '</span><h3>', escapeHtml(stop.title), '</h3></div>',
       '<p><strong>', escapeHtml(stop.city), '</strong>', stop.address ? ' · ' + escapeHtml(stop.address) : '', '</p>',
-      '<p>', escapeHtml(stop.notes), '</p>',
       renderTicketGuidance(stop.ticket),
-      renderAttractionQuality(stop.attractionQuality),
-      '<p class="small"><strong>Food / washroom:</strong> ', escapeHtml(stop.food || '—'), '<br><strong>Kid plan:</strong> ', escapeHtml(stop.kidPlan || '—'), '<br><strong>From prior stop:</strong> ', escapeHtml(stop.leg || '—'), stop.timeBudget ? ' · <strong>Time:</strong> ' + escapeHtml(stop.timeBudget) : '', '</p>',
+      '<p class="small"><strong>From prior stop:</strong> ', escapeHtml(stop.leg || '—'), stop.timeBudget ? ' · <strong>Time here:</strong> ' + escapeHtml(stop.timeBudget) : '', '</p>',
       stop.skipAt ? '<p class="small"><strong>Late rule:</strong> Skip at ' + escapeHtml(stop.skipAt) + '+ minutes late' + (stop.saves ? ' to save about ' + escapeHtml(stop.saves) : '') + '.</p>' : '',
       stop.reservation ? '<p class="small"><strong>Reservation:</strong> ' + escapeHtml(stop.reservation) + '</p>' : '',
-      '<div class="links">', externalLink(stop.mapUrl, 'Map'), externalLink(stop.sourceUrl, 'Source'), '</div>',
+      '<div class="links">', externalLink(stop.mapUrl, 'Map'), '</div>',
+      '<details class="stop-more"><summary>Notes, food, kid plan & source</summary><p>', escapeHtml(stop.notes), '</p>',
+      renderAttractionQuality(stop.attractionQuality),
+      '<p class="small"><strong>Food / washroom:</strong> ', escapeHtml(stop.food || '—'), '<br><strong>Kid plan:</strong> ', escapeHtml(stop.kidPlan || '—'), '</p><div class="links">', externalLink(stop.sourceUrl, 'Source'), '</div></details>',
       '<div class="stop-actions">',
       '<button type="button" data-stop-action="toggle" data-stop-id="', escapeHtml(stop.id), '" aria-pressed="', currentStatus === 'done' ? 'true' : 'false', '">', currentStatus === 'done' ? 'Mark pending' : 'Mark complete', '</button>',
       '<button type="button" data-stop-action="skip" data-stop-id="', escapeHtml(stop.id), '" aria-pressed="', currentStatus === 'skipped' ? 'true' : 'false', '">', currentStatus === 'skipped' ? 'Restore stop' : 'Skip stop', '</button>',
@@ -1849,12 +1862,28 @@ setTimeout(function () {
       '<div class="card full ', riskClass(day.risk), '">',
       '<div class="day-summary"><div><p class="route-label">', escapeHtml(day.risk), ' risk · ', escapeHtml(modeText), '</p><h2>', escapeHtml(day.label), '</h2><p><strong>', escapeHtml(day.routeFocus), '</strong></p><p class="muted">Approx drive: <strong>', escapeHtml(day.driveKm), ' km</strong> · ', escapeHtml(day.pureDriveTime), '</p><p class="note"><strong>Morning:</strong> Wake ', escapeHtml(day.wakeTime), ' · target rollout ', escapeHtml(day.departTarget), '<br><strong>Drivers:</strong> ', escapeHtml(day.driverPlan), '</p><p class="note"><strong>Time zone:</strong> ', escapeHtml(day.timeZoneNote), '</p></div>',
       '<div class="summary-actions">', externalLink(dayRouteUrl(day), 'Open active-day route', 'button primary'), dayWeatherLink(day.id), '</div></div>',
-      '<div class="mode-note ', mode === 'on-time' || mode === 'preview' ? 'safe' : '', '"><strong>Decision rule:</strong> ', escapeHtml(day.contingency), '<br><span class="small"><strong>Fallback:</strong> ', escapeHtml(day.emergency), '</span></div>',
+      '<div class="mode-note ', mode === 'on-time' ? 'safe' : '', '"><strong>Decision rule:</strong> ', escapeHtml(day.contingency), '</div>',
+      '<div class="safety-fallback"><strong>Safety fallback:</strong> ', escapeHtml(day.emergency), '</div>',
+      '<p class="small muted"><strong>Timing note:</strong> Times are planning targets. Allow the full listed stop time plus parking, queues, meals and traffic before relying on the next arrival.</p>',
       renderMealPlan(day),
       '</div>',
-      filtered.length ? '<div class="timeline">' + filtered.map(function (stop) { return renderStopCard(day, stop); }).join('') + '</div>' : '<div class="empty-state">No stops match. Try clearing the stop type or search field.</div>'
+      filtered.length ? '<div class="timeline">' + filtered.map(function (stop) { return renderStopCard(day, stop); }).join('') + '</div>' : '<div class="empty-state">No stops match. Try clearing the stop type or search field.</div>',
+      '<div class="day-nav-actions"><button type="button" class="button subtle" id="previousDay"', operationalPlan.days[0].id === day.id ? ' disabled' : '', '>← Previous day</button><button type="button" class="button subtle" id="nextDay"', operationalPlan.days[operationalPlan.days.length - 1].id === day.id ? ' disabled' : '', '>Next day →</button></div>'
     ].join('');
     document.getElementById('dayResult').innerHTML = body;
+    var dayIndex = operationalPlan.days.findIndex(function (item) { return item.id === day.id; });
+    document.getElementById('previousDay').addEventListener('click', function () {
+      if (dayIndex <= 0) return;
+      uiFilters.dayId = operationalPlan.days[dayIndex - 1].id;
+      renderDayContent();
+      document.getElementById('daybyday-heading').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    document.getElementById('nextDay').addEventListener('click', function () {
+      if (dayIndex >= operationalPlan.days.length - 1) return;
+      uiFilters.dayId = operationalPlan.days[dayIndex + 1].id;
+      renderDayContent();
+      document.getElementById('daybyday-heading').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   function shortDay(label) {
@@ -1866,6 +1895,7 @@ setTimeout(function () {
     var planned = rawData.foodies.map(function (food) {
       var day = sourceDay(food.date);
       var label = day ? day.dateLabel : food.date;
+      var isNewGlasgow = normalize(food.name).indexOf('new glasgow lobster suppers') !== -1;
       return {
         id: 'food-' + slug(food.date + '-' + food.name),
         name: food.name, meal: food.meal || 'Meal', city: food.city || '',
@@ -1874,8 +1904,8 @@ setTimeout(function () {
         dayId: food.date, dayLabel: label, dayShort: shortDay(label),
         planned: true, region: '',
         menuRank: Array.isArray(food.menuRank) ? food.menuRank : [],
-        summary: food.why || '', order: food.order || '', tip: food.friction || '',
-        backup: food.backup || '', reserve: food.reserve || '',
+        summary: food.why || '', order: food.order || '', tip: isNewGlasgow ? 'Arrive near the 17:15 target and expect a 90–120 minute visit including the queue.' : (food.friction || ''),
+        backup: food.backup || '', reserve: isNewGlasgow ? 'Walk-in for a family of three; reservations are limited to groups of 8+.' : (food.reserve || ''),
         address: food.address || '',
         mapUrl: food.mapUrl || mapSearchUrl(food.address || food.name),
         source: food.source || '',
@@ -1923,7 +1953,7 @@ setTimeout(function () {
       photoOk ? '<img src="' + escapeHtml(item.photo) + '" alt="' + escapeHtml(item.name) + '" loading="lazy">' : '<div class="photo-fallback" aria-hidden="true">' + (item.icon || '📍') + '</div>',
       item.rating ? '<span class="rating-badge">★ ' + item.rating.toFixed(1) + '</span>' : '',
       picked ? '<span class="picked-badge">Picked</span>' : '',
-      item.planned ? '<span class="plan-flag">In plan' + (item.dayShort ? ' · ' + escapeHtml(item.dayShort) : '') + '</span>' : '<span class="plan-flag new">New idea</span>',
+      item.planned ? '<span class="plan-flag">In plan' + (item.dayShort ? ' · ' + escapeHtml(item.dayShort) : '') + '</span>' : '<span class="plan-flag new">' + escapeHtml(item.planLabel || 'New idea') + '</span>',
       photoOk && item.photoNote ? '<span class="photo-note">' + escapeHtml(item.photoNote) + '</span>' : '',
       '</div>',
       '<div class="sugg-body">',
@@ -2007,7 +2037,7 @@ setTimeout(function () {
     section.innerHTML = [
       '<h2 id="food-heading" class="section-heading">Food — best picks first</h2>',
       '<p class="section-intro">Every food idea for the route, ranked with the highest-rated on top. <strong>☆ Pick</strong> pins a card to the top; <strong>✕ Remove</strong> hides it. Both save in this browser and are reversible anytime. Ratings are approximate Google scores — reconfirm hours and menus before going. Photos load from Wikimedia Commons when online.</p>',
-      '<details class="card full" style="margin:0 0 16px"><summary><strong>Locked-in daily meal plan</strong> — one Plan A per meal slot</summary><p class="small muted" style="margin:10px 0 12px">Reservation priority: La Bûche, Wolastoq Wharf, New Glasgow Lobster Suppers, Slaymaker &amp; Nichols, and Tide &amp; Boar.</p><div class="timeline">', mealPlanRows(), '</div></details>',
+      '<details class="card full" style="margin:0 0 16px"><summary><strong>Locked-in daily meal plan</strong> — one Plan A per meal slot</summary><p class="small muted" style="margin:10px 0 12px">Reserve La Bûche, Slaymaker &amp; Nichols and Tide &amp; Boar; confirm Wolastoq Wharf Sunday hours. New Glasgow is an early walk-in for this family.</p><div class="timeline">', mealPlanRows(), '</div></details>',
       '<div class="control-grid" aria-label="Food suggestion filters">',
       '<label for="foodDayV2">Day<select id="foodDayV2"><option value="">All days</option><option value="extras">New ideas only</option></select></label>',
       '<label for="mealFilterV2">Meal<select id="mealFilterV2"><option value="">All meals</option></select></label>',
@@ -2088,19 +2118,24 @@ setTimeout(function () {
 
   function attractionSuggestionList() {
     var planned = rawData.attractions.map(function (attraction) {
+      var attractionName = normalize(attraction.Attraction);
+      var isGrandFalls = attractionName.indexOf('grand falls gorge') !== -1;
+      var isMagneticHill = attractionName.indexOf('magnetic hill illusion') !== -1;
+      var isHopewell = attractionName.indexOf('hopewell rocks') !== -1;
+      var correctedAddress = isMagneticHill ? '2846 Mountain Road, Moncton, NB E1G 2W7' : (attraction.Address || '');
       return {
         id: 'attr-' + slug(attraction.Attraction),
         name: attraction.Attraction,
         rating: Number(attraction.Rating || 0),
         photo: attraction['Photo URL'] || '', photoNote: attraction['Photo note'] || '',
-        dayLabel: attraction.Day || '', dayShort: attraction.Day || '',
-        best: attraction['Best time'] || '',
-        summary: attraction.Description || '',
-        kid: attraction['Kid fit'] || '', foodWash: attraction['Food / Washroom'] || '',
-        address: attraction.Address || '',
-        mapUrl: attraction['Map URL'] || mapSearchUrl(attraction.Address || attraction.Attraction),
+        dayLabel: isGrandFalls ? 'Backup only — not in Plan A' : (attraction.Day || ''), dayShort: isGrandFalls ? '' : (attraction.Day || ''),
+        best: isHopewell ? 'Predicted access about 9:00 AM–2:45 PM; target stairs 10:45 and confirm with park staff.' : (attraction['Best time'] || ''),
+        summary: isGrandFalls ? 'Scenic gorge retained only as a future-trip idea; the Aug 16 Plan A uses Edmundston and Hartland service breaks instead.' : (attraction.Description || ''),
+        kid: isHopewell ? 'Timing-sensitive: use closed-toe grippy shoes, consider the shuttle, and treat 60–90 minutes on the floor as enough.' : (attraction['Kid fit'] || ''), foodWash: attraction['Food / Washroom'] || '',
+        address: correctedAddress,
+        mapUrl: isMagneticHill ? mapSearchUrl(correctedAddress) : (attraction['Map URL'] || mapSearchUrl(correctedAddress || attraction.Attraction)),
         source: attraction['Source URL'] || '',
-        planned: true, region: '',
+        planned: !isGrandFalls, planLabel: isGrandFalls ? 'Backup only' : '', region: '',
         icon: '🗺️'
       };
     });
@@ -2203,11 +2238,11 @@ setTimeout(function () {
           '<p>', escapeHtml(hotel['Why recommended'] || ''), '</p>',
           '<dl><dt>Address</dt><dd>', escapeHtml(hotel.Address || '—'), '</dd><dt>Booking</dt><dd>', escapeHtml(hotel['Booking instruction'] || 'Confirm parking and cancellation terms.'), '</dd></dl>',
           '<div class="links">', externalLink(hotel['Map URL'], 'Map'), externalLink(hotel['Address/source'], 'Hotel source'), externalLink(hotel['Amenities/source'], 'Amenities'), '</div>',
-          '<div class="hotel-backups"><h4>Backup options</h4><p class="hotel-backups-intro">Check these in order if the preferred stay is unavailable.</p>',
+          '<details class="hotel-backups"><summary>Show 2 backup hotels</summary><p class="hotel-backups-intro">Check these in order if the preferred stay is unavailable.</p>',
           alternatives.map(function (alternative, index) {
             return '<div class="hotel-backup"><p><span class="tag">Backup ' + (index + 1) + '</span></p><h4>' + escapeHtml(alternative.name) + '</h4><p>' + escapeHtml(alternative.fit) + '</p><p class="small muted">' + escapeHtml(alternative.address) + '</p><div class="links">' + externalLink(mapSearchUrl(alternative.address), 'Map') + externalLink(alternative.source, 'Check rooms') + '</div></div>';
           }).join(''),
-          '</div></article>'
+          '</details></article>'
         ].join('');
       }).join(''),
       '</div>'
@@ -2218,14 +2253,14 @@ setTimeout(function () {
     var section = document.getElementById('fuel');
     section.innerHTML = [
       '<h2 id="fuel-heading" class="section-heading">Fuel plan</h2>',
-      '<p class="section-intro">Minimized fuel strategy: start full, then refuel only near the 10% trigger. With the conservative ', escapeHtml(String(fuelMath.conservativeRangeKm)), ' km range, that means about ', escapeHtml(String(fuelMath.targetSinceLastFillKm)), ' km since the last fill and about ', escapeHtml(String(fuelMath.triggerRemainingKm)), ' km remaining. This is tight; verify 91 AKI availability before committing to a rural low-fuel stretch.</p>',
+      '<p class="section-intro">Family-safe fuel strategy: start full with 91 AKI minimum, then refuel by a quarter tank remaining—or sooner when the live range approaches 120–150 km, weather is poor, or the next reliable station is uncertain. The car’s live range and safe station access override fixed-distance math.</p>',
       '<div class="mobile-card-list">',
       minimalFuelPlan.map(function (fuel) {
         return [
           '<article class="data-card"><h3>', escapeHtml(fuel.stop || 'Fuel decision'), '</h3>',
           '<p><span class="tag">', escapeHtml(fuel.dateLabel || ''), '</span><span class="tag">', escapeHtml(fuel.tank || 'Check dash'), '</span></p>',
           '<dl><dt>Address / zone</dt><dd>', escapeHtml(fuel.address || '—'), '</dd><dt>Action</dt><dd>', escapeHtml(fuel.action || 'Review'), '</dd><dt>Why</dt><dd>', escapeHtml(fuel.reason || '—'), '</dd></dl>',
-          '<p class="small"><strong>Rule:</strong> no top-up by habit. Fill only when the dash is near 10%, unless weather, closures, or station availability make that unsafe.</p>',
+          '<p class="small"><strong>Rule:</strong> refuel by 25%; never delay fuel for a tidy mileage target and never let it compete with the Hopewell tide window.</p>',
           '<div class="links">', externalLink(fuel.mapUrl, 'Map'), externalLink(fuel.sourceUrl, 'Station source'), '</div></article>'
         ].join('');
       }).join(''),
@@ -2241,15 +2276,14 @@ setTimeout(function () {
       '<div class="mobile-card-list">',
       operationalPlan.days.map(function (day) {
         return [
-          '<article class="data-card ', riskClass(day.risk), '"><h3>', escapeHtml(day.label), '</h3>',
-          '<p><span class="tag">', escapeHtml(day.risk), ' risk</span><span class="tag">', escapeHtml(day.driveKm), ' km</span></p>',
+          '<details class="data-card ', riskClass(day.risk), '"', normalize(day.risk) === 'high' ? ' open' : '', '><summary><strong>', escapeHtml(day.label), '</strong> · ', escapeHtml(day.risk), ' risk · ', escapeHtml(day.driveKm), ' km</summary>',
           '<p><strong>', escapeHtml(day.routeFocus), '</strong><br>', escapeHtml(day.pureDriveTime), '</p>',
           '<p><strong>Morning:</strong> Wake ', escapeHtml(day.wakeTime), ' · target rollout ', escapeHtml(day.departTarget), '<br><strong>Driver plan:</strong> ', escapeHtml(day.driverPlan), '</p>',
           '<p><strong>Delay rule:</strong> ', escapeHtml(day.contingency), '</p>',
           '<p><strong>Fallback:</strong> ', escapeHtml(day.emergency), '</p>',
           '<p class="small"><strong>Time zone:</strong> ', escapeHtml(day.timeZoneNote), '</p>',
           externalLink(dayRouteUrl(day), 'Open active-day route'),
-          '</article>'
+          '</details>'
         ].join('');
       }).join(''),
       '</div>'
@@ -2258,9 +2292,19 @@ setTimeout(function () {
 
   function renderSources() {
     var section = document.getElementById('sources');
-    var items = rawData.sources.map(function (source) {
-      return { name: source.Topic, fact: source['Key fact used'], url: source['Source URL'] };
-    }).concat(ticketGuidanceList).concat(roadLinks.map(function (link) {
+    var sourceItems = rawData.sources.filter(function (source) {
+      return !/^Low-fuel corridor:/i.test(String(source.Topic || ''));
+    }).map(function (source) {
+      var fact = source['Key fact used'];
+      if (/Hopewell Cape tide predictions/i.test(String(source.Topic || ''))) {
+        fact = 'CHS predicts low tide at 11:52 AM ADT on Aug 19. Estimated floor access is about 9:00 AM–2:45 PM, but actual access remains at park staff discretion.';
+      }
+      return { name: source.Topic, fact: fact, url: source['Source URL'] };
+    });
+    var fuelSourceItems = minimalFuelPlan.map(function (fuel) {
+      return { name: fuel.stop, fact: 'Verify 91 AKI before travel and refuel by 25% remaining, sooner near 120–150 km displayed range or uncertain services.', url: fuel.sourceUrl || fuel.mapUrl };
+    });
+    var items = sourceItems.concat(fuelSourceItems).concat(ticketGuidanceList).concat(roadLinks.map(function (link) {
       return { name: link.title, fact: link.detail, url: link.url };
     }));
     section.innerHTML = [
@@ -2817,7 +2861,7 @@ setTimeout(function () {
         ? 'Store them on this phone before leaving Wi-Fi so the Food and Attractions cards keep their photos with no signal.</p><div class="action-bar"><button type="button" class="button primary" id="cachePhotos">Cache photos for offline</button><button type="button" class="button subtle" id="clearPhotoCache">Clear photo cache</button></div><div id="photoCacheStatus" class="status-line" role="status" aria-live="polite"></div>'
         : 'Photo caching needs the hosted (HTTPS) copy of this page; the downloaded file cannot store them.</p>',
       '<p style="margin-top:10px"><label><input id="offlinePhotoMode" type="checkbox" ', tripState.offlineMode ? 'checked' : '', '> Hide photos entirely (offline-friendly cards)</label></p></article>',
-      '<article class="card"><h3>Roads & weather</h3><div class="road-grid">',
+      '<article class="card"><h3>Roads & weather</h3><p class="small"><strong>Go / no-go:</strong> A severe-weather warning cancels beach, coastal and cliff walks; a bridge advisory pauses the crossing; high smoke/AQHI moves activity indoors; a Hopewell closure means viewpoints only under staff direction.</p><div class="road-grid">',
       roadLinks.concat(weatherLinks).map(function (link) { return '<a class="road-link" href="' + escapeHtml(safeExternalUrl(link.url)) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">' + escapeHtml(link.title) + '<span>' + escapeHtml(link.detail) + '</span></a>'; }).join(''),
       '</div></article>',
       '</div>'
