@@ -19,7 +19,7 @@ Live public site: https://henrymaplehonda.github.io/pei-foodie-road-trip/
 The primary app has four focused views:
 
 - **Today** — next stop, navigation, trip progress, and schedule status.
-- **Plan** — one compact daily timeline with late-mode cutoffs and route links.
+- **Plan** — a hotel-anchored daily timeline with the booked departure/arrival property, one clear breakfast/lunch/dinner plan, late-mode cutoffs, and route links.
 - **Prep** — seven booked hotels, unfinished confirmation tasks, calls, and packing.
 - **Safety** — emergency numbers, the 91-AKI fuel rule, road and weather links, and offline exports.
 
@@ -43,7 +43,9 @@ The larger food, attraction, hotel, and overview catalogues stay out of the prim
 
 The seven hotel nights are booked. Reconfirm each property directly before travel, with special attention to the Cofortel, Canadas Best Value Inn, and Best Western confirmations that currently show only two adults; also confirm the child sleeping setup in the DoubleTree one-bedroom suite. Arrange an early bag drop at Canadas Best Value Inn or a same-day post-checkout hold at Hampton for the August 18 Charlottetown hotel switch.
 
-The active route uses the directional plazas that match travel: ONroute Odessa eastbound on August 14 and ONroute Mallorytown North westbound on August 21. The August 18 lunch uses Blue Mussel Café's new 5033 Rustico Road location and treats its live waitlist as a same-service tool only. Charlottetown is hosting Old Home Week August 14–22, so the Slaymaker dinner includes extra downtown parking time and Victoria Row is no longer part of Plan A.
+The active route uses the directional plazas that match travel: ONroute Odessa eastbound on August 14 and ONroute Mallorytown North westbound on August 21. The requested Kamouraska Quai Miller visit is a required August 16 waterfront stop before the proper Rivière-du-Loup lunch. The August 18 lunch uses Blue Mussel Café's new 5033 Rustico Road location and treats its live waitlist as a same-service tool only. Charlottetown is hosting Old Home Week August 14–22, so the Slaymaker dinner includes extra downtown parking time and Victoria Row is no longer part of Plan A.
+
+Hotel breakfast is preferred whenever its confirmed service window protects the departure time. Every day also has a proper lunch and a seated dinner plan with a named fallback; room service is not used as a meal plan.
 
 Save a cancellable Kingston safety overnight before departure. Hampton Inn Kingston at 125 Innovation Drive is the primary candidate and Holiday Inn Express Kingston West at 205 Resource Road is the backup; make the go/stop decision at westbound Mallorytown North based on fatigue, weather, traffic, and the child's condition.
 
