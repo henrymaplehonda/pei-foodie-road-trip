@@ -19,7 +19,7 @@ Live public site: https://henrymaplehonda.github.io/pei-foodie-road-trip/
 The primary app has four focused views:
 
 - **Today** — next stop, navigation, trip progress, and schedule status.
-- **Plan** — a hotel-anchored daily timeline with the booked departure/arrival property, one clear breakfast/lunch/dinner plan, late-mode cutoffs, and route links.
+- **Plan** — a hotel-anchored daily timeline with recognizable destination names, parking-target navigation, one clear breakfast/lunch/dinner plan, recovery blocks, and late-mode cutoffs.
 - **Prep** — seven booked hotels, unfinished confirmation tasks, calls, and packing.
 - **Safety** — emergency numbers, the 91-AKI fuel rule, road and weather links, and offline exports.
 
@@ -43,19 +43,19 @@ The larger food, attraction, hotel, and overview catalogues stay out of the prim
 
 The seven hotel nights are booked. Reconfirm each property directly before travel, with special attention to the Cofortel, Canadas Best Value Inn, and Best Western confirmations that currently show only two adults; also confirm the child sleeping setup in the DoubleTree one-bedroom suite. Arrange an early bag drop at Canadas Best Value Inn or a same-day post-checkout hold at Hampton for the August 18 Charlottetown hotel switch.
 
-The active route uses the directional plazas that match travel: ONroute Odessa eastbound on August 14 and ONroute Mallorytown North westbound on August 21. The requested Kamouraska Quai Miller visit is a required August 16 waterfront stop before the proper Rivière-du-Loup lunch. The August 18 lunch uses Blue Mussel Café's new 5033 Rustico Road location and treats its live waitlist as a same-service tool only. Charlottetown is hosting Old Home Week August 14–22, so the Slaymaker dinner includes extra downtown parking time and Victoria Row is no longer part of Plan A.
+The active route uses the directional plazas that match travel: ONroute Odessa eastbound on August 14 and ONroute Mallorytown North westbound on August 21. Upper Canada Village and the Morrisburg detour are removed; August 14 now uses a proper seated lunch at Tata’s in Brockville. The requested Kamouraska Quai Miller visit is a required August 16 waterfront stop before the proper Rivière-du-Loup lunch, and its route link targets named public parking on Avenue LeBlanc. The August 18 lunch uses Blue Mussel Café's new 5033 Rustico Road location and treats its live waitlist as a same-service tool only. Charlottetown is hosting Old Home Week August 14–22, so the Slaymaker dinner includes extra downtown parking time and Victoria Row is no longer part of Plan A.
 
-Hotel breakfast is preferred whenever its confirmed service window protects the departure time. Every day also has a proper lunch and a seated dinner plan with a named fallback; room service is not used as a meal plan.
+Hotel breakfast is preferred whenever its confirmed service window protects the departure time. Every day also has a proper lunch and a seated dinner plan with a named fallback; room service and self-catered lunches are not used as meal plans. The itinerary protects one priority experience per day and treats every other attraction as optional or easy to skip.
 
 Save a cancellable Kingston safety overnight before departure. Hampton Inn Kingston at 125 Innovation Drive is the primary candidate and Holiday Inn Express Kingston West at 205 Resource Road is the backup; make the go/stop decision at westbound Mallorytown North based on fatigue, weather, traffic, and the child's condition.
 
-Confirm operating hours, attraction admissions, reservations, road conditions, fuel availability, tides, and weather before departure. Card ratings are approximate Google review scores recorded at planning time; several seaside spots (Richard's, Malpeque Oyster Barn, Point Prim Chowder House) are seasonal, so verify hours the week before.
+Confirm operating hours, attraction admissions, reservations, road conditions, fuel availability, tides, and weather before departure. Restaurant and attraction cards link to official or local tourism sources where available; several seaside spots are seasonal, so verify hours the week before.
 
 The August 19 Hopewell Rocks tide window is set from official Canadian Hydrographic Service predictions (station 00170, Hopewell Cape, ADT): high 5:23 AM (11.33 m), low 11:52 AM (2.48 m), high 5:45 PM (11.32 m). Ocean-floor walking runs roughly 9:00 AM–2:45 PM, so the day rolls out of Charlottetown at 7:30 AM, targets the entrance by 10:15–10:30 AM and the beach stairs by 10:45 AM, then opens up a relaxed Moncton afternoon (4:00 PM guaranteed hotel check-in, pool, optional Magnetic Hill) with dinner at 6:00 PM. Re-verify the official table 24–48 hours before the visit.
 
-The active itinerary now follows a family-driving cadence: roughly every two hours or less, the route includes a real stop such as an attraction, park, beach, boardwalk, or scenic photo break. Several of those breaks are adapted from the original spreadsheet plan.
+The active itinerary now follows a family-driving cadence: every 1.5–2.5 hours, the route includes a named restaurant, service centre, attraction, waterfront, beach or short scenic break. Attraction directions target the closest practical parking instead of an unexplained street address. August 20 no longer repeats Kamouraska, preserving an earlier DoubleTree arrival and a real recovery block.
 
-Attraction-style stops include a 4.0+ Google Maps review gate plus a nearby kid-friendly fallback with a map link, so there is always a low-friction backup if a main stop is crowded, closed, or not matching the kid mood.
+Attraction-style stops include a nearby child-friendly fallback with a map link, so there is always a low-friction backup if a main stop is crowded, closed, or not matching the child’s mood.
 
 Fuel planning uses a family-safe buffer: start full with 91 AKI minimum, then refuel by a quarter tank remaining—or sooner when the live range approaches 120–150 km, weather is poor, or the next reliable premium station is uncertain. The car’s live range and safe station access override fixed-distance estimates.
 
