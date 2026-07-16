@@ -113,6 +113,26 @@ function check(name, ok, detail) {
   ];
   const hotelText = await page.locator('#hotels').innerText();
   check('hotel ledger contains the 7 exact booked properties', bookedHotelNames.every((name) => hotelText.includes(name)));
+  const confirmationHotels = await page.evaluate(() => JSON.parse(document.getElementById('trip-data').textContent).hotels);
+  const expectedHotelConfirmations = [
+    { Date: '2026-08-14', hotel: 'Montreal Marriott Chateau Champlain', in: 'Fri, Aug 14 · from 4:00 PM', out: 'Sat, Aug 15 · by 12:00 PM', room: 'Room · 2 double beds', guests: '2 adults + 1 child' },
+    { Date: '2026-08-15', hotel: 'Hôtel Cofortel', in: 'Sat, Aug 15 · from 4:00 PM', out: 'Sun, Aug 16 · by 12:00 PM', room: 'Elite room · 1 king bed · 2nd floor', guests: 'Confirmation currently shows 2 adults' },
+    { Date: '2026-08-16', hotel: 'Delta Hotels by Marriott Fredericton', in: 'Sun, Aug 16 · from 4:00 PM', out: 'Mon, Aug 17 · by 11:00 AM', room: 'Room · 1 king bed + sofa bed', guests: '2 adults + 1 child' },
+    { Date: '2026-08-17', hotel: 'Hampton Inn & Suites Charlottetown', in: 'Mon, Aug 17 · from 4:00 PM', out: 'Tue, Aug 18 · by 11:00 AM', room: 'Standard room · 2 queen beds', guests: '2 adults + 1 child' },
+    { Date: '2026-08-18', hotel: 'Canadas Best Value Inn & Suites Charlottetown', in: 'Tue, Aug 18 · from 3:00 PM', out: 'Wed, Aug 19 · by 11:00 AM', room: 'Suite · 1 king bed · non-smoking · jetted tub', guests: 'Confirmation currently shows 2 adults' },
+    { Date: '2026-08-19', hotel: 'Best Western Plus Moncton', in: 'Wed, Aug 19 · from 4:00 PM', out: 'Thu, Aug 20 · by 11:00 AM', room: 'Room type/bed setup is not visible in the supplied screenshot', guests: 'Confirmation currently shows 2 adults' },
+    { Date: '2026-08-20', hotel: 'DoubleTree by Hilton Quebec Resort', in: 'Thu, Aug 20 · from 4:00 PM', out: 'Fri, Aug 21 · by 12:00 PM', room: 'Suite · 1 bedroom', guests: '2 adults + 1 child' }
+  ];
+  check('hotel confirmation details match all 7 booking screenshots', expectedHotelConfirmations.every((expected) => {
+    const actual = confirmationHotels.find((hotel) => hotel.Date === expected.Date);
+    return actual
+      && actual['Recommended hotel'] === expected.hotel
+      && actual['Check-in'] === expected.in
+      && actual['Check-out'] === expected.out
+      && actual.Room === expected.room
+      && actual.Guests === expected.guests;
+  }));
+  check('old recommended hotels are absent', ['Le Square Phillips Hôtel & Suites', 'Château Fredericton', 'Rodd Royalty', 'Fairfield by Marriott Inn & Suites Moncton'].every((name) => !hotelText.includes(name)));
   check('every hotel card is marked booked', (await page.locator('#hotels .tag.category-hotel').allTextContents()).filter((text) => text.includes('Hotel · booked')).length === 7);
   check('hotel cards expose confirmation fields', ['Check-in', 'Check-out', 'Room', 'Guests', 'Cancellation'].every((label) => hotelText.includes(label)));
   check('booking action flags are visible', (await page.locator('#hotels .data-card.warn').count()) === 4 && (await page.locator('#hotels .mode-note').count()) === 4);
