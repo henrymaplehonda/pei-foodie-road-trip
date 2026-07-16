@@ -20,8 +20,8 @@
     }
   ],
   "shortcuts": [
-    { "name": "Trip control", "url": "./index.html#live" },
-    { "name": "Checklist", "url": "./index.html#checklist" },
-    { "name": "Offline pack", "url": "./index.html#offline" }
+    { "name": "Today", "url": "./index.html#live" },
+    { "name": "Prep", "url": "./index.html#checklist" },
+    { "name": "Safety", "url": "./index.html#offline" }
   ]
 }
