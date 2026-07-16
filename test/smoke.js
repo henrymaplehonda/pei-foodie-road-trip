@@ -93,7 +93,7 @@ function check(name, ok, detail) {
   check('attractions are grouped by trip day', (await page.locator('#attractions .day-group[data-day^="2026-08-"]').count()) >= 6);
   check('attraction day groups are visible', await page.locator('#attractions .day-group[data-day="2026-08-14"]').isVisible());
   check('Aug 16 offers multiple on-route attractions', (await page.locator('#attractions .day-group[data-day="2026-08-16"] .sugg-card').count()) >= 4);
-  check('photo and scenic plan stops appear as attractions', (await page.locator('#attractions .sugg-card').filter({ hasText: 'Hartland Covered Bridge' }).count()) >= 2 && (await page.locator('#attractions .sugg-card').filter({ hasText: 'Kamouraska' }).count()) >= 2);
+  check('photo and scenic plan stops appear without a repeated Kamouraska detour', (await page.locator('#attractions .sugg-card').filter({ hasText: 'Hartland Covered Bridge' }).count()) >= 2 && (await page.locator('#attractions .sugg-card').filter({ hasText: 'Kamouraska' }).count()) === 1);
   const magneticCard = page.locator('#attractions .sugg-card:has(h3:text-is("Magnetic Hill Illusion"))').first();
   check('Magnetic Hill card uses the official address', (await magneticCard.textContent()).includes('2846 Mountain Road') && (await magneticCard.locator('a[href*="2846"]').count()) >= 1);
   const grandFallsCard = page.locator('#attractions .sugg-card').filter({ hasText: 'Grand Falls Gorge' }).first();
@@ -175,20 +175,20 @@ function check(name, ok, detail) {
   await page.selectOption('#daySelectV2', '2026-08-14');
   await page.selectOption('#dayMode', 'late60');
   const lateAug14Text = await page.locator('#dayResult').textContent();
-  const lateDinosaurCards = await page.locator('#dayResult .timeline .stop').filter({ hasText: 'Prehistoric World' }).count();
-  check('60-minute delay mode removes the dinosaur card but protects Odessa', lateDinosaurCards === 0 && lateAug14Text.includes('ONroute Odessa') && lateAug14Text.includes('Meal backup active'));
+  check('60-minute delay mode removes optional Big Apple but protects the proper lunch', !lateAug14Text.includes('The Big Apple visitor parking') && lateAug14Text.includes('ONroute Odessa') && lateAug14Text.includes('Tata’s House of Pizza & Pasta'));
   await page.selectOption('#dayMode', 'on-time');
-  check('on-time mode restores the full Aug 14 plan', (await page.locator('#dayResult').textContent()).includes('Prehistoric World'));
+  const onTimeAug14Text = await page.locator('#dayResult').textContent();
+  check('on-time mode restores the optional movement stop without the rejected attraction', onTimeAug14Text.includes('The Big Apple visitor parking') && !onTimeAug14Text.includes('Upper Canada Village') && !onTimeAug14Text.includes('Prehistoric World'));
   await page.click('#nav [data-section=live]');
   check('plan state stays synchronized between day and live views', (await page.locator('#liveMode').inputValue()) === 'on-time');
   await page.selectOption('#liveMode', 'preview');
   check('live schedule selector retains focus after rerender', await page.evaluate(() => document.activeElement && document.activeElement.id === 'liveMode'));
 
   const aug14Text = await dayText('2026-08-14');
-  check('Aug 14 uses the eastbound plaza and separates snack from proper lunch', aug14Text.includes('ONroute Odessa') && aug14Text.includes('3745 Highway 401 Eastbound') && aug14Text.includes('Morning snack / washroom') && aug14Text.includes('Morrisburg packed lunch') && aug14Text.includes('65-80 min'));
+  check('Aug 14 uses the eastbound plaza and a proper Brockville lunch', aug14Text.includes('ONroute Odessa') && aug14Text.includes('3745 Highway 401 Eastbound') && aug14Text.includes('Morning snack / washroom') && aug14Text.includes('Tata’s House of Pizza & Pasta') && aug14Text.includes('11 Windsor Drive') && aug14Text.includes('50-60 min'));
 
   const aug15Text = await dayText('2026-08-15');
-  check('Aug 15 protects Montmorency lunch and the 4 PM Cofortel room', aug15Text.includes('Morning snack / washroom') && aug15Text.includes('packed or on-site lunch around noon') && aug15Text.includes('16:00 check-in') && !aug15Text.includes('14:30'));
+  check('Aug 15 protects the Manoir lunch and the 4 PM Cofortel room', aug15Text.includes('Restaurant-terrasse du Manoir Montmorency') && aug15Text.includes('children’s menu') && aug15Text.includes('16:00 check-in') && !aug15Text.includes('packed or on-site lunch'));
 
   const aug16Text = await dayText('2026-08-16');
   check('Aug 16 includes the requested Quai Miller visit and Delta recovery', aug16Text.includes('Visit Kamouraska Quai Miller') && aug16Text.includes('09:10–09:35') && aug16Text.includes('Edmundston service + driver swap') && aug16Text.includes('About 125 km / 1 h 25 from Hartland') && aug16Text.includes('Delta Hotels by Marriott Fredericton') && aug16Text.includes('STMR.36') && !aug16Text.includes('Grand Falls Gorge'));
@@ -206,10 +206,10 @@ function check(name, ok, detail) {
   check('Aug 19 respects Best Western 4 PM check-in', aug19Text.includes('Best Western Plus Moncton') && aug19Text.includes('16:00 guaranteed') && aug19Text.includes('2 adults'));
 
   const aug20Text = await dayText('2026-08-20');
-  check('Aug 20 protects early departure, cooler lunch and on-site dinner', aug20Text.includes('Wake 05:30') && aug20Text.includes('Edmundston cooler lunch') && aug20Text.toLowerCase().includes('quarter tank') && aug20Text.includes('DoubleTree by Hilton Quebec Resort') && aug20Text.includes('Le Dijon'));
+  check('Aug 20 protects early departure, proper lunch, recovery and on-site dinner', aug20Text.includes('Wake 05:30') && aug20Text.includes('Frank’s Bar & Grill') && aug20Text.includes('100 Rice Street') && aug20Text.toLowerCase().includes('quarter tank') && aug20Text.includes('DoubleTree by Hilton Quebec Resort') && aug20Text.includes('16:30–17:15') && aug20Text.includes('Le Dijon'));
 
   const aug21Text = await dayText('2026-08-21');
-  const aug21Requirements = ['06:30 wheels moving', 'packed breakfast', '14:00 overnight checkpoint', 'About 185 km / 2 h', '20:00', 'fatigue'];
+  const aug21Requirements = ['06:30 wheels moving', 'DoubleTree hotel breakfast', 'Scores Restaurant Boucherville', '14:00 overnight checkpoint', 'About 190 km / 2 h', '20:00', 'fatigue'];
   const aug21Missing = aug21Requirements.filter((item) => !aug21Text.toLowerCase().includes(item.toLowerCase()));
   check('Aug 21 has a fatigue-based overnight checkpoint', aug21Missing.length === 0, 'missing=' + aug21Missing.join(', '));
   check('Aug 21 fallback stays westbound', aug21Text.includes('Mallorytown North') && aug21Text.includes('Hampton Inn Kingston') && !aug21Text.includes('Mallorytown South') && !aug21Text.includes('Cornwall'));
@@ -219,6 +219,11 @@ function check(name, ok, detail) {
     return normalized.includes('hotel anchor') && normalized.includes('breakfast, lunch & dinner') && normalized.includes('breakfast') && normalized.includes('lunch') && normalized.includes('dinner');
   }));
   check('the plan uses proper restaurant dinners instead of room service', allDayTexts.every((text) => !text.toLowerCase().includes('room service')) && aug16Text.includes('STMR.36 at Delta') && aug20Text.includes('Proper dinner: Le Dijon dining room'));
+  check('the active itinerary contains no rejected attraction or self-catered lunch', allDayTexts.every((text) => {
+    const normalized = text.toLowerCase();
+    return !normalized.includes('upper canada village') && !normalized.includes('prehistoric world') && !normalized.includes('packed lunch') && !normalized.includes('cooler lunch') && !normalized.includes('packed picnic');
+  }));
+  check('attraction stops expose named visitor parking', aug15Text.includes('Montmorency Falls lower-site P1/P2 visitor parking') && aug18Text.includes('Green Gables Visitor Centre parking') && aug18Text.includes('Cavendish Main Beach visitor parking') && aug19Text.includes('Hopewell Rocks main visitor parking'));
   const route14 = await dayRoute('2026-08-14');
   const route15 = await dayRoute('2026-08-15');
   const route16 = await dayRoute('2026-08-16');
@@ -236,7 +241,9 @@ function check(name, ok, detail) {
   check('Aug 21 default route stays westbound and excludes backward or split-only stops', route21.destination === 'Vaughan, ON' && route21.waypoints.includes('678 Highway 401 Westbound') && !route21.waypoints.includes('Brockville') && !route21.waypoints.includes('209 King St W'));
   check('active-day routes respect the mobile Maps waypoint limit', [route14, route15, route16, route17, route18, route19, route21].every((route) => route.segmentCount >= 1 && route.maxWaypoints <= 3));
   check('day summary is compact and hotel/meal anchored', (await page.locator('#dayResult .day-fact').count()) === 4 && (await page.locator('#dayResult .hotel-anchor').count()) === 1 && (await page.locator('#dayResult .meal-contract-item').count()) === 3 && (await page.locator('#dayResult .meal-plan-card').count()) === 0);
-  check('stop cards keep directions and details while limiting badges to exceptions', (await page.locator('#dayResult details.stop-more').count()) > 0 && (await page.locator('#dayResult .stop-primary-actions a').count()) > 0 && (await page.locator('#dayResult .priority-badge').count()) > 0 && (await page.locator('#dayResult .kind-badge').count()) === 0);
+  const visibleStopCount = await page.locator('#dayResult .timeline .stop').count();
+  check('stop cards keep named destinations, directions and concise details', visibleStopCount > 0 && (await page.locator('#dayResult .stop-destination').count()) === visibleStopCount && (await page.locator('#dayResult details.stop-more').count()) === visibleStopCount && (await page.locator('#dayResult .stop-primary-actions a').count()) > 0 && (await page.locator('#dayResult .priority-badge').count()) > 0 && (await page.locator('#dayResult .kind-badge').count()) === 0);
+  check('meal and attraction logistics stay available inside expandable details', (await page.locator('#dayResult .practical-grid').count()) >= 1);
   check('day navigation buttons render', (await page.locator('#previousDay').count()) === 1 && (await page.locator('#nextDay').count()) === 1);
   await page.click('#previousDay');
   check('previous-day control changes the selected day', (await page.locator('#daySelectV2').inputValue()) === '2026-08-20');
@@ -249,7 +256,8 @@ function check(name, ok, detail) {
   await page.goto(base + '/index.html#checklist', { waitUntil: 'networkidle' });
   check('deep link #checklist boots to checklist', await page.locator('#checklist').isVisible());
   await page.goto(base + '/index.html#attractions', { waitUntil: 'networkidle' });
-  check('deep link #attractions shows cards', await page.locator('#attractions .day-group[data-day="2026-08-14"]').isVisible() && (await page.locator('#attractions .sugg-card').count()) === 35);
+  const attractionText = await page.locator('#attractions').textContent();
+  check('deep link #attractions shows cards without the rejected attraction', await page.locator('#attractions .day-group[data-day="2026-08-14"]').isVisible() && (await page.locator('#attractions .sugg-card').count()) >= 30 && !attractionText.includes('Upper Canada Village'));
   await page.goto(base + '/index.html#hotels', { waitUntil: 'networkidle' });
   check('deep link #hotels shows cards', await page.locator('#hotels .day-group[data-day="2026-08-14"]').isVisible() && (await page.locator('#hotels .data-card').count()) === 7);
 
