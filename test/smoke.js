@@ -191,7 +191,7 @@ function check(name, ok, detail) {
   check('Aug 15 protects Montmorency lunch and the 4 PM Cofortel room', aug15Text.includes('Morning snack / washroom') && aug15Text.includes('packed or on-site lunch around noon') && aug15Text.includes('16:00 check-in') && !aug15Text.includes('14:30'));
 
   const aug16Text = await dayText('2026-08-16');
-  check('Aug 16 has realistic service breaks and Delta recovery', aug16Text.includes('Edmundston service + driver swap') && aug16Text.includes('About 125 km / 1 h 25 from Hartland') && aug16Text.includes('Delta Hotels by Marriott Fredericton') && aug16Text.includes('STMR.36') && !aug16Text.includes('Grand Falls Gorge'));
+  check('Aug 16 includes the requested Quai Miller visit and Delta recovery', aug16Text.includes('Visit Kamouraska Quai Miller') && aug16Text.includes('09:10–09:35') && aug16Text.includes('Edmundston service + driver swap') && aug16Text.includes('About 125 km / 1 h 25 from Hartland') && aug16Text.includes('Delta Hotels by Marriott Fredericton') && aug16Text.includes('STMR.36') && !aug16Text.includes('Grand Falls Gorge'));
 
   const aug17Text = await dayText('2026-08-17');
   check('Aug 17 reaches the booked Hampton with corrected walk-in rules', aug17Text.includes('2846 Mountain Road') && aug17Text.includes('groups of 8+') && aug17Text.includes('Hampton Inn & Suites Charlottetown') && !aug17Text.includes('NB Military History Museum'));
@@ -213,6 +213,12 @@ function check(name, ok, detail) {
   const aug21Missing = aug21Requirements.filter((item) => !aug21Text.toLowerCase().includes(item.toLowerCase()));
   check('Aug 21 has a fatigue-based overnight checkpoint', aug21Missing.length === 0, 'missing=' + aug21Missing.join(', '));
   check('Aug 21 fallback stays westbound', aug21Text.includes('Mallorytown North') && aug21Text.includes('Hampton Inn Kingston') && !aug21Text.includes('Mallorytown South') && !aug21Text.includes('Cornwall'));
+  const allDayTexts = [aug14Text, aug15Text, aug16Text, aug17Text, aug18Text, aug19Text, aug20Text, aug21Text];
+  check('every day exposes one hotel anchor and a three-meal contract', allDayTexts.every((text) => {
+    const normalized = text.toLowerCase();
+    return normalized.includes('hotel anchor') && normalized.includes('breakfast, lunch & dinner') && normalized.includes('breakfast') && normalized.includes('lunch') && normalized.includes('dinner');
+  }));
+  check('the plan uses proper restaurant dinners instead of room service', allDayTexts.every((text) => !text.toLowerCase().includes('room service')) && aug16Text.includes('STMR.36 at Delta') && aug20Text.includes('Proper dinner: Le Dijon dining room'));
   const route14 = await dayRoute('2026-08-14');
   const route15 = await dayRoute('2026-08-15');
   const route16 = await dayRoute('2026-08-16');
@@ -229,7 +235,7 @@ function check(name, ok, detail) {
   check('Aug 16 default route ends at Delta, not the conditional dinner branch', route16.destination.includes('225 Woodstock Road'));
   check('Aug 21 default route stays westbound and excludes backward or split-only stops', route21.destination === 'Vaughan, ON' && route21.waypoints.includes('678 Highway 401 Westbound') && !route21.waypoints.includes('Brockville') && !route21.waypoints.includes('209 King St W'));
   check('active-day routes respect the mobile Maps waypoint limit', [route14, route15, route16, route17, route18, route19, route21].every((route) => route.segmentCount >= 1 && route.maxWaypoints <= 3));
-  check('day summary is compact and avoids duplicate meal cards', (await page.locator('#dayResult .day-fact').count()) === 4 && (await page.locator('#dayResult .meal-plan-card').count()) === 0);
+  check('day summary is compact and hotel/meal anchored', (await page.locator('#dayResult .day-fact').count()) === 4 && (await page.locator('#dayResult .hotel-anchor').count()) === 1 && (await page.locator('#dayResult .meal-contract-item').count()) === 3 && (await page.locator('#dayResult .meal-plan-card').count()) === 0);
   check('stop cards keep directions and details while limiting badges to exceptions', (await page.locator('#dayResult details.stop-more').count()) > 0 && (await page.locator('#dayResult .stop-primary-actions a').count()) > 0 && (await page.locator('#dayResult .priority-badge').count()) > 0 && (await page.locator('#dayResult .kind-badge').count()) === 0);
   check('day navigation buttons render', (await page.locator('#previousDay').count()) === 1 && (await page.locator('#nextDay').count()) === 1);
   await page.click('#previousDay');
