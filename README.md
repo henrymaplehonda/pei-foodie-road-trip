@@ -14,32 +14,30 @@ Live public site: https://henrymaplehonda.github.io/pei-foodie-road-trip/
 - `manifest.webmanifest`, `sw.js`, `icon.svg` — optional hosted PWA/offline-cache support
 - `roadtrip-html-master-prompt.txt` — original planning and generation brief
 
-## Food & attraction picker
+## Phone-first interface
 
-The Food and Attractions tabs show every idea as a photo card with an approximate Google rating, ranked best-first. Alongside the 17 planned meals and routed attractions, there are 14 extra food ideas and 18 extra attraction ideas along the route (Montréal, Québec City, the Aug 16 New Brunswick drive, Bay of Fundy, and PEI). Operational photo and scenery stops are also mirrored automatically into the Attractions tab on each applicable day. Use **☆ Pick** to pin favourites to the top and **✕ Remove** to hide anything you are not doing — both are stored only in the browser and can be undone anytime via *View removed* / *Restore all*. Photos load from Wikimedia Commons when online; the offline photo mode hides them without losing any addresses or links.
+The primary app has four focused views:
+
+- **Today** — next stop, navigation, trip progress, and schedule status.
+- **Plan** — one compact daily timeline with late-mode cutoffs and route links.
+- **Prep** — seven booked hotels, unfinished confirmation tasks, calls, and packing.
+- **Safety** — emergency numbers, the 91-AKI fuel rule, road and weather links, and offline exports.
+
+The larger food, attraction, hotel, and overview catalogues stay out of the primary navigation and are loaded only when an existing deep link requests them. This keeps normal startup fast and the phone view easy to scan.
 
 ## Trip tools
 
-- **Countdown & reconfirm schedule** — the Overview tab counts down to departure and lists dated verification milestones (tickets, reservations, hotels, week-before checks) that mirror the checklist.
-- **Weather links** — every day card, the Trip control tab, and the Offline pack link to the Environment Canada forecast for that night's city, plus the hurricane/tropical outlook (August is Maritimes remnant season).
-- **Dark mode** — follows the phone's light/dark setting automatically; the ◐ button at the end of the tab bar cycles Auto → Dark → Light.
-- **Packing checklist** — route-specific packing groups (tide-day shoes, boardwalk bug spray, two-driver kit) at the bottom of the Checklist tab.
-- **Phone-to-phone sync** — the Offline pack tab can copy a sync code on one phone and paste it on the other to transfer picks, checklist progress, packing, and expenses without a file.
-- **Trip spend tracker** — quick expense log with optional budget on the Trip control tab, stored only in the browser.
-- **Plan-state controls** — preview, on-time, 30-minute-late, and 60-minute-late modes stay synchronized between Trip control and the day plan; delay modes remove only stops with explicit cutoffs.
-- **Offline photos** — an opt-in button on the Offline pack tab stores the Wikimedia card photos on-device so Food/Attraction cards keep photos with no signal (hosted HTTPS copy only).
-- **Booked-hotel ledger** — all seven confirmed stays, confirmation-supplied check-in/out windows, room and guest details, cancellation notes, property links, and clearly marked unresolved items. Private Expedia itinerary numbers and the reservation holder’s name are not published.
-- **Emergency card** — offline-safe tap-to-call numbers (911, 811, CAA, and all seven hotels) on the Offline pack tab.
-- **Route map** — a stylized offline SVG map of the loop (with the Hopewell tide window) on the Overview tab.
-- **Keep screen awake** — a wake-lock toggle on Trip control for the navigator's phone while driving.
-- **Tab deep links** — every tab has a `#hash` URL (back button works); the PWA exposes Trip control / Checklist / Offline pack shortcuts, and the Checklist tab shows a red badge when dated tasks are overdue.
-- **Reservation call list** — tap-to-call numbers for the four restaurant calls that still matter: three bookings plus New Glasgow’s walk-in-hours check.
-- **Expense CSV export** — download the spend log as a spreadsheet-ready CSV from Trip control.
-- **Print pack** — printing (or Save as PDF from the Offline pack) always comes out in light colours with buttons and forms stripped, even from dark mode.
+- Schedule controls stay synchronized between **Today** and **Plan**.
+- The booked-hotel summary keeps check-in/out times and action flags visible while storing room, address, cancellation, and official-link details in expandable rows.
+- **Prep** puts unfinished and high-priority tasks first and keeps completed items collapsed.
+- **Safety** keeps 911, 811, CAA, hotel contacts, premium-fuel guidance, and offline/print exports together.
+- Dark mode follows the phone automatically and can be changed from the header.
+- Progress, packing, and schedule choices are stored only in the browser; import/export and phone sync remain available under advanced controls.
+- Direct links such as `#food`, `#attractions`, `#overview`, and `#hotels` remain available as reference pages.
 
 ## Development
 
-`npm install && npx playwright install chromium && npm test` runs a headless smoke test (`test/smoke.js`) that loads the dashboard at phone width and checks every tab, the tide-anchored Aug 19 plan, dark mode, deep links, and layout overflow. The same test runs in GitHub Actions on every pull request.
+`npm install && npx playwright install chromium && npm test` runs a headless smoke test (`test/smoke.js`) that checks the four-tab phone layout, first-viewport next action, booked hotels, tide-anchored Aug 19 plan, dark mode, legacy deep links, and horizontal overflow. The same test runs in GitHub Actions on every pull request.
 
 ## Before traveling
 

@@ -53,11 +53,15 @@ function check(name, ok, detail) {
     try { return JSON.parse(document.getElementById('trip-data').textContent).days.length === 8; } catch (e) { return false; }
   }));
   check('trip-control app booted', await page.evaluate(() => window.__tripControlBooted === true));
-  check('lands on Trip control', await page.locator('#live').isVisible());
-  check('countdown card renders', (await page.locator('.countdown-card').count()) === 1);
-  check('header uses the minimum octane requirement', (await page.locator('header').innerText()).includes('91 AKI minimum'));
+  check('lands on Today', await page.locator('#live').isVisible());
+  check('secondary planning catalogues are lazy on first load', (await page.locator('.countdown-card').count()) === 0 && (await page.locator('#food .sugg-card, #attractions .sugg-card, #hotels .data-card').count()) === 0);
+  const headerText = await page.locator('header').innerText();
+  const headerBox = await page.locator('header').boundingBox();
+  const nextStopBox = await page.locator('#live .next-stop').boundingBox();
+  check('header is concise and trip-specific', headerText.includes('PEI Road Trip') && headerText.includes('7 hotels booked') && !headerText.includes('family-safe premium-fuel'));
+  check('mobile first action appears in the initial viewport', headerBox.height < 180 && nextStopBox.y < 500, 'header=' + Math.round(headerBox.height) + 'px, next=' + Math.round(nextStopBox.y) + 'px');
 
-  const tabs = ['live', 'overview', 'daybyday', 'food', 'attractions', 'hotels', 'sanity', 'checklist', 'offline'];
+  const tabs = ['live', 'daybyday', 'checklist', 'offline'];
   for (const tab of tabs) {
     await page.click(`#nav [data-section=${tab}]`);
     await page.waitForTimeout(100);
@@ -65,24 +69,27 @@ function check(name, ok, detail) {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     check('tab ' + tab + ' visible, no overflow', visible && overflow <= 0, 'overflow=' + overflow + 'px');
   }
-  check('board hides Sources and Fuel while exposing the plan-state selector',
-    (await page.locator('#nav [data-section=sources]').count()) === 0 &&
-    (await page.locator('#nav [data-section=fuel]').count()) === 0 &&
-    (await page.locator('#liveMode').count()) === 1);
+  const navLabels = await page.locator('#nav [role=tab]').allTextContents();
+  check('primary navigation is reduced to four clear tabs', navLabels.length === 4 && ['Today', 'Plan', 'Prep', 'Safety'].every((label) => navLabels.some((text) => text.includes(label))));
+  check('secondary catalogues stay out of primary navigation', ['overview', 'food', 'attractions', 'hotels', 'sanity', 'fuel', 'sources'].every((id) => !navLabels.some((text) => text.toLowerCase().includes(id))) && (await page.locator('#nav #themeToggle').count()) === 0);
+  check('tablist uses roving keyboard focus', (await page.locator('#nav [role=tab][tabindex="0"]').count()) === 1 && (await page.locator('#nav [role=tab][tabindex="-1"]').count()) === 3);
 
+  await page.goto(base + '/index.html#overview', { waitUntil: 'networkidle' });
+  check('legacy Overview direct link still renders on demand', await page.locator('#overview').isVisible() && (await page.locator('.countdown-card').count()) === 1 && (await page.locator('#tab-checklist').getAttribute('aria-selected')) === 'true');
   check('route map renders 7 stops', (await page.locator('.route-map .city-dot').count()) === 7);
   check('route map labels Hopewell as estimated and staff-controlled', (await page.locator('.route-map').textContent()).includes('Estimated 9 AM–2:45 PM · confirm with staff'));
   check('milestones render', (await page.locator('.milestone').count()) === 7);
   check('reservation call list has 4 relevant numbers', (await page.locator('.reservation-card .tel-link').count()) === 4);
   check('emergency card has route-critical numbers and all 7 hotels', (await page.locator('#offline .emergency-list .tel-link').count()) === 15);
+  check('Safety prioritizes three immediate calls and removes photo-cache clutter', (await page.locator('#offline .safety-contacts .tel-link').count()) === 3 && (await page.locator('#offline').textContent()).includes('91 AKI') && (await page.locator('#offline #cachePhotos').count()) === 0);
   check('packing list has items', (await page.locator('[data-packing-id]').count()) >= 25);
 
-  await page.click('#nav [data-section=food]');
+  await page.goto(base + '/index.html#food', { waitUntil: 'networkidle' });
   const newGlasgowCard = page.locator('#food .sugg-card').filter({ hasText: 'New Glasgow Lobster Suppers' }).first();
   const newGlasgowText = await newGlasgowCard.textContent();
   check('New Glasgow card shows the walk-in rule', newGlasgowText.includes('Walk-in for a family of three') && !newGlasgowText.includes('Check/confirm ahead'));
 
-  await page.click('#nav [data-section=attractions]');
+  await page.goto(base + '/index.html#attractions', { waitUntil: 'networkidle' });
   check('attractions are grouped by trip day', (await page.locator('#attractions .day-group[data-day^="2026-08-"]').count()) >= 6);
   check('attraction day groups are visible', await page.locator('#attractions .day-group[data-day="2026-08-14"]').isVisible());
   check('Aug 16 offers multiple on-route attractions', (await page.locator('#attractions .day-group[data-day="2026-08-16"] .sugg-card').count()) >= 4);
@@ -92,7 +99,7 @@ function check(name, ok, detail) {
   const grandFallsCard = page.locator('#attractions .sugg-card').filter({ hasText: 'Grand Falls Gorge' }).first();
   check('Grand Falls is clearly a backup, not Plan A', (await grandFallsCard.textContent()).includes('Backup only') && !(await grandFallsCard.textContent()).includes('In plan'));
 
-  await page.click('#nav [data-section=hotels]');
+  await page.goto(base + '/index.html#hotels', { waitUntil: 'networkidle' });
   check('hotel nights are grouped day by day', (await page.locator('#hotels .day-group[data-day^="2026-08-"]').count()) === 7);
   check('hotel day groups are visible', await page.locator('#hotels .day-group[data-day="2026-08-14"]').isVisible());
   const bookedHotelNames = [
@@ -114,10 +121,12 @@ function check(name, ok, detail) {
 
   await page.click('#nav [data-section=checklist]');
   const checklistText = await page.locator('#checklist').innerText();
+  check('Prep keeps all seven booked hotels in a compact disclosure', (await page.locator('#checklist .hotel-list .hotel-compact').count()) === 7 && checklistText.includes('Booked hotels'));
   check('checklist elevates the 3 child-count mismatches', ['Call Cofortel', 'Call Canadas Best Value Inn', 'Call Best Western Plus Moncton'].every((text) => checklistText.includes(text)));
   check('checklist includes the Charlottetown luggage handoff', checklistText.includes('Arrange the Aug 18 Charlottetown luggage handoff'));
   check('Aug 18 generic hotel reconfirm points to the new booked hotel', checklistText.includes('Reconfirm booked stay: Canadas Best Value Inn & Suites Charlottetown') && (checklistText.match(/Reconfirm booked stay: Hampton Inn & Suites Charlottetown/g) || []).length === 1);
 
+  await page.goto(base + '/index.html#fuel', { waitUntil: 'networkidle' });
   const fuelText = await page.locator('#fuel').innerText();
   check('fuel plan uses family-safe quarter-tank trigger', fuelText.includes('25%') && fuelText.includes('91 AKI minimum') && fuelText.includes('120–150 km'));
   check('fuel plan removed old low-fuel rule', !fuelText.includes('10%') && !fuelText.includes('conservative 800'));
@@ -147,18 +156,19 @@ function check(name, ok, detail) {
   await page.selectOption('#dayMode', 'late60');
   const lateAug14Text = await page.locator('#dayResult').textContent();
   const lateDinosaurCards = await page.locator('#dayResult .timeline .stop').filter({ hasText: 'Prehistoric World' }).count();
-  check('60-minute delay mode removes the dinosaur card but protects Odessa', lateDinosaurCards === 0 && lateAug14Text.includes('ONroute Odessa') && lateAug14Text.includes('Active backup:'));
+  check('60-minute delay mode removes the dinosaur card but protects Odessa', lateDinosaurCards === 0 && lateAug14Text.includes('ONroute Odessa') && lateAug14Text.includes('Meal backup active'));
   await page.selectOption('#dayMode', 'on-time');
   check('on-time mode restores the full Aug 14 plan', (await page.locator('#dayResult').textContent()).includes('Prehistoric World'));
   await page.click('#nav [data-section=live]');
   check('plan state stays synchronized between day and live views', (await page.locator('#liveMode').inputValue()) === 'on-time');
   await page.selectOption('#liveMode', 'preview');
+  check('live schedule selector retains focus after rerender', await page.evaluate(() => document.activeElement && document.activeElement.id === 'liveMode'));
 
   const aug14Text = await dayText('2026-08-14');
-  check('Aug 14 uses the eastbound plaza and separates snack from proper lunch', aug14Text.includes('ONroute Odessa') && aug14Text.includes('3745 Highway 401 Eastbound') && aug14Text.includes('Morning snack / washroom') && aug14Text.includes('Packed Morrisburg lunch') && aug14Text.includes('65-80 min'));
+  check('Aug 14 uses the eastbound plaza and separates snack from proper lunch', aug14Text.includes('ONroute Odessa') && aug14Text.includes('3745 Highway 401 Eastbound') && aug14Text.includes('Morning snack / washroom') && aug14Text.includes('Morrisburg packed lunch') && aug14Text.includes('65-80 min'));
 
   const aug15Text = await dayText('2026-08-15');
-  check('Aug 15 protects Montmorency lunch and the 4 PM Cofortel room', aug15Text.includes('Morning snack / washroom') && aug15Text.includes('Montmorency lunch') && aug15Text.includes('16:00 check-in') && !aug15Text.includes('14:30'));
+  check('Aug 15 protects Montmorency lunch and the 4 PM Cofortel room', aug15Text.includes('Morning snack / washroom') && aug15Text.includes('packed or on-site lunch around noon') && aug15Text.includes('16:00 check-in') && !aug15Text.includes('14:30'));
 
   const aug16Text = await dayText('2026-08-16');
   check('Aug 16 has realistic service breaks and Delta recovery', aug16Text.includes('Edmundston service + driver swap') && aug16Text.includes('About 125 km / 1 h 25 from Hartland') && aug16Text.includes('Delta Hotels by Marriott Fredericton') && aug16Text.includes('STMR.36') && !aug16Text.includes('Grand Falls Gorge'));
@@ -199,17 +209,13 @@ function check(name, ok, detail) {
   check('Aug 16 default route ends at Delta, not the conditional dinner branch', route16.destination.includes('225 Woodstock Road'));
   check('Aug 21 default route stays westbound and excludes backward or split-only stops', route21.destination === 'Vaughan, ON' && route21.waypoints.includes('678 Highway 401 Westbound') && !route21.waypoints.includes('Brockville') && !route21.waypoints.includes('209 King St W'));
   check('active-day routes respect the mobile Maps waypoint limit', [route14, route15, route16, route17, route18, route19, route21].every((route) => route.segmentCount >= 1 && route.maxWaypoints <= 3));
-  check('day cards expose clear plan badges and optional detail', (await page.locator('#dayResult .priority-badge').count()) > 0 && (await page.locator('#dayResult details.stop-more').count()) > 0);
-  check('stop categories use distinct colors', await page.evaluate(() => {
-    const badges = Array.from(document.querySelectorAll('#dayResult .kind-badge'));
-    const colors = new Set(badges.map((badge) => getComputedStyle(badge).backgroundColor));
-    return badges.some((badge) => badge.classList.contains('category-food')) && badges.some((badge) => badge.classList.contains('category-drive')) && colors.size >= 3;
-  }));
+  check('day summary is compact and avoids duplicate meal cards', (await page.locator('#dayResult .day-fact').count()) === 4 && (await page.locator('#dayResult .meal-plan-card').count()) === 0);
+  check('stop cards keep directions and details while limiting badges to exceptions', (await page.locator('#dayResult details.stop-more').count()) > 0 && (await page.locator('#dayResult .stop-primary-actions a').count()) > 0 && (await page.locator('#dayResult .priority-badge').count()) > 0 && (await page.locator('#dayResult .kind-badge').count()) === 0);
   check('day navigation buttons render', (await page.locator('#previousDay').count()) === 1 && (await page.locator('#nextDay').count()) === 1);
   await page.click('#previousDay');
   check('previous-day control changes the selected day', (await page.locator('#daySelectV2').inputValue()) === '2026-08-20');
 
-  await page.click('#nav [data-section=sanity]');
+  await page.goto(base + '/index.html#sanity', { waitUntil: 'networkidle' });
   check('high-risk drive cards start expanded', (await page.locator('#sanity details.warn[open]').count()) >= 1);
   check('lower-risk drive cards start collapsed', (await page.locator('#sanity details:not(.warn):not([open])').count()) >= 1);
 

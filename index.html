@@ -240,19 +240,159 @@ button,textarea,.theme-toggle,.action-bar,.stop-actions,.expense-form,.checklist
 :root[data-theme="dark"] .privacy-banner,:root[data-theme="dark"] .mode-note,:root[data-theme="dark"] .warn,:root[data-theme="dark"] .ticket-alert,:root[data-theme="dark"] .note,:root[data-theme="dark"] .attraction-quality,:root[data-theme="dark"] .checklist-row.is-done,:root[data-theme="dark"] .mode-note.safe{background:#fff;color:#111827;border-color:#d1d5db}
 }
 </style>
+<style id="readability-styles">
+:root{--bg:#f4f7f6;--panel:#fff;--ink:#18232c;--muted:#53616d;--line:#d9e1df;--accent:#8f263b;--accent2:#0d6168;--soft:#edf2f1;--surface-alt:#f4f7f6;--shadow:0 8px 24px rgba(24,35,44,.08)}
+body{line-height:1.55;background:var(--bg)}
+header{padding:18px 20px;background:#18343a}
+header .wrap{position:relative;max-width:960px}
+h1{font-size:clamp(32px,5vw,44px);line-height:1;letter-spacing:-.035em}
+.sub{margin:8px 0 0;font-size:16px;max-width:620px}
+.pills{gap:7px;margin-top:12px;padding-right:94px}
+.pill{padding:5px 9px;font-size:12px;background:rgba(255,255,255,.08)}
+.header-theme{position:absolute;right:0;top:0;min-height:38px;padding:7px 10px;border:1px solid rgba(255,255,255,.35);border-radius:10px;background:transparent;color:#fff;font-weight:700}
+.privacy-banner{display:none}
+nav{background:rgba(255,255,255,.96);box-shadow:0 2px 10px rgba(24,35,44,.05)}
+.navwrap{max-width:960px;justify-content:center;gap:4px;padding:8px 16px}
+.navbtn{min-height:42px;border:0;border-radius:10px;background:transparent;color:var(--muted);font-weight:750;padding:8px 18px}
+.navbtn.active,.navbtn[aria-selected="true"]{background:#dcefee;color:#0a5258}
+main{max-width:960px;padding:24px 16px 52px}
+.section-heading{font-size:clamp(25px,4vw,32px);margin-bottom:7px}
+.section-intro{margin:0 0 16px;max-width:700px}
+.card,.quick-card,.data-card,.stop,.meal-plan-card,.checklist-row{box-shadow:none;background:var(--panel)}
+.card,.quick-card,.data-card{border-radius:14px}
+.control-grid{gap:10px;margin-bottom:14px}
+.control-grid label,.field-label{font-size:12px;letter-spacing:.01em}
+.primary-controls{grid-template-columns:repeat(2,minmax(0,1fr));max-width:680px}
+.advanced-filters,.day-detail-panel,.task-details,.hotel-bookings,.prep-tools,.safety-details{margin:8px 0 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.advanced-filters>summary,.day-detail-panel>summary,.task-details>summary,.hotel-bookings>summary,.prep-tools>summary,.safety-details>summary{min-height:44px;padding:10px 13px;cursor:pointer;font-weight:750;color:var(--accent2)}
+.advanced-filters .control-grid{padding:0 13px 13px;margin:0}
+.day-detail-panel>div{padding:0 13px 12px}
+.day-detail-panel>div p{margin:6px 0}
+.next-stop{border-radius:16px;padding:22px;background:#0d6168;box-shadow:var(--shadow)}
+.next-stop h3{font-size:clamp(23px,4vw,30px);line-height:1.15}
+.next-stop .next-time{font-size:17px;margin:6px 0 0}
+.next-stop .next-details{margin-top:10px;border-top:1px solid rgba(255,255,255,.28);padding-top:7px}
+.next-stop .next-details summary{cursor:pointer;font-weight:750;min-height:38px;display:flex;align-items:center}
+.next-stop .next-details p{margin:5px 0}
+.trip-control-grid{grid-template-columns:1fr;gap:12px}
+.trip-progress{margin-top:14px}
+.today-controls{margin-top:14px}
+.quick-card.compact-guidance{padding:14px 16px}
+.quick-card.compact-guidance>summary{min-height:34px;cursor:pointer;color:var(--accent2)}
+.quick-card.compact-guidance h3{font-size:17px}
+.quick-card.compact-guidance p{margin:5px 0}
+.day-summary{display:block}
+.day-summary h2{font-size:clamp(23px,4vw,30px);margin-bottom:4px}
+.day-route{font-size:17px;margin:0 0 12px}
+.day-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}
+.day-fact{padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface-alt)}
+.day-fact span{display:block;color:var(--muted);font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.04em}
+.day-fact strong{display:block;margin-top:2px;font-size:14px}
+.day-summary-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.key-rule{border-left:4px solid var(--warn);padding:9px 11px;margin:12px 0 0;background:#fff8ed;border-radius:8px;font-size:14px}
+.active-meal-backups{margin:12px 0 0;border:1px solid #f4c98b;border-radius:10px;background:#fff8ed;padding:10px 12px}
+.active-meal-backups p{margin:4px 0}
+.stop{grid-template-columns:78px minmax(0,1fr);gap:14px;padding:14px;border-left-width:4px;border-radius:13px}
+.stop .time{font-size:16px;line-height:1.3}
+.stop-heading{gap:7px;margin-bottom:3px}
+.stop-heading h3{font-size:18px;line-height:1.3;flex-basis:100%}
+.priority-badge{font-size:12px;min-height:22px;text-transform:none;letter-spacing:0}
+.stop-quick-meta{margin:2px 0;color:var(--muted);font-size:14px}
+.stop-leg{margin:7px 0;font-size:14px}
+.stop-primary-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.stop-primary-actions .button,.stop-primary-actions button{margin:0;min-height:42px}
+.stop-primary-actions .button{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.stop-more{margin-top:10px}
+.stop-more summary{font-size:14px;min-height:38px}
+.stop-more p{margin:7px 0}
+.stop-details-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.stop-details-actions button{min-height:40px}
+.mobile-card-list{gap:10px}
+.hotel-list{display:grid;gap:9px;padding:0 13px 13px}
+.hotel-compact{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--panel)}
+.hotel-compact h3{font-size:16px;margin:2px 0 5px}
+.hotel-compact p{margin:4px 0}
+.hotel-times{display:flex;gap:12px;flex-wrap:wrap;font-size:14px}
+.hotel-attention{margin-top:7px;padding:7px 9px;border-radius:8px;background:#fff4e5;color:#854d0e;font-size:13px}
+.checklist-toolbar{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.reservation-card{padding:0;margin:12px 0}
+.reservation-card>summary{min-height:46px;padding:11px 14px;cursor:pointer;color:var(--accent2)}
+.reservation-card>p,.reservation-card>ul{margin-left:14px;margin-right:14px}
+.checklist-row{grid-template-columns:auto minmax(0,1fr);gap:10px;padding:12px;margin-bottom:8px;border-radius:12px}
+.checklist-row input[type="checkbox"],.packing-item input[type="checkbox"]{min-width:0}
+.checklist-row h3{font-size:16px;line-height:1.35;margin:0}
+.task-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:5px 0!important}
+.task-meta .tag{margin:0}
+.task-details{grid-column:1/-1;margin:3px 0 0}
+.task-details>div{padding:0 12px 12px}
+.task-details p{margin:6px 0}
+.checklist-fields{grid-template-columns:1fr 1fr;margin-top:9px}
+.completed-tasks{margin-top:12px}
+.packing-grid{gap:9px}
+.packing-content{padding:0 13px 13px}
+.packing-group{padding:12px}
+.packing-item{min-height:36px;padding:5px 2px}
+.offline-grid{gap:10px}
+.safety-contacts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.safety-contacts .tel-link{height:100%}
+.fuel-rule{border-left:4px solid var(--accent2);padding:11px 13px;border-radius:10px;background:#ecfeff;margin:12px 0}
+.reference-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 13px 13px}
+.reference-links .road-link{padding:10px}
+.data-card dl{grid-template-columns:100px minmax(0,1fr)}
+.section-divider{margin:24px 0 12px;border:0;border-top:1px solid var(--line)}
+.compact-privacy{font-size:13px;color:var(--muted);text-align:center;margin:18px 0 0}
+:root[data-theme="dark"] header{background:#102b30}
+:root[data-theme="dark"] .navbtn.active,:root[data-theme="dark"] .navbtn[aria-selected="true"]{background:#153f43;color:#a8eef0}
+:root[data-theme="dark"] .key-rule,:root[data-theme="dark"] .active-meal-backups,:root[data-theme="dark"] .hotel-attention{background:#332613;color:#f5d9ac}
+:root[data-theme="dark"] .fuel-rule{background:#0d2b30}
+@media(max-width:760px){
+  body{padding-bottom:72px}
+  header{padding:15px 16px 14px}
+  header .wrap{min-height:94px}
+  h1{font-size:34px}
+  .sub{font-size:14px;margin-top:6px}
+  .pills{margin-top:9px;padding-right:0}
+  .pill{font-size:11px;padding:4px 7px}
+  .header-theme{min-height:36px;font-size:12px;padding:6px 8px}
+  nav{position:fixed;top:auto;bottom:0;left:0;right:0;z-index:40;border-top:1px solid var(--line);border-bottom:0;padding-bottom:env(safe-area-inset-bottom)}
+  .navwrap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;padding:7px 8px;overflow:visible}
+  .navbtn{min-height:50px;padding:7px 3px;font-size:12px;white-space:normal}
+  main{padding:18px 12px 34px}
+  .section-heading{font-size:25px}
+  .primary-controls{grid-template-columns:1fr 1fr}
+  .day-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stop{grid-template-columns:68px minmax(0,1fr);gap:10px}
+  .stop .time{display:block;font-size:15px}
+  .stop .time br{display:block}
+  .stop .type{display:block;width:max-content;margin:5px 0 0}
+  .stop-primary-actions{display:grid;grid-template-columns:1fr auto}
+  .stop-primary-actions .button{width:100%;text-align:center}
+  .action-bar{display:flex;grid-template-columns:none;gap:7px}
+  .action-bar .button,.action-bar button{width:auto;margin:0}
+  .next-stop .action-bar .button:first-child{flex:1;text-align:center}
+  .safety-contacts,.reference-links{grid-template-columns:1fr}
+  .data-card dl{grid-template-columns:86px minmax(0,1fr)}
+}
+@media(max-width:410px){
+  .pills .pill:nth-child(3){display:none}
+  .primary-controls{grid-template-columns:1fr}
+  .checklist-fields{grid-template-columns:1fr}
+}
+@media print{body{padding-bottom:0}.header-theme{display:none!important}nav{position:static}.advanced-filters{display:none}.task-details,.hotel-bookings,.safety-details{display:block}}
+</style>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to trip content</a>
 <header>
   <div class="wrap">
-    <h1>Henry Family Foodie Road Trip</h1>
-    <p class="sub">Vaughan → Montréal → Québec City → Fredericton → PEI → Moncton → Québec City → Vaughan. Built for a wife, 6-year-old son, early wake-ups, two-driver rhythm, foodie lunches/dinners, family-safe premium-fuel stops, washroom breaks, hotel rhythm, and realistic drive-time pressure.</p>
+    <h1>PEI Road Trip</h1>
+    <p class="sub">Aug 14–21, 2026 · Vaughan → PEI → Vaughan</p>
     <div class="pills">
-      <span class="pill">Aug 14–21, 2026</span>
-      <span class="pill">8 calendar days / 7 nights</span>
-      <span class="pill">2025 Volvo XC60 · 91 AKI minimum</span>
-      <span class="pill">Family-safe fuel · 25% trigger</span>
+      <span class="pill">8 days</span>
+      <span class="pill">7 hotels booked</span>
+      <span class="pill">~3,900 km</span>
     </div>
+    <button type="button" class="theme-toggle header-theme" id="themeToggle" aria-label="Change colour theme">◐ Theme</button>
   </div>
 </header>
 <div class="privacy-banner" role="note"><strong>Private family plan.</strong> Keep this version private, do not share real-time locations while travelling, and use a redacted copy for anything public.</div>
@@ -496,9 +636,9 @@ function renderLegacyFailureNotice() {
 }
 setTimeout(function () {
   if (window.__tripControlBooted) return;
-  var interfaceReady = document.querySelectorAll('#nav [data-section]').length >= 10
-    && document.querySelectorAll('#attractions .sugg-card').length > 0
-    && document.querySelectorAll('#hotels .data-card').length > 0;
+  var interfaceReady = document.querySelectorAll('#nav [data-section]').length >= 4
+    && document.querySelectorAll('#live .next-stop').length > 0
+    && document.querySelectorAll('#checklist .checklist-row').length > 0;
   if (interfaceReady) {
     window.__tripControlBooted = true;
     return;
@@ -1280,13 +1420,13 @@ setTimeout(function () {
 
   function renderReservationCallList() {
     return [
-      '<div class="card full reservation-card"><h3>Reservation call list — target July 31</h3>',
-      '<p class="small muted">Numbers checked against each restaurant’s current listings. Tap to call, then record the confirmation in the matching task below.</p>',
+      '<details class="card full reservation-card"><summary><strong>Restaurant calls</strong> · 4 numbers</summary>',
+      '<p class="small muted">Call, confirm, then mark the matching task complete.</p>',
       '<ul class="offline-list emergency-list">',
       reservationContacts.map(function (contact) {
         return '<li><a class="tel-link" href="tel:' + escapeHtml(contact.phone.replace(/[^\d+]/g, '')) + '"><strong>' + escapeHtml(contact.name) + '</strong><span>' + escapeHtml(contact.phone) + ' · ' + escapeHtml(contact.note) + '</span></a></li>';
       }).join(''),
-      '</ul></div>'
+      '</ul></details>'
     ].join('');
   }
 
@@ -1633,23 +1773,32 @@ setTimeout(function () {
     attractionSearch: '',
     attractionShowRemoved: false
   };
+  var secondaryMounted = {};
+
+  function ensureSecondarySection(sectionId) {
+    if (secondaryMounted[sectionId]) return;
+    if (sectionId === 'overview') renderOverview();
+    else if (sectionId === 'food') mountFoodSection();
+    else if (sectionId === 'attractions') mountAttractionsSection();
+    else if (sectionId === 'hotels') renderHotels();
+    else if (sectionId === 'sanity') renderSanity();
+    else if (sectionId === 'fuel') renderFuel();
+    else if (sectionId === 'sources') renderSources();
+    else return;
+    secondaryMounted[sectionId] = true;
+  }
 
   function buildNavigation() {
     var tabs = [
-      ['live', 'Trip control'],
-      ['overview', 'Overview'],
-      ['daybyday', 'Day-by-day'],
-      ['food', 'Food picks'],
-      ['attractions', 'Attractions'],
-      ['hotels', 'Hotels'],
-      ['sanity', 'Drive sanity'],
-      ['checklist', 'Checklist'],
-      ['offline', 'Offline pack']
+      ['live', 'Today'],
+      ['daybyday', 'Plan'],
+      ['checklist', 'Prep'],
+      ['offline', 'Safety']
     ];
     var nav = document.getElementById('nav');
     nav.innerHTML = tabs.map(function (tab, index) {
-      return '<button type="button" class="navbtn" role="tab" id="tab-' + tab[0] + '" aria-controls="' + tab[0] + '" aria-selected="' + (index === 0 ? 'true' : 'false') + '" data-section="' + tab[0] + '">' + escapeHtml(tab[1]) + '</button>';
-    }).join('') + '<button type="button" class="navbtn theme-toggle" id="themeToggle">◐ Theme</button>';
+      return '<button type="button" class="navbtn" role="tab" tabindex="' + (index === 0 ? '0' : '-1') + '" id="tab-' + tab[0] + '" aria-controls="' + tab[0] + '" aria-selected="' + (index === 0 ? 'true' : 'false') + '" data-section="' + tab[0] + '">' + escapeHtml(tab[1]) + '</button>';
+    }).join('');
     nav.addEventListener('click', function (event) {
       var button = event.target.closest('[data-section]');
       if (button) activateSection(button.dataset.section, true);
@@ -1672,25 +1821,37 @@ setTimeout(function () {
 
   function validSectionId(value) {
     var id = String(value || '').replace(/^#/, '');
-    return document.querySelector('#nav [data-section="' + (/^[a-z]+$/.test(id) ? id : 'x') + '"]') ? id : '';
+    var known = ['live', 'daybyday', 'checklist', 'offline', 'overview', 'food', 'attractions', 'hotels', 'sanity', 'fuel', 'sources'];
+    return /^[a-z]+$/.test(id) && known.indexOf(id) !== -1 ? id : '';
+  }
+
+  function primarySectionId(sectionId) {
+    if (sectionId === 'live' || sectionId === 'daybyday' || sectionId === 'checklist' || sectionId === 'offline') return sectionId;
+    if (sectionId === 'overview' || sectionId === 'hotels') return 'checklist';
+    if (sectionId === 'food' || sectionId === 'attractions') return 'daybyday';
+    return 'offline';
   }
 
   function activateSection(sectionId, moveFocus, fromHistory) {
+    ensureSecondarySection(sectionId);
     if (!fromHistory) {
       try { history.pushState({ section: sectionId }, '', '#' + sectionId); } catch (error) {}
     }
     var sections = Array.from(document.querySelectorAll('main > section'));
+    var tabSection = primarySectionId(sectionId);
     sections.forEach(function (section) {
       var active = section.id === sectionId;
       section.classList.toggle('active', active);
       section.hidden = !active;
       section.setAttribute('role', 'tabpanel');
-      section.setAttribute('aria-labelledby', 'tab-' + section.id);
+      section.setAttribute('aria-labelledby', 'tab-' + tabSection);
     });
     Array.from(document.querySelectorAll('#nav [role="tab"]')).forEach(function (button) {
-      button.setAttribute('aria-selected', button.dataset.section === sectionId ? 'true' : 'false');
+      var selected = button.dataset.section === tabSection;
+      button.setAttribute('aria-selected', selected ? 'true' : 'false');
+      button.setAttribute('tabindex', selected ? '0' : '-1');
     });
-    var activeTab = document.querySelector('#nav [data-section="' + sectionId + '"]');
+    var activeTab = document.querySelector('#nav [data-section="' + tabSection + '"]');
     if (activeTab && activeTab.scrollIntoView) activeTab.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'auto' });
     if (moveFocus) {
       var target = document.getElementById(sectionId);
@@ -1793,20 +1954,22 @@ setTimeout(function () {
       return day.stops.map(function (stop) { return stop.kind; });
     })).sort();
     section.innerHTML = [
-      '<h2 id="daybyday-heading" class="section-heading">Day-by-day operations</h2>',
-      '<p class="section-intro">The timeline below is the single canonical plan. Meal alternatives are shown as backups, not extra stops.</p>',
-      '<div class="control-grid" aria-label="Day itinerary filters">',
+      '<h2 id="daybyday-heading" class="section-heading">Trip plan</h2>',
+      '<p class="section-intro">One clear timeline for each day.</p>',
+      '<div class="control-grid primary-controls" aria-label="Day itinerary settings">',
       '<label for="daySelectV2">Day<select id="daySelectV2"></select></label>',
-      '<label for="dayMode">Plan state<select id="dayMode"><option value="preview">Preview / pre-trip</option><option value="on-time">On time</option><option value="late30">30+ minutes late</option><option value="late60">60+ minutes late</option></select></label>',
-      '<label for="typeFilterV2">Stop type<select id="typeFilterV2"><option value="">All stop types</option>', typeOptions.map(function (type) { return '<option value="' + escapeHtml(type) + '">' + escapeHtml(type) + '</option>'; }).join(''), '</select></label>',
-      '<label for="stopSearchV2">Search stops<input id="stopSearchV2" type="search" placeholder="City, note, food, or stop" autocomplete="off"></label>',
+      '<label for="dayMode">Schedule<select id="dayMode"><option value="preview">Planning</option><option value="on-time">On schedule</option><option value="late30">30+ min late</option><option value="late60">60+ min late</option></select></label>',
       '</div>',
+      '<details class="advanced-filters"><summary>Filter stops</summary><div class="control-grid">',
+      '<label for="typeFilterV2">Stop type<select id="typeFilterV2"><option value="">All stop types</option>', typeOptions.map(function (type) { return '<option value="' + escapeHtml(type) + '">' + escapeHtml(type) + '</option>'; }).join(''), '</select></label>',
+      '<label for="stopSearchV2">Search<input id="stopSearchV2" type="search" placeholder="Place or city" autocomplete="off"></label>',
+      '</div></details>',
       '<div id="dayResultStatus" class="status-line" role="status" aria-live="polite"></div>',
       '<div id="dayResult"></div>'
     ].join('');
     var select = document.getElementById('daySelectV2');
     select.innerHTML = operationalPlan.days.map(function (day) {
-      return '<option value="' + escapeHtml(day.id) + '">' + escapeHtml(day.label + ' · ' + day.routeFocus) + '</option>';
+      return '<option value="' + escapeHtml(day.id) + '">' + escapeHtml(day.label) + '</option>';
     }).join('');
     select.value = uiFilters.dayId;
     select.addEventListener('change', function () {
@@ -1854,24 +2017,17 @@ setTimeout(function () {
   }
 
   function renderMealPlan(day) {
-    return '<div class="meal-plan">' + day.meals.map(function (meal) {
+    var backups = day.meals.map(function (meal) {
       var stop = stopById(day, meal.selectedStopId);
       var state = stop ? stopStatus(stop.id) : 'pending';
       var hiddenByDelay = Boolean(stop && hiddenInMode(day, stop));
       var backupActive = Boolean(stop && (state === 'skipped' || hiddenByDelay));
-      var activePlan = backupActive ? (meal.backup || 'Use a safe nearby alternative.') : (stop ? stop.title : 'Review plan');
-      var statusText = hiddenByDelay ? 'Backup active — removed by delay mode' : state === 'skipped' ? 'Backup active — stop skipped' : statusLabel(state);
-      return [
-        '<article class="meal-plan-card">',
-        '<span class="tag ', categoryClass(meal.meal), '">', escapeHtml(meal.meal), '</span>',
-        meal.conditional ? '<span class="tag category-backup">Conditional</span>' : '',
-        '<h3>', escapeHtml(meal.title), '</h3>',
-        '<p><strong>', backupActive ? 'Active backup:' : 'Plan A:', '</strong> ', escapeHtml(activePlan), '</p>',
-        meal.backup && !backupActive ? '<p class="small"><strong>Backup:</strong> ' + escapeHtml(meal.backup) + '</p>' : '',
-        meal.reserve && !backupActive ? '<p class="small"><strong>Reservation:</strong> ' + escapeHtml(meal.reserve) + '</p>' : '',
-        '<p class="small"><strong>Status:</strong> ', escapeHtml(statusText), '</p>',
-        '</article>'
-      ].join('');
+      if (!backupActive) return null;
+      return { meal: meal.meal, backup: meal.backup || 'Use a safe nearby alternative.' };
+    }).filter(Boolean);
+    if (!backups.length) return '';
+    return '<div class="active-meal-backups"><strong>Meal backup active</strong>' + backups.map(function (item) {
+      return '<p><span class="tag ' + categoryClass(item.meal) + '">' + escapeHtml(item.meal) + '</span> ' + escapeHtml(item.backup) + '</p>';
     }).join('') + '</div>';
   }
 
@@ -1879,25 +2035,28 @@ setTimeout(function () {
     var currentStatus = stopStatus(stop.id);
     var classes = 'stop priority-' + stop.priority + ' ' + (currentStatus === 'done' ? 'is-complete' : '') + (currentStatus === 'skipped' ? ' is-skipped' : '');
     var priorityLabel = stop.choiceGated ? 'Choice branch' : stop.priority === 'optional' ? 'Optional' : stop.priority === 'conditional' ? 'Fallback' : 'Plan A';
+    var priorityBadge = stop.priority === 'required' && !stop.choiceGated ? '' : '<span class="priority-badge ' + escapeHtml(stop.priority) + '">' + escapeHtml(priorityLabel) + '</span>';
     return [
       '<article class="', classes, '">',
       '<div class="time">', escapeHtml(stop.time), stop.zone ? '<br><span class="type">' + escapeHtml(stop.zone) + '</span>' : '', '</div>',
       '<div>',
-      '<div class="stop-heading"><span class="priority-badge ', escapeHtml(stop.priority), '">', escapeHtml(priorityLabel), '</span><span class="kind-badge ', categoryClass(stop.kind), '">', escapeHtml(stop.kind), '</span><h3>', escapeHtml(stop.title), '</h3></div>',
-      '<p><strong>', escapeHtml(stop.city), '</strong>', stop.address ? ' · ' + escapeHtml(stop.address) : '', '</p>',
-      renderTicketGuidance(stop.ticket),
-      '<p class="small"><strong>From prior stop:</strong> ', escapeHtml(stop.leg || '—'), stop.timeBudget ? ' · <strong>Time here:</strong> ' + escapeHtml(stop.timeBudget) : '', '</p>',
+      '<div class="stop-heading">', priorityBadge, '<h3>', escapeHtml(stop.title), '</h3></div>',
+      '<p class="stop-quick-meta"><strong>', escapeHtml(stop.city), '</strong> · ', escapeHtml(stop.kind), '</p>',
+      '<p class="stop-leg">', escapeHtml(stop.leg || 'Start here'), stop.timeBudget ? ' · <strong>' + escapeHtml(stop.timeBudget) + '</strong>' : '', '</p>',
       stop.skipAt ? '<p class="small"><strong>Late rule:</strong> Skip at ' + escapeHtml(stop.skipAt) + '+ minutes late' + (stop.saves ? ' to save about ' + escapeHtml(stop.saves) : '') + '.</p>' : '',
+      renderTicketGuidance(stop.ticket),
+      '<div class="stop-primary-actions">', externalLink(stop.mapUrl, 'Directions', 'button primary'),
+      '<button type="button" class="button subtle" data-stop-action="toggle" data-stop-id="', escapeHtml(stop.id), '" aria-pressed="', currentStatus === 'done' ? 'true' : 'false', '">', currentStatus === 'done' ? 'Undo' : 'Done', '</button></div>',
+      '<details class="stop-more"><summary>Address & details</summary>',
+      stop.address ? '<p><strong>Address:</strong> ' + escapeHtml(stop.address) + '</p>' : '',
+      '<p>', escapeHtml(stop.notes), '</p>',
       stop.reservation ? '<p class="small"><strong>Reservation:</strong> ' + escapeHtml(stop.reservation) + '</p>' : '',
-      '<div class="links">', externalLink(stop.mapUrl, 'Map'), '</div>',
-      '<details class="stop-more"><summary>Notes, food, kid plan & source</summary><p>', escapeHtml(stop.notes), '</p>',
       renderAttractionQuality(stop.attractionQuality),
-      '<p class="small"><strong>Food / washroom:</strong> ', escapeHtml(stop.food || '—'), '<br><strong>Kid plan:</strong> ', escapeHtml(stop.kidPlan || '—'), '</p><div class="links">', externalLink(stop.sourceUrl, 'Source'), '</div></details>',
-      '<div class="stop-actions">',
-      '<button type="button" data-stop-action="toggle" data-stop-id="', escapeHtml(stop.id), '" aria-pressed="', currentStatus === 'done' ? 'true' : 'false', '">', currentStatus === 'done' ? 'Mark pending' : 'Mark complete', '</button>',
-      '<button type="button" data-stop-action="skip" data-stop-id="', escapeHtml(stop.id), '" aria-pressed="', currentStatus === 'skipped' ? 'true' : 'false', '">', currentStatus === 'skipped' ? 'Restore stop' : 'Skip stop', '</button>',
+      '<p class="small"><strong>Food / washroom:</strong> ', escapeHtml(stop.food || '—'), '<br><strong>Kid plan:</strong> ', escapeHtml(stop.kidPlan || '—'), '</p>',
+      '<div class="stop-details-actions">', externalLink(stop.sourceUrl, 'Source', 'button subtle'),
+      '<button type="button" class="button subtle" data-stop-action="skip" data-stop-id="', escapeHtml(stop.id), '" aria-pressed="', currentStatus === 'skipped' ? 'true' : 'false', '">Skip stop</button>',
       stop.address ? '<button type="button" class="copy-address" data-stop-action="copy" data-address="' + escapeHtml(stop.address) + '">Copy address</button>' : '',
-      '</div>',
+      '</div></details>',
       '</div>',
       '</article>'
     ].join('');
@@ -1915,17 +2074,18 @@ setTimeout(function () {
     document.getElementById('dayMode').value = tripState.modes[day.id] || 'preview';
     document.getElementById('typeFilterV2').value = type;
     document.getElementById('stopSearchV2').value = uiFilters.daySearch;
-    document.getElementById('dayResultStatus').textContent = filtered.length ? 'Showing ' + filtered.length + ' of ' + visibleStops(day).length + ' active stops for ' + day.label + '.' : 'No stops match those filters. Clear a filter or search term.';
+    document.getElementById('dayResultStatus').textContent = filtered.length ? filtered.length + ' active stops.' : 'No stops match. Clear the filters.';
     var mode = tripState.modes[day.id] || 'preview';
-    var modeText = mode === 'late60' ? '60+ minutes late' : mode === 'late30' ? '30+ minutes late' : mode === 'on-time' ? 'on time' : 'preview mode';
+    var modeText = mode === 'late60' ? '60+ min late' : mode === 'late30' ? '30+ min late' : mode === 'on-time' ? 'On schedule' : 'Planning';
+    var timeZoneChanges = day.id === '2026-08-16' || day.id === '2026-08-20';
     var body = [
       '<div class="card full ', riskClass(day.risk), '">',
-      '<div class="day-summary"><div><p class="route-label">', escapeHtml(day.risk), ' risk · ', escapeHtml(modeText), '</p><h2>', escapeHtml(day.label), '</h2><p><strong>', escapeHtml(day.routeFocus), '</strong></p><p class="muted">Approx drive: <strong>', escapeHtml(day.driveKm), ' km</strong> · ', escapeHtml(day.pureDriveTime), '</p><p class="note"><strong>Morning:</strong> Wake ', escapeHtml(day.wakeTime), ' · target rollout ', escapeHtml(day.departTarget), '<br><strong>Drivers:</strong> ', escapeHtml(day.driverPlan), '</p><p class="note"><strong>Time zone:</strong> ', escapeHtml(day.timeZoneNote), '</p></div>',
-      '<div class="summary-actions">', dayRouteLinks(day, 'button primary'), dayWeatherLink(day.id), '</div></div>',
-      '<div class="mode-note ', mode === 'on-time' ? 'safe' : '', '"><strong>Decision rule:</strong> ', escapeHtml(day.contingency), '</div>',
-      '<div class="safety-fallback"><strong>Safety fallback:</strong> ', escapeHtml(day.emergency), '</div>',
-      '<p class="small muted"><strong>Timing note:</strong> Times are planning targets. Allow the full listed stop time plus parking, queues, meals and traffic before relying on the next arrival.</p>',
+      '<div class="day-summary"><p class="route-label">', escapeHtml(modeText), '</p><h2>', escapeHtml(day.label), '</h2><p class="day-route"><strong>', escapeHtml(day.routeFocus), '</strong></p>',
+      '<div class="day-facts"><div class="day-fact"><span>Leave</span><strong>', escapeHtml(day.departTarget), '</strong></div><div class="day-fact"><span>Drive</span><strong>', escapeHtml(day.pureDriveTime), '</strong></div><div class="day-fact"><span>Distance</span><strong>', escapeHtml(day.driveKm), ' km</strong></div><div class="day-fact"><span>Risk</span><strong>', escapeHtml(day.risk), '</strong></div></div>',
+      '<div class="day-summary-actions">', dayRouteLinks(day, 'button primary'), dayWeatherLink(day.id), '</div></div>',
+      '<div class="key-rule"><strong>If delayed:</strong> ', escapeHtml(day.contingency), '</div>',
       renderMealPlan(day),
+      '<details class="day-detail-panel"', normalize(day.risk) === 'high' ? ' open' : '', '><summary>Driving & safety notes</summary><div><p><strong>Wake:</strong> ', escapeHtml(day.wakeTime), ' · <strong>Driver plan:</strong> ', escapeHtml(day.driverPlan), '</p><p><strong>Safety fallback:</strong> ', escapeHtml(day.emergency), '</p>', timeZoneChanges ? '<p><strong>Time change:</strong> ' + escapeHtml(day.timeZoneNote) + '</p>' : '', '</div></details>',
       '</div>',
       filtered.length ? '<div class="timeline">' + filtered.map(function (stop) { return renderStopCard(day, stop); }).join('') + '</div>' : '<div class="empty-state">No stops match. Try clearing the stop type or search field.</div>',
       '<div class="day-nav-actions"><button type="button" class="button subtle" id="previousDay"', operationalPlan.days[0].id === day.id ? ' disabled' : '', '>← Previous day</button><button type="button" class="button subtle" id="nextDay"', operationalPlan.days[operationalPlan.days.length - 1].id === day.id ? ' disabled' : '', '>Next day →</button></div>'
@@ -2554,33 +2714,36 @@ setTimeout(function () {
     var section = document.getElementById('live');
     var day = dayById(tripState.activeDate);
     var mode = tripState.modes[day.id] || 'preview';
-    var stops = visibleStops(day);
+    var stops = visibleStops(day).filter(function (stop) { return !stop.choiceGated; });
     var completed = stops.filter(function (stop) { return stopStatus(stop.id) === 'done'; }).length;
     var next = nextStop(day);
     var prior = stops.filter(function (stop) { return stopStatus(stop.id) === 'done'; }).pop() || stops[0];
     var nextRoute = next ? routeUrl(prior && prior.id !== next.id ? [prior, next] : [next]) : '';
     var progress = stops.length ? Math.round((completed / stops.length) * 100) : 0;
-    var modeName = { preview: 'Preview / pre-trip', 'on-time': 'On time', late30: '30+ minutes late', late60: '60+ minutes late' }[mode] || 'Preview / pre-trip';
-    var tideDetails = day.id === operationalPlan.tidePlan.date ? '<div class="mode-note safe"><strong>Hopewell tide plan:</strong> ' + escapeHtml(operationalPlan.tidePlan.status) + '.<br>' + escapeHtml(operationalPlan.tidePlan.tides) + '<br><strong>' + escapeHtml(operationalPlan.tidePlan.accessWindow) + '.</strong> Park hours ' + escapeHtml(operationalPlan.tidePlan.parkHours) + '. Re-verify on ' + escapeHtml(operationalPlan.tidePlan.verifyAfter) + '.<div class="action-bar">' + externalLink(operationalPlan.tidePlan.sourceUrl, 'Official tide table', 'button subtle') + externalLink(operationalPlan.tidePlan.chsUrl, 'CHS predictions', 'button subtle') + '</div></div>' : '';
+    var modeName = { preview: 'Planning', 'on-time': 'On schedule', late30: '30+ min late', late60: '60+ min late' }[mode] || 'Planning';
+    var overnight = day.stops.find(function (stop) { return /^check in:/i.test(String(stop.title || '')); });
+    var tonight = overnight ? overnight.title.replace(/^Check in:\s*/i, '') : 'Home in Vaughan';
+    var tideDetails = day.id === operationalPlan.tidePlan.date ? '<div class="mode-note safe"><strong>Hopewell:</strong> Low tide 11:52 AM. Target entrance 10:15–10:30 and stairs by 10:45; staff control actual floor access.<div class="action-bar">' + externalLink(operationalPlan.tidePlan.sourceUrl, 'Tide table', 'button subtle') + externalLink(operationalPlan.tidePlan.chsUrl, 'CHS prediction', 'button subtle') + '</div></div>' : '';
     section.innerHTML = [
-      '<h2 id="live-heading" class="section-heading">Trip control</h2>',
-      '<p class="section-intro">Pick the active day to see the next stop, route, and progress.</p>',
+      '<h2 id="live-heading" class="section-heading">Today</h2>',
+      '<p class="section-intro">Your next action, route, and progress.</p>',
       renderTodayBanner(day),
-      '<div class="control-grid" aria-label="Trip control settings">',
-      '<label for="liveDay">Active day<select id="liveDay">', operationalPlan.days.map(function (item) { return '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(item.label) + '</option>'; }).join(''), '</select></label>',
-      '<label for="liveMode">Plan state<select id="liveMode"><option value="preview">Preview / pre-trip</option><option value="on-time">On time</option><option value="late30">30+ minutes late</option><option value="late60">60+ minutes late</option></select></label>',
-      '</div>',
       '<div class="trip-control-grid">',
       '<article class="next-stop"><p class="route-label">', escapeHtml(modeName), ' · ', escapeHtml(day.risk), ' risk</p>',
-      next ? '<h3>Next: ' + escapeHtml(next.title) + '</h3><p class="muted">' + escapeHtml(next.time) + (next.zone ? ' ' + escapeHtml(next.zone) : '') + ' · ' + escapeHtml(next.city) + '</p><p>' + escapeHtml(next.notes) + '</p>' : '<h3>Day complete</h3><p class="muted">Every currently active stop is completed, skipped, or removed by your delay mode.</p>',
-      '<div class="action-bar">', next ? externalLink(nextRoute, 'Navigate to next stop', 'button') : '', dayRouteLinks(day, 'button secondary'), '</div>',
+      next ? '<h3>' + escapeHtml(next.title) + '</h3><p class="muted next-time">' + escapeHtml(next.time) + (next.zone ? ' ' + escapeHtml(next.zone) : '') + ' · ' + escapeHtml(next.city) + '</p>' : '<h3>Day complete</h3><p class="muted">All active stops are complete.</p>',
+      '<p class="small"><strong>Tonight:</strong> ', escapeHtml(tonight), '</p>',
+      '<div class="action-bar">', next ? externalLink(nextRoute, 'Navigate', 'button') : '', dayRouteLinks(day, 'button secondary'), '</div>',
       '<div class="trip-progress"><strong>', completed, '/', stops.length, ' active stops complete</strong><div class="progress-meter" aria-label="' + completed + ' of ' + stops.length + ' active stops complete"><span style="width:' + progress + '%"></span></div></div>',
+      next ? '<details class="next-details"><summary>What to know</summary><p>' + escapeHtml(next.notes) + '</p></details>' : '',
       renderWakeLockControl(),
       '</article>',
-      '<article class="quick-card"><h3>Delay decision</h3><p><strong>Today’s delay rule:</strong> ', escapeHtml(day.contingency), '</p><p><strong>Protect:</strong> ', escapeHtml(day.emergency), '</p><p class="small"><strong>Time zone:</strong> ', escapeHtml(day.timeZoneNote), '</p><div class="action-bar"><button type="button" class="button subtle" id="openDayPlan">Open this day’s plan</button>', dayWeatherLink(day.id), '</div></article>',
       '</div>',
+      '<div class="control-grid primary-controls today-controls" aria-label="Trip control settings">',
+      '<label for="liveDay">Day<select id="liveDay">', operationalPlan.days.map(function (item) { return '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(item.label) + '</option>'; }).join(''), '</select></label>',
+      '<label for="liveMode">Schedule<select id="liveMode"><option value="preview">Planning</option><option value="on-time">On schedule</option><option value="late30">30+ min late</option><option value="late60">60+ min late</option></select></label>',
+      '</div>',
+      '<details class="quick-card compact-guidance"><summary><strong>If plans change</strong></summary><p><strong>If delayed:</strong> ', escapeHtml(day.contingency), '</p><p><strong>Safety fallback:</strong> ', escapeHtml(day.emergency), '</p><div class="action-bar"><button type="button" class="button subtle" id="openDayPlan">Open full plan</button>', dayWeatherLink(day.id), '</div></details>',
       tideDetails,
-      renderExpenseCard()
     ].join('');
     document.getElementById('liveDay').value = day.id;
     document.getElementById('liveMode').value = mode;
@@ -2590,12 +2753,16 @@ setTimeout(function () {
       persist();
       renderDayContent();
       renderLive();
+      var nextDaySelect = document.getElementById('liveDay');
+      if (nextDaySelect) nextDaySelect.focus();
     });
     document.getElementById('liveMode').addEventListener('change', function (event) {
       tripState.modes[day.id] = event.target.value;
       persist();
       renderDayContent();
       renderLive();
+      var nextModeSelect = document.getElementById('liveMode');
+      if (nextModeSelect) nextModeSelect.focus();
     });
     document.getElementById('openDayPlan').addEventListener('click', function () {
       uiFilters.dayId = day.id;
@@ -2622,7 +2789,6 @@ setTimeout(function () {
         renderLive();
       });
     }
-    wireExpenseCard();
   }
 
   function taskState(taskId) {
@@ -2652,15 +2818,13 @@ setTimeout(function () {
     var tab = document.getElementById('tab-checklist');
     if (!tab) return;
     var overdue = overdueTaskCount();
-    tab.innerHTML = 'Checklist' + (overdue ? ' <span class="nav-badge" aria-label="' + overdue + ' overdue tasks">' + overdue + '</span>' : '');
+    tab.innerHTML = 'Prep' + (overdue ? ' <span class="nav-badge" aria-label="' + overdue + ' overdue tasks">' + overdue + '</span>' : '');
   }
 
   function renderPackingSection() {
     var progress = packingProgress();
     return [
-      '<h2 class="section-heading" style="margin-top:26px">Packing checklist</h2>',
-      '<p class="section-intro">Curated for this route: tide-day shoes, boardwalk bug spray, and the two-driver rhythm. Saved in this browser; use a sync code (Offline pack tab) to share it with the other phone.</p>',
-      '<div class="checklist-toolbar"><strong>', progress.done, ' / ', progress.total, ' items packed</strong></div>',
+      '<details class="hotel-bookings packing-summary"><summary><strong>Packing checklist</strong> · ', progress.done, '/', progress.total, ' packed</summary><div class="packing-content">',
       '<div class="packing-grid">',
       packingGroups.map(function (group) {
         var groupDone = group.items.filter(function (item) { return packingState.items[packingItemId(group.name, item)]; }).length;
@@ -2675,33 +2839,77 @@ setTimeout(function () {
           '</ul></article>'
         ].join('');
       }).join(''),
-      '</div>'
+      '</div></div></details>'
+    ].join('');
+  }
+
+  function renderBookedHotelSummary() {
+    return [
+      '<details class="hotel-bookings"><summary><strong>Booked hotels</strong> · 7 nights</summary><div class="hotel-list">',
+      rawData.hotels.map(function (hotel) {
+        var attention = hotel.Attention || '';
+        return [
+          '<article class="hotel-compact"><p class="route-label">', escapeHtml(hotel['Date label'] || hotel.Date || ''), ' · ', escapeHtml(hotel.Base || ''), '</p>',
+          '<h3>', escapeHtml(hotel['Recommended hotel'] || ''), '</h3>',
+          '<p class="hotel-times"><span><strong>In:</strong> ', escapeHtml(hotel['Check-in'] || 'Reconfirm'), '</span><span><strong>Out:</strong> ', escapeHtml(hotel['Check-out'] || 'Reconfirm'), '</span></p>',
+          attention ? '<p class="hotel-attention"><strong>Confirm:</strong> ' + escapeHtml(attention) + '</p>' : '',
+          '<div class="action-bar">', externalLink(hotel['Map URL'], 'Directions', 'button primary'), '</div>',
+          '<details class="task-details"><summary>Room & booking details</summary><div><p><strong>Room:</strong> ', escapeHtml(hotel.Room || '—'), '<br><strong>Guests:</strong> ', escapeHtml(hotel.Guests || '—'), '</p><p><strong>Address:</strong> ', escapeHtml(hotel.Address || '—'), '</p><p><strong>Cancellation:</strong> ', escapeHtml(hotel.Cancellation || 'Reconfirm directly.'), '</p><div class="action-bar">', externalLink(hotel['Address/source'], 'Official hotel', 'button subtle'), externalLink(hotel['Amenities/source'], 'Amenities', 'button subtle'), '</div></div></details>',
+          '</article>'
+        ].join('');
+      }).join(''),
+      '</div></details>'
+    ].join('');
+  }
+
+  function taskBrief(description) {
+    var text = String(description || '').trim();
+    var end = text.search(/[.!?](?:\s|$)/);
+    return end >= 0 ? text.slice(0, end + 1) : text;
+  }
+
+  function renderChecklistTask(item) {
+    var state = taskState(item.id);
+    var brief = taskBrief(item.description);
+    return [
+      '<article class="checklist-row ', state.done ? 'is-done' : '', '">',
+      '<input id="task-', escapeHtml(item.id), '" type="checkbox" data-task-id="', escapeHtml(item.id), '" data-task-field="done" ', state.done ? 'checked' : '', ' aria-label="Mark ', escapeHtml(item.title), ' complete">',
+      '<div><h3>', escapeHtml(item.title), '</h3><p class="task-meta"><span class="tag">', escapeHtml(item.category), '</span>', item.priority === 'Critical' || item.priority === 'High' ? '<span class="tag category-alert">' + escapeHtml(item.priority) + '</span>' : '', item.dueDate ? '<span class="small"><strong>By ' + escapeHtml(item.dueDate) + '</strong></span>' : '', '</p>',
+      brief ? '<p>' + escapeHtml(brief) + '</p>' : '', '</div>',
+      '<details class="task-details"><summary>Details & notes</summary><div>', brief !== item.description ? '<p>' + escapeHtml(item.description) + '</p>' : '', '<div class="action-bar">', externalLink(item.url, 'Source', 'button subtle'), '</div>',
+      '<div class="checklist-fields"><label>Status<select data-task-id="', escapeHtml(item.id), '" data-task-field="status"><option', state.status === 'Not started' ? ' selected' : '', '>Not started</option><option', state.status === 'Need confirmation' ? ' selected' : '', '>Need confirmation</option><option', state.status === 'Confirmed' ? ' selected' : '', '>Confirmed</option><option', state.status === 'Completed' ? ' selected' : '', '>Completed</option><option', state.status === 'Not applicable' ? ' selected' : '', '>Not applicable</option></select></label>',
+      '<label>Last checked<input type="date" value="', escapeHtml(state.checkedAt), '" data-task-id="', escapeHtml(item.id), '" data-task-field="checkedAt"></label>',
+      '<label>Confirmation code<input maxlength="120" value="', escapeHtml(state.confirmation), '" data-task-id="', escapeHtml(item.id), '" data-task-field="confirmation"></label><label>Private notes<input maxlength="500" value="', escapeHtml(state.notes), '" data-task-id="', escapeHtml(item.id), '" data-task-field="notes"></label></div>',
+      '</div></details></article>'
     ].join('');
   }
 
   function renderChecklist() {
     var section = document.getElementById('checklist');
     var done = checklistProgress();
+    var priorityOrder = { Critical: 0, High: 1, Normal: 2 };
+    var ordered = checklistTasks.slice().sort(function (a, b) {
+      var doneDiff = Number(taskState(a.id).done) - Number(taskState(b.id).done);
+      if (doneDiff) return doneDiff;
+      var priorityDiff = (priorityOrder[a.priority] == null ? 3 : priorityOrder[a.priority]) - (priorityOrder[b.priority] == null ? 3 : priorityOrder[b.priority]);
+      if (priorityDiff) return priorityDiff;
+      return String(a.dueDate || '9999').localeCompare(String(b.dueDate || '9999'));
+    });
+    var pending = ordered.filter(function (item) { return !taskState(item.id).done; });
+    var completed = ordered.filter(function (item) { return taskState(item.id).done; });
     section.innerHTML = [
-      '<h2 id="checklist-heading" class="section-heading">Booking & verification checklist</h2>',
-      '<p class="section-intro">Private fields stay in local browser storage. Export redacted progress by default; choose the private export only when you need confirmation codes and notes.</p>',
-      '<div class="checklist-toolbar"><strong>', done, ' / ', checklistTasks.length, ' tasks completed</strong><div class="action-bar"><button type="button" class="button subtle" id="exportRedacted">Export redacted</button><button type="button" class="button subtle" id="exportPrivate">Export private</button><button type="button" class="button subtle" id="importProgress">Import progress</button><button type="button" class="button danger" id="resetProgress">Reset local progress</button></div></div>',
+      '<h2 id="checklist-heading" class="section-heading">Prep</h2>',
+      '<p class="section-intro">Bookings, confirmations, and packing—unfinished items first.</p>',
+      '<div class="checklist-toolbar"><strong>', done, '/', checklistTasks.length, ' tasks complete</strong></div>',
       '<input id="importProgressFile" type="file" accept="application/json" hidden>',
       '<div id="checklistStatus" class="status-line" role="status" aria-live="polite"></div>',
+      renderBookedHotelSummary(),
       renderReservationCallList(),
-      checklistTasks.map(function (item) {
-        var state = taskState(item.id);
-        return [
-          '<article class="checklist-row ', state.done ? 'is-done' : '', '">',
-          '<input id="task-', escapeHtml(item.id), '" type="checkbox" data-task-id="', escapeHtml(item.id), '" data-task-field="done" ', state.done ? 'checked' : '', ' aria-label="Mark ', escapeHtml(item.title), ' complete">',
-          '<div><h3>', escapeHtml(item.title), '</h3><p><span class="tag">', escapeHtml(item.category), '</span><span class="tag">', escapeHtml(item.priority), '</span></p><p>', escapeHtml(item.description), '</p>', item.dueDate ? '<p class="small"><strong>Target:</strong> ' + escapeHtml(item.dueDate) + '</p>' : '', externalLink(item.url, 'Open source'), '</div>',
-          '<div class="checklist-fields"><label>Status<select data-task-id="', escapeHtml(item.id), '" data-task-field="status"><option', state.status === 'Not started' ? ' selected' : '', '>Not started</option><option', state.status === 'Need confirmation' ? ' selected' : '', '>Need confirmation</option><option', state.status === 'Confirmed' ? ' selected' : '', '>Confirmed</option><option', state.status === 'Completed' ? ' selected' : '', '>Completed</option><option', state.status === 'Not applicable' ? ' selected' : '', '>Not applicable</option></select></label>',
-          '<label>Last checked<input type="date" value="', escapeHtml(state.checkedAt), '" data-task-id="', escapeHtml(item.id), '" data-task-field="checkedAt"></label>',
-          '<details><summary>Private confirmation & notes</summary><label>Confirmation code<input maxlength="120" value="', escapeHtml(state.confirmation), '" data-task-id="', escapeHtml(item.id), '" data-task-field="confirmation"></label><label>Notes<input maxlength="500" value="', escapeHtml(state.notes), '" data-task-id="', escapeHtml(item.id), '" data-task-field="notes"></label></details>',
-          '</div></article>'
-        ].join('');
-      }).join(''),
-      renderPackingSection()
+      '<h3 style="margin:22px 0 10px">To do</h3>',
+      pending.length ? pending.map(renderChecklistTask).join('') : '<div class="card ok"><strong>All preparation tasks are complete.</strong></div>',
+      completed.length ? '<details class="completed-tasks hotel-bookings"><summary><strong>Completed</strong> · ' + completed.length + '</summary><div style="padding:0 12px 12px">' + completed.map(renderChecklistTask).join('') + '</div></details>' : '',
+      renderPackingSection(),
+      '<details class="prep-tools"><summary>Manage saved trip data</summary><div class="action-bar" style="padding:0 12px 12px"><button type="button" class="button subtle" id="exportRedacted">Export redacted</button><button type="button" class="button subtle" id="exportPrivate">Export private</button><button type="button" class="button subtle" id="importProgress">Import</button><button type="button" class="button danger" id="resetProgress">Reset</button></div></details>'
     ].join('');
     section.onchange = onChecklistChange;
     document.getElementById('exportRedacted').addEventListener('click', function () { exportProgress(true); });
@@ -2811,8 +3019,8 @@ setTimeout(function () {
     renderDayContent();
     renderLive();
     renderChecklist();
-    renderFoodContent();
-    renderAttractionsContent();
+    if (secondaryMounted.food) renderFoodContent();
+    if (secondaryMounted.attractions) renderAttractionsContent();
   }
 
   function buildSyncCode() {
@@ -2873,8 +3081,8 @@ setTimeout(function () {
     renderDayContent();
     renderLive();
     renderChecklist();
-    renderFoodContent();
-    renderAttractionsContent();
+    if (secondaryMounted.food) renderFoodContent();
+    if (secondaryMounted.attractions) renderAttractionsContent();
     setStatus('Local trip progress was reset.');
   }
 
@@ -2946,28 +3154,27 @@ setTimeout(function () {
 
   function renderOffline() {
     var section = document.getElementById('offline');
-    var protocolNotice = location.protocol === 'file:' ? 'This downloaded file works without a service worker. Hosted caching activates only on HTTPS or localhost.' : 'Hosted cache support is available; maps and external sources still need a connection.';
+    var phoneLink = function (contact) {
+      return '<li><a class="tel-link" href="tel:' + escapeHtml(contact.phone.replace(/[^\d+*]/g, '')) + '"><strong>' + escapeHtml(contact.name) + '</strong><span>' + escapeHtml(contact.phone) + ' · ' + escapeHtml(contact.detail) + '</span></a></li>';
+    };
+    var primaryContacts = [emergencyContacts[0], emergencyContacts[1], emergencyContacts[7]];
+    var supportContacts = emergencyContacts.slice(2, 7);
+    var hotelContacts = emergencyContacts.slice(8);
     section.innerHTML = [
-      '<h2 id="offline-heading" class="section-heading">Offline & safety pack</h2>',
-      '<p class="section-intro">The itinerary and your local progress can work offline. Google Maps, bookings, sources, and live road/tide checks cannot.</p>',
-      '<div class="note" id="networkNotice" role="status">', navigator.onLine ? 'Online right now.' : 'Offline right now — use the saved itinerary and addresses, then reconnect for external links.', ' ', escapeHtml(protocolNotice), '</div>',
-      '<div class="offline-grid" style="margin-top:16px">',
-      '<article class="card"><h3>Emergency & key phone numbers</h3><p class="small">Saved in the page so they work with zero signal bars of data. Tap to call.</p><ul class="offline-list emergency-list">',
-      emergencyContacts.map(function (contact) {
-        return '<li><a class="tel-link" href="tel:' + escapeHtml(contact.phone.replace(/[^\d+*]/g, '')) + '"><strong>' + escapeHtml(contact.name) + '</strong><span>' + escapeHtml(contact.phone) + ' · ' + escapeHtml(contact.detail) + '</span></a></li>';
-      }).join(''),
-      '</ul><p class="small">Non-urgent bridge info: <a href="https://www.confederationbridge.com/" target="_blank" rel="noopener noreferrer">confederationbridge.com</a>. Park and road links are under Roads &amp; weather.</p></article>',
-      '<article class="card"><h3>Before leaving Wi-Fi</h3><ul class="offline-list"><li>Download your map areas in your preferred map app.</li><li>Open every confirmed hotel and restaurant once.</li><li>Cache photos below and save the emergency text pack.</li><li>Check weather, provincial 511 pages, and the Hopewell tide plan.</li></ul><div class="action-bar"><button type="button" class="button primary" id="printTrip">Print / save PDF</button><button type="button" class="button subtle" id="downloadTextPack">Download emergency text</button><button type="button" class="button subtle" id="downloadHtmlPack">Download offline HTML copy</button></div></article>',
-      '<article class="card"><h3>Sync between phones</h3><p class="small">Copy a sync code on this phone, then paste it on the second phone (Offline pack tab) to bring over picks, checklist progress, packing, and expenses. Codes include private notes — share them only between your own devices.</p><div class="action-bar"><button type="button" class="button primary" id="copySyncCode">Copy sync code</button></div><label class="field-label" for="syncCodeInput">Paste a sync code from the other phone<textarea id="syncCodeInput" rows="3" placeholder="PEITRIP2:…"></textarea></label><div class="action-bar"><button type="button" class="button subtle" id="applySyncCode">Apply sync code</button></div><div id="syncStatus" class="status-line" role="status" aria-live="polite"></div></article>',
-      '<article class="card"><h3>Photos offline</h3><p class="small">Photos load from Wikimedia Commons. ',
-      photoCachingSupported()
-        ? 'Store them on this phone before leaving Wi-Fi so the Food and Attractions cards keep their photos with no signal.</p><div class="action-bar"><button type="button" class="button primary" id="cachePhotos">Cache photos for offline</button><button type="button" class="button subtle" id="clearPhotoCache">Clear photo cache</button></div><div id="photoCacheStatus" class="status-line" role="status" aria-live="polite"></div>'
-        : 'Photo caching needs the hosted (HTTPS) copy of this page; the downloaded file cannot store them.</p>',
-      '<p style="margin-top:10px"><label><input id="offlinePhotoMode" type="checkbox" ', tripState.offlineMode ? 'checked' : '', '> Hide photos entirely (offline-friendly cards)</label></p></article>',
-      '<article class="card"><h3>Roads & weather</h3><p class="small"><strong>Go / no-go:</strong> A severe-weather warning cancels beach, coastal and cliff walks; a bridge advisory pauses the crossing; high smoke/AQHI moves activity indoors; a Hopewell closure means viewpoints only under staff direction.</p><div class="road-grid">',
-      roadLinks.concat(weatherLinks).map(function (link) { return '<a class="road-link" href="' + escapeHtml(safeExternalUrl(link.url)) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">' + escapeHtml(link.title) + '<span>' + escapeHtml(link.detail) + '</span></a>'; }).join(''),
-      '</div></article>',
-      '</div>'
+      '<h2 id="offline-heading" class="section-heading">Safety</h2>',
+      '<p class="section-intro">Emergency contacts, fuel rules, live checks, and offline tools.</p>',
+      '<div class="note" id="networkNotice" role="status">', navigator.onLine ? 'Online · live links available' : 'Offline · use saved addresses and phone numbers', '</div>',
+      '<article class="card" style="margin-top:12px"><h3>Call now</h3><ul class="offline-list emergency-list safety-contacts">', primaryContacts.map(phoneLink).join(''), '</ul></article>',
+      '<details class="safety-details"><summary>Park, poison, and bridge numbers</summary><ul class="offline-list emergency-list" style="padding:0 12px 12px">', supportContacts.map(phoneLink).join(''), '</ul></details>',
+      '<details class="safety-details"><summary>Hotel phone numbers · 7</summary><ul class="offline-list emergency-list" style="padding:0 12px 12px">', hotelContacts.map(phoneLink).join(''), '</ul></details>',
+      '<div class="fuel-rule"><strong>Fuel:</strong> Use 91 AKI. Start full and refuel by 25% remaining—or sooner near 120–150 km displayed range.</div>',
+      '<details class="safety-details"><summary>Planned fuel stops</summary><div class="hotel-list">', minimalFuelPlan.map(function (fuel) {
+        return '<article class="hotel-compact"><p class="route-label">' + escapeHtml(fuel.dateLabel || '') + '</p><h3>' + escapeHtml(fuel.stop || 'Fuel decision') + '</h3><p>' + escapeHtml(fuel.action || '') + '</p><div class="action-bar">' + externalLink(fuel.mapUrl, 'Directions', 'button primary') + externalLink(fuel.sourceUrl, 'Station', 'button subtle') + '</div></article>';
+      }).join(''), '</div></details>',
+      '<details class="safety-details"><summary>Roads, weather, bridge & tides</summary><div class="reference-links">', roadLinks.concat(weatherLinks).map(function (link) { return '<a class="road-link" href="' + escapeHtml(safeExternalUrl(link.url)) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">' + escapeHtml(link.title) + '<span>' + escapeHtml(link.detail) + '</span></a>'; }).join(''), '</div><p class="small" style="padding:0 13px 13px"><strong>Stop rule:</strong> Severe-weather warnings cancel coastal walks; bridge advisories pause crossings; Hopewell staff control ocean-floor access.</p></details>',
+      '<article class="card"><h3>Save for offline use</h3><p class="small">Download the page before leaving Wi-Fi. Maps and live checks still need a connection.</p><div class="action-bar"><button type="button" class="button primary" id="downloadHtmlPack">Save offline copy</button><button type="button" class="button subtle" id="downloadTextPack">Emergency text</button><button type="button" class="button subtle" id="printTrip">Print / PDF</button></div></article>',
+      '<details class="safety-details"><summary>Advanced · sync between phones</summary><div style="padding:0 13px 13px"><p class="small">Sync codes include private notes. Share only between your own phones.</p><div class="action-bar"><button type="button" class="button primary" id="copySyncCode">Copy sync code</button></div><label class="field-label" for="syncCodeInput">Paste code<textarea id="syncCodeInput" rows="3" placeholder="PEITRIP2:…"></textarea></label><div class="action-bar"><button type="button" class="button subtle" id="applySyncCode">Apply code</button></div><div id="syncStatus" class="status-line" role="status" aria-live="polite"></div></div></details>',
+      '<p class="compact-privacy">Private plan · progress is saved on this device.</p>'
     ].join('');
     document.getElementById('printTrip').addEventListener('click', function () { window.print(); });
     document.getElementById('downloadTextPack').addEventListener('click', function () {
@@ -2994,16 +3201,6 @@ setTimeout(function () {
       } catch (error) {
         document.getElementById('syncStatus').textContent = 'That code could not be applied. Copy a fresh sync code from the other phone and paste the whole thing.';
       }
-    });
-    if (photoCachingSupported()) {
-      document.getElementById('cachePhotos').addEventListener('click', cachePhotosForOffline);
-      document.getElementById('clearPhotoCache').addEventListener('click', clearPhotoCache);
-    }
-    document.getElementById('offlinePhotoMode').addEventListener('change', function (event) {
-      tripState.offlineMode = event.target.checked;
-      persist();
-      renderFoodContent();
-      renderAttractionsContent();
     });
   }
 
@@ -3087,14 +3284,7 @@ setTimeout(function () {
     main.prepend(appStatus);
     buildNavigation();
     initTheme();
-    renderOverview();
     mountDaySection();
-    mountFoodSection();
-    mountAttractionsSection();
-    renderHotels();
-    renderFuel();
-    renderSanity();
-    renderSources();
     renderLive();
     renderChecklist();
     renderOffline();
