@@ -4099,6 +4099,62 @@
     return lines.join('\n');
   }
 
+  // Full stop-by-stop reference, rendered from the same operationalPlan used
+  // everywhere else, for a paper/PDF backup that needs no connection. Shown only
+  // when printing (see #printableItinerary rules in index.html).
+  function printStopAddress(stop) {
+    if (stop.parkingAddress) return (stop.parkingName ? stop.parkingName + ' — ' : '') + stop.parkingAddress;
+    return stop.address || '';
+  }
+
+  function buildPrintableItinerary() {
+    var head = '<div class="pi-head"><h1>PEI Foodie Road Trip — Aug 14–21, 2026</h1>' +
+      '<p class="pi-sub">Printable stop-by-stop reference · approx ' + escapeHtml(String(operationalPlan.roughTotalKm)) +
+      ' km · works with no internet. Times are local (see each day’s time zone); confirm hours, tides, fuel and road conditions before you go.</p></div>';
+    var days = operationalPlan.days.map(function (day) {
+      var stops = day.stops.filter(function (stop) { return !stop.choiceGated; }).map(function (stop) {
+        var addr = printStopAddress(stop);
+        var note = (stop.notes || '').trim();
+        if (note.length > 240) note = note.slice(0, 237).replace(/\s+\S*$/, '') + '…';
+        var tag = stop.priority === 'optional'
+          ? ' <span class="pi-opt">(optional)</span>'
+          : (stop.conditional ? ' <span class="pi-opt">(only if confirmed)</span>' : '');
+        return '<div class="pi-stop"><div class="pi-line"><span class="pi-time">' +
+          escapeHtml(stop.time || '') + (stop.zone ? ' ' + escapeHtml(stop.zone) : '') + '</span> — <strong>' +
+          escapeHtml(stop.title || stop.locationName || 'Stop') + '</strong>' + tag + '</div>' +
+          (addr ? '<div class="pi-addr">' + escapeHtml(addr) + '</div>' : '') +
+          (note ? '<div class="pi-note">' + escapeHtml(note) + '</div>' : '') + '</div>';
+      }).join('');
+      var meals = (day.meals || []).map(function (meal) {
+        return escapeHtml(meal.meal) + ': ' + escapeHtml(meal.title);
+      }).join(' · ');
+      var routeOptions = (routeOptionsByDay[day.id] && routeOptionsByDay[day.id].options) || [];
+      var ideas = routeOptions.map(function (option) { return escapeHtml(option.name); }).join('; ');
+      var hotel = hotelShortNames[day.id] || '';
+      return '<section class="pi-day"><h2>' + escapeHtml(day.label) + ' — ' + escapeHtml(day.routeFocus || '') + '</h2>' +
+        '<p class="pi-meta">Drive ~' + escapeHtml(String(day.driveKm)) + ' km · ' +
+        escapeHtml(day.pureDriveTime || '') + ' · ' + escapeHtml(day.timeZoneNote || '') + '</p>' +
+        stops +
+        (meals ? '<p class="pi-meals"><strong>Meals</strong> — ' + meals + '</p>' : '') +
+        '<p class="pi-hotel"><strong>Tonight</strong> — ' + escapeHtml(hotel) + '</p>' +
+        (ideas ? '<p class="pi-ideas"><strong>Optional ideas</strong> — ' + ideas + '</p>' : '') +
+        '</section>';
+    }).join('');
+    return head + days;
+  }
+
+  function printAllStops() {
+    var host = document.getElementById('printableItinerary');
+    if (host) host.innerHTML = buildPrintableItinerary();
+    document.body.classList.add('print-all');
+    var cleanup = function () {
+      document.body.classList.remove('print-all');
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+    window.print();
+  }
+
   var PHOTO_CACHE = 'pei-foodie-road-trip-photos-v1';
 
   function allPhotoUrls() {
@@ -4162,7 +4218,7 @@
         return '<article class="hotel-compact"><p class="route-label">' + escapeHtml(fuel.dateLabel || '') + '</p><h3>' + escapeHtml(fuel.stop || 'Fuel decision') + '</h3><p>' + escapeHtml(fuel.action || '') + '</p><div class="action-bar">' + externalLink(fuel.mapUrl, 'Directions', 'button primary') + externalLink(fuel.sourceUrl, 'Station', 'button subtle') + '</div></article>';
       }).join(''), '</div></details>',
       '<details class="safety-details"><summary>Roads, weather, bridge & tides</summary><div class="reference-links">', roadLinks.concat(weatherLinks).map(function (link) { return '<a class="road-link" href="' + escapeHtml(safeExternalUrl(link.url)) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">' + escapeHtml(link.title) + '<span>' + escapeHtml(link.detail) + '</span></a>'; }).join(''), '</div><p class="small" style="padding:0 13px 13px"><strong>Stop rule:</strong> Severe-weather warnings cancel coastal walks; bridge advisories pause crossings; Hopewell staff control ocean-floor access.</p></details>',
-      '<article class="card"><h3>Save for offline use</h3><p class="small">Download the page before leaving Wi-Fi. Maps and live checks still need a connection.</p><div class="action-bar"><button type="button" class="button primary" id="downloadHtmlPack">Save offline copy</button><button type="button" class="button subtle" id="downloadTextPack">Emergency text</button><button type="button" class="button subtle" id="printTrip">Print / PDF</button></div></article>',
+      '<article class="card"><h3>Save for offline use</h3><p class="small">Download the page before leaving Wi-Fi. Maps and live checks still need a connection.</p><div class="action-bar"><button type="button" class="button primary" id="downloadHtmlPack">Save offline copy</button><button type="button" class="button subtle" id="downloadTextPack">Emergency text</button><button type="button" class="button subtle" id="printTrip">Print all stops</button></div></article>',
       '<details class="safety-details"><summary>Advanced · sync between phones</summary><div style="padding:0 13px 13px"><p class="small">Sync codes include private notes. Share only between your own phones.</p><div class="action-bar"><button type="button" class="button primary" id="copySyncCode">Copy sync code</button></div><label class="field-label" for="syncCodeInput">Paste code<textarea id="syncCodeInput" rows="3" placeholder="PEITRIP2:…"></textarea></label><div class="action-bar"><button type="button" class="button subtle" id="applySyncCode">Apply code</button></div><div id="syncStatus" class="status-line" role="status" aria-live="polite"></div></div></details>',
       '<p class="compact-privacy">Private plan · progress is saved on this device.</p>'
     ].join('');
@@ -4176,7 +4232,7 @@
         renderOffline();
       });
     });
-    document.getElementById('printTrip').addEventListener('click', function () { window.print(); });
+    document.getElementById('printTrip').addEventListener('click', printAllStops);
     document.getElementById('downloadTextPack').addEventListener('click', function () {
       downloadText('pei-foodie-road-trip-offline-essentials.txt', buildOfflineTextPack());
       setStatus('Offline emergency text pack downloaded.');
