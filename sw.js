@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pei-foodie-road-trip-v22';
+const CACHE_NAME = 'pei-foodie-road-trip-v23';
 const PHOTO_CACHE = 'pei-foodie-road-trip-photos-v1';
 const CORE_ASSETS = [
   './',
