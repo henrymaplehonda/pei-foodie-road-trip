@@ -165,6 +165,63 @@
     'd8-home': [43.83512, -79.53467]
   };
 
+  // TripAdvisor/Google ratings for every hotel, food and attraction stop in the
+  // operational plan, keyed by stop id. Reuses the same TripAdvisor snapshot as
+  // PLAN_B_IDEA_COORDS/planBData (taken 2026-07-17) where a stop is the same
+  // venue as a Plan B row or hotel cross-check entry; the remaining stops were
+  // looked up fresh on 2026-07-17. Ratings are only attached to the primary
+  // check-in stop for each hotel, not every checkout/return visit to the same
+  // building, so the same score is not repeated on non-review logistics cards.
+  // Two attractions (Ripley's Cavendish, Marine Rail Historical Park) have a
+  // confirmed TripAdvisor listing but no numeric score could be verified, so
+  // they keep source+url only (rating left null renders as "page linked").
+  var STOP_RATINGS = {
+    'd1-big-apple': { source: 'TripAdvisor', rating: 3.5, reviews: 951, url: 'https://www.tripadvisor.ca/Attraction_Review-g5414486-d586711-Reviews-The_Big_Apple-Colborne_Ontario.html' },
+    'd1-lunch': { source: 'TripAdvisor', rating: 3.7, reviews: 27, url: 'https://www.tripadvisor.com/Restaurant_Review-g181758-d4876488-Reviews-Tata_s_House_of_Pizza_Pasta-Brockville_Ontario.html' },
+    'd1-prehistoric-world': { source: 'TripAdvisor', rating: 4.4, reviews: 99, url: 'https://www.tripadvisor.ca/Attraction_Review-g499277-d4600300-Reviews-Prehistoric_World-Morrisburg_Ontario.html' },
+    'd1-hotel': { source: 'TripAdvisor', rating: 4.1, reviews: 2617, url: 'https://www.tripadvisor.ca/Hotel_Review-g155032-d185746-Reviews-Montreal_Marriott_Chateau_Champlain-Montreal_Quebec.html' },
+    'd1-dinner': { source: 'TripAdvisor', rating: 3.9, reviews: 162, url: 'https://www.tripadvisor.ca/Restaurant_Review-g155032-d19271060-Reviews-Time_Out_Market_Montreal-Montreal_Quebec.html' },
+    'd2-breakfast-stop': { source: 'TripAdvisor', rating: 3.7, reviews: 23, url: 'https://www.tripadvisor.com/Restaurant_Review-g155032-d23479475-Reviews-Lloyd-Montreal_Quebec.html' },
+    'd2-falls': { source: 'TripAdvisor', rating: 4.4, reviews: 10473, url: 'https://www.tripadvisor.ca/Attraction_Review-g155033-d155582-Reviews-Parc_de_la_Chute_Montmorency-Quebec_City_Quebec.html' },
+    'd2-lunch': { source: 'TripAdvisor', rating: 3.7, reviews: 304, url: 'https://www.tripadvisor.com/Restaurant_Review-g155033-d706126-Reviews-Le_Manoir_Montmorency-Quebec_City_Quebec.html' },
+    'd2-hotel': { source: 'TripAdvisor', rating: 4.4, reviews: 897, url: 'https://www.tripadvisor.ca/Hotel_Review-g10850433-d1309009-Reviews-Hotel_Cofortel-L_Ancienne_Lorette_Quebec.html' },
+    'd2-old-quebec': { source: 'TripAdvisor', rating: 4.6, reviews: 3740, url: 'https://www.tripadvisor.ca/Attraction_Review-g155033-d155589-Reviews-Terrasse_Dufferin-Quebec_City_Quebec.html' },
+    'd2-dinner': { source: 'TripAdvisor', rating: 4.3, reviews: 2383, url: 'https://www.tripadvisor.ca/Restaurant_Review-g155033-d8330527-Reviews-La_Buche-Quebec_City_Quebec.html' },
+    'd3-kamouraska': { source: 'TripAdvisor', rating: 4.4, reviews: 44, url: 'https://www.tripadvisor.ca/Attraction_Review-g1172165-d8536022-Reviews-Quais_de_Kamouraska-Kamouraska_Bas_Saint_Laurent_Quebec.html' },
+    'd3-lunch': { source: 'TripAdvisor', rating: 4.2, reviews: 488, url: 'https://www.tripadvisor.ca/Restaurant_Review-g182149-d772494-Reviews-L_estaminet-Riviere_du_Loup_Bas_Saint_Laurent_Quebec.html' },
+    'd3-hartland': { source: 'TripAdvisor', rating: 4.4, reviews: 290, url: 'https://www.tripadvisor.ca/Attraction_Review-g1093799-d1229394-Reviews-Hartland_Covered_Bridge-Hartland_New_Brunswick.html' },
+    'd3-hotel': { source: 'TripAdvisor', rating: 4.4, reviews: 943, url: 'https://www.tripadvisor.ca/Hotel_Review-g154957-d182691-Reviews-Delta_Hotels_by_Marriott_Fredericton-Fredericton_New_Brunswick.html' },
+    'd3-dinner': { source: 'TripAdvisor', rating: 4.6, reviews: 992, url: 'https://www.tripadvisor.com/Restaurant_Review-g154957-d3153443-Reviews-Wolastoq_Wharf-Fredericton_New_Brunswick.html' },
+    'd4-magnetic': { source: 'TripAdvisor', rating: 3.7, reviews: 661, url: 'https://www.tripadvisor.ca/Attraction_Review-g154958-d183715-Reviews-Magnetic_Hill_Park-Moncton_New_Brunswick.html' },
+    'd4-lunch': { source: 'TripAdvisor', rating: 4.6, reviews: 417, url: 'https://www.tripadvisor.com/Restaurant_Review-g154958-d1007362-Reviews-Tony_s_Bistro_Patisserie-Moncton_New_Brunswick.html' },
+    'd4-cape': { source: 'TripAdvisor', rating: 4.3, reviews: 78, url: 'https://www.tripadvisor.ca/Attraction_Review-g4332393-d4431312-Reviews-Cape_Jourimain_Nature_Centre-Bayfield_New_Brunswick.html' },
+    'd4-hotel': { source: 'TripAdvisor', rating: 4.4, reviews: 154, url: 'https://www.tripadvisor.ca/Hotel_Review-g155023-d17675210-Reviews-Hampton_Inn_Suites_Charlottetown-Charlottetown_Prince_Edward_Island.html' },
+    'd4-dinner': { source: 'TripAdvisor', rating: 4.2, reviews: 1105, url: 'https://www.tripadvisor.ca/Restaurant_Review-g1800168-d770333-Reviews-New_Glasgow_Lobster_Supper-New_Glasgow_Prince_Edward_Island.html' },
+    'd4-victoria': { source: 'TripAdvisor', rating: 4.2, reviews: 531, url: 'https://www.tripadvisor.com/Attraction_Review-g155023-d6949138-Reviews-Victoria_Row-Charlottetown_Prince_Edward_Island.html' },
+    'd5-green-gables': { source: 'TripAdvisor', rating: 4.3, reviews: 1657, url: 'https://www.tripadvisor.ca/Attraction_Review-g499311-d186971-Reviews-Green_Gables-Cavendish_Prince_Edward_Island.html' },
+    'd5-lunch': { source: 'TripAdvisor', rating: 4.6, reviews: 1747, url: 'https://www.tripadvisor.com/Restaurant_Review-g23064095-d1112725-Reviews-Blue_Mussel_Cafe-North_Rustico_Harbour_Prince_Edward_Island.html' },
+    'd5-beach': { source: 'TripAdvisor', rating: 4.5, reviews: 955, url: 'https://www.tripadvisor.ca/Attraction_Review-g499311-d186975-Reviews-Cavendish_Beach-Cavendish_Prince_Edward_Island.html' },
+    'd5-rain': { source: 'TripAdvisor', rating: null, reviews: null, url: 'https://www.tripadvisor.com/Attraction_Review-g499311-d3404275-Reviews-Ripley_s_Believe_it_or_Not-Cavendish_Prince_Edward_Island.html' },
+    'd5-hotel': { source: 'TripAdvisor', rating: 3.6, reviews: 331, url: 'https://www.tripadvisor.ca/Hotel_Review-g155023-d226269-Reviews-Canadas_Best_Value_Inn_Suites_Charlottetown-Charlottetown_Prince_Edward_Island.html' },
+    'd5-dinner': { source: 'TripAdvisor', rating: 4.5, reviews: 117, url: 'https://www.tripadvisor.ca/Restaurant_Review-g155023-d19503722-Reviews-Slaymaker_Nichols_Gastro_House-Charlottetown_Prince_Edward_Island.html' },
+    'd6-marine-rail': { source: 'TripAdvisor', rating: null, reviews: null, url: 'https://www.tripadvisor.com/Attraction_Review-g1507275-d4916327-Reviews-Marine_Rail_Historical_Park-Borden_Carleton_Prince_Edward_Island.html' },
+    'd6-sackville-rest': { source: 'TripAdvisor', rating: 4.7, reviews: 172, url: 'https://www.tripadvisor.ca/Attractions-g154956-Activities-c57-New_Brunswick.html' },
+    'd6-hopewell': { source: 'TripAdvisor', rating: 4.6, reviews: 322, url: 'https://www.tripadvisor.ca/AttractionProductReview-g499179-d11991515-Hopewell_Rocks_Admission-Hopewell_Cape_Albert_County_New_Brunswick.html' },
+    'd6-lunch': { source: 'TripAdvisor', rating: 3.6, reviews: 126, url: 'https://www.tripadvisor.com/Restaurant_Review-g499179-d7144614-Reviews-High_Tide_Cafe-Hopewell_Cape_Albert_County_New_Brunswick.html' },
+    'd6-hotel': { source: 'TripAdvisor', rating: 4.0, reviews: 656, url: 'https://www.tripadvisor.com/Hotel_Review-g154958-d281344-Reviews-Best_Western_Plus_Moncton-Moncton_New_Brunswick.html' },
+    'd6-dinner': { source: 'TripAdvisor', rating: 4.1, reviews: 1041, url: 'https://www.tripadvisor.ca/Restaurants-g154958-Moncton_New_Brunswick.html' },
+    'd7-edmundston': { source: 'TripAdvisor', rating: 3.8, reviews: 264, url: 'https://www.tripadvisor.com/Restaurant_Review-g182168-d4586743-Reviews-Frank_s_Bar_Grill-Edmundston_New_Brunswick.html' },
+    'd7-hotel': { source: 'TripAdvisor', rating: 4.0, reviews: 157, url: 'https://www.tripadvisor.com/Hotel_Review-g155033-d575089-Reviews-DoubleTree_by_Hilton_Quebec_Resort-Quebec_City_Quebec.html' },
+    'd7-dinner': { source: 'TripAdvisor', rating: 4.0, reviews: 97, url: 'https://www.tripadvisor.com/Restaurant_Review-g155033-d3486867-Reviews-Le_Dijon-Quebec_City_Quebec.html' },
+    'd8-chambly': { source: 'TripAdvisor', rating: 4.5, reviews: 219, url: 'https://www.tripadvisor.com/Attraction_Review-g183734-d183936-Reviews-Fort_Chambly_National_Historic_Site-Chambly_Quebec.html' },
+    'd8-restaurant-lunch': { source: 'TripAdvisor', rating: 3.9, reviews: 55, url: 'https://www.tripadvisor.ca/Restaurant_Review-g182198-d770803-Reviews-Restaurant_Scores-Boucherville_Quebec.html' },
+    'd8-big-apple': { source: 'TripAdvisor', rating: 3.5, reviews: 951, url: 'https://www.tripadvisor.ca/Attraction_Review-g5414486-d586711-Reviews-The_Big_Apple-Colborne_Ontario.html' }
+  };
+  // d7-hartland and d6-magnetic are the same Hartland Bridge / Magnetic Hill
+  // venues as d3-hartland / d4-magnetic above; point them at the same record.
+  STOP_RATINGS['d7-hartland'] = STOP_RATINGS['d3-hartland'];
+  STOP_RATINGS['d6-magnetic'] = STOP_RATINGS['d4-magnetic'];
+
   function customStop(details) {
     var stopId = details.id || slug(details.dayId + '-' + details.title);
     return {
@@ -196,7 +253,8 @@
       conditional: Boolean(details.conditional),
       choiceGated: Boolean(details.choiceGated),
       routeEligible: details.routeEligible !== false,
-      coords: details.coords || STOP_COORDS[stopId] || null
+      coords: details.coords || STOP_COORDS[stopId] || null,
+      rating: details.rating || STOP_RATINGS[stopId] || null
     };
   }
 
@@ -2460,7 +2518,7 @@
           city: stop.city || '', mapUrl: stop.mapUrl || '',
           category: mapCategoryKey(stop), optional: stopIsOptional(stop),
           routeEligible: stop.routeEligible !== false && !stop.conditional,
-          coords: stop.coords
+          coords: stop.coords, rating: stop.rating
         };
         if (!stop.coords) { missing.push(info); return; }
         ordered.push(info);
@@ -2593,6 +2651,7 @@
         '<p class="trip-pop-meta">Day ', String(s.day ? s.day.index : '?'), ' · ', escapeHtml(cat.label), ' · ', escapeHtml(s.time || 'Flexible'), s.zone ? ' ' + escapeHtml(s.zone) : '', '</p>',
         s.isIdea && s.routePoint ? '<p class="trip-pop-meta">' + escapeHtml(s.routePoint) + '</p>' : '',
         s.isIdea && s.note ? '<p class="trip-pop-note">' + escapeHtml(s.note) + '</p>' : '',
+        !s.isIdea && s.rating ? '<p class="trip-pop-meta">' + stopRatingChip(s.rating) + '</p>' : '',
         s.address ? '<p class="trip-pop-addr">' + escapeHtml(s.address) + '</p>' : '',
         s.isIdea && s.gate ? '<p class="trip-pop-gate"><strong>Go / no-go:</strong> ' + escapeHtml(s.gate) + '</p>' : '',
         '<p class="trip-pop-links">', linkHtml, '</p>',
@@ -2918,6 +2977,7 @@
       '<button type="button" class="button subtle" data-stop-action="toggle" data-stop-id="', escapeHtml(stop.id), '" aria-pressed="', currentStatus === 'done' ? 'true' : 'false', '">', currentStatus === 'done' ? 'Undo' : 'Done', '</button></div>',
       stop.locationName ? '<p><strong>Location:</strong> ' + escapeHtml(stop.locationName) + '</p>' : '',
       arrivalAddress ? '<p><strong>' + (stop.parkingName ? 'Parking / arrival address:' : 'Address:') + '</strong> ' + escapeHtml(arrivalAddress) + '</p>' : '',
+      stop.rating ? '<p>' + stopRatingChip(stop.rating) + '</p>' : '',
       renderParkingEntrance(stop.parkingEntrance),
       '<p>', escapeHtml(stop.notes), '</p>',
       stop.reservation ? '<p class="small"><strong>Reservation:</strong> ' + escapeHtml(stop.reservation) + '</p>' : '',
@@ -3254,11 +3314,19 @@
     'Fromagerie Victoria': [46.6781, -71.3488]
   };
 
-  function planBRatingChip(rating, reviews) {
+  function planBRatingChip(rating, reviews, source) {
     var ratingHtml = rating
       ? '<span class="ta-rating' + (rating >= 4.5 ? '' : rating >= 4.0 ? ' ta-ok' : ' ta-low') + '">★ ' + Number(rating).toFixed(1) + '</span>'
-      : '<span class="tag">TripAdvisor page linked</span>';
+      : '<span class="tag">' + escapeHtml(source || 'TripAdvisor') + ' page linked</span>';
     return ratingHtml + (reviews ? '<span class="tag">' + escapeHtml(String(reviews)) + ' reviews</span>' : '');
+  }
+
+  // Rating chip for a scheduled stop's { source, rating, reviews, url } record
+  // (see STOP_RATINGS below) — same visual language as the Plan B rating chip,
+  // plus a link back to the review page it came from.
+  function stopRatingChip(rating) {
+    if (!rating) return '';
+    return planBRatingChip(rating.rating, rating.reviews, rating.source) + externalLink(rating.url, rating.source || 'TripAdvisor', 'tag');
   }
 
   function planBTypeBucket(type) {
