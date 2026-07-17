@@ -2168,7 +2168,10 @@
     foodSearch: '',
     foodShowRemoved: false,
     attractionSearch: '',
-    attractionShowRemoved: false
+    attractionShowRemoved: false,
+    planbDay: '',
+    planbType: '',
+    planbSearch: ''
   };
   var secondaryMounted = {};
 
@@ -2178,6 +2181,7 @@
     else if (sectionId === 'food') mountFoodSection();
     else if (sectionId === 'attractions') mountAttractionsSection();
     else if (sectionId === 'hotels') renderHotels();
+    else if (sectionId === 'planb') mountPlanBSection();
     else if (sectionId === 'sanity') renderSanity();
     else if (sectionId === 'fuel') renderFuel();
     else if (sectionId === 'sources') renderSources();
@@ -2218,14 +2222,14 @@
 
   function validSectionId(value) {
     var id = String(value || '').replace(/^#/, '');
-    var known = ['live', 'daybyday', 'checklist', 'offline', 'overview', 'food', 'attractions', 'hotels', 'sanity', 'fuel', 'sources'];
+    var known = ['live', 'daybyday', 'checklist', 'offline', 'overview', 'food', 'attractions', 'hotels', 'planb', 'sanity', 'fuel', 'sources'];
     return /^[a-z]+$/.test(id) && known.indexOf(id) !== -1 ? id : '';
   }
 
   function primarySectionId(sectionId) {
     if (sectionId === 'live' || sectionId === 'daybyday' || sectionId === 'checklist' || sectionId === 'offline') return sectionId;
     if (sectionId === 'overview' || sectionId === 'hotels') return 'checklist';
-    if (sectionId === 'food' || sectionId === 'attractions') return 'daybyday';
+    if (sectionId === 'food' || sectionId === 'attractions' || sectionId === 'planb') return 'daybyday';
     return 'offline';
   }
 
@@ -2735,6 +2739,7 @@
     section.innerHTML = [
       '<h2 id="daybyday-heading" class="section-heading">Trip plan</h2>',
       '<p class="section-intro">One clear timeline for each day.</p>',
+      '<p class="section-cta"><button type="button" class="button" id="planBEntry">TripAdvisor Plan B — rated alternates &amp; upgrades ↗</button></p>',
       tripMapMarkup(),
       '<div class="control-grid primary-controls" aria-label="Day itinerary settings">',
       '<label for="daySelectV2">Day<select id="daySelectV2"></select></label>',
@@ -2748,6 +2753,7 @@
       '<div id="dayResult"></div>'
     ].join('');
     wireTripMapControls();
+    document.getElementById('planBEntry').addEventListener('click', function () { activateSection('planb', true); });
     var select = document.getElementById('daySelectV2');
     select.innerHTML = operationalPlan.days.map(function (day) {
       return '<option value="' + escapeHtml(day.id) + '">' + escapeHtml(dayOptionLabel(day)) + '</option>';
@@ -3069,6 +3075,172 @@
         ].join('');
       });
     }).join('');
+  }
+
+  // TripAdvisor "Plan B" — a rated alternates/upgrades shortlist for the same
+  // booked-hotel route, sourced from a TripAdvisor snapshot taken 2026-07-17.
+  // Reference only: it does not change the operational plan above.
+  var planBData = {
+    rules: [
+      { rule: 'Hotel anchors', note: 'All seven hotels are already booked and fixed. Plan B changes stops and meals only.' },
+      { rule: 'Food rhythm', note: 'Hotel breakfast when in a hotel. No brunch. Pick one proper dine per day; keep the other meal light/simple.' },
+      { rule: 'TripAdvisor use', note: 'Ratings and review counts are included where current TripAdvisor snippets exposed them. Every Plan B stop links to TripAdvisor.' },
+      { rule: 'How to choose', note: 'Use only one or two Plan B upgrades per day. If delayed, keep the hotel, meal rhythm and child energy first.' },
+      { rule: 'Ratings', note: 'Green = 4.5+ standout, yellow = 4.0-4.4 solid, red = below 4.0 strategic only.' },
+      { rule: 'Audit note', note: 'Rows are arranged in route order. Low-rated service stops are kept only when they are useful for fuel/washroom safety.' }
+    ],
+    dailyFocus: [
+      { date: '2026-08-14', overnight: 'Montreal Marriott Chateau Champlain', focus: 'Better Brockville lunch; optional tunnel', upgrade: 'Brockville Railway Tunnel', skip: 'The Big Apple / tunnel if traffic slips' },
+      { date: '2026-08-15', overnight: 'Hotel Cofortel', focus: 'Montmorency + Old Quebec, but lighter food if needed', upgrade: 'Les Cafes de Julie instead of slow Manoir lunch', skip: 'Old Quebec evening walk' },
+      { date: '2026-08-16', overnight: 'Delta Fredericton', focus: 'Kamouraska + real lunch + efficient scenic breaks', upgrade: 'Parc des Chutes or Hartland, not both', skip: 'Grand Falls Gorge' },
+      { date: '2026-08-17', overnight: 'Hampton Charlottetown', focus: 'Bridge-side rest + lobster supper', upgrade: 'Cape Jourimain', skip: 'Victoria Park evening add-on' },
+      { date: '2026-08-18', overnight: 'Canadas Best Value Inn Charlottetown', focus: 'Green Gables / beach / strong Charlottetown dinner', upgrade: 'Cavendish Beach', skip: 'Beach time if weather poor' },
+      { date: '2026-08-19', overnight: 'Best Western Plus Moncton', focus: 'Sackville rest before Hopewell, then Moncton', upgrade: 'Albert County Museum only after Hopewell', skip: 'Any post-Hopewell museum' },
+      { date: '2026-08-20', overnight: 'DoubleTree Quebec Resort', focus: 'Long return drive; keep stops short', upgrade: 'Hartland if skipped earlier', skip: 'Parc des Chutes' },
+      { date: '2026-08-21', overnight: 'Home', focus: 'Safe return day, no weak food stops', upgrade: 'Fromagerie Victoria snack if on time', skip: 'The Big Apple return stop' }
+    ],
+    stops: [
+      { date: '2026-08-14', time: '08:30', segment: 'Vaughan to Montreal', name: 'The Big Apple', type: 'Attraction / child break', priority: 'Strategic only', rating: 3.5, reviews: 951, why: 'Useful washroom and kid stretch just off 401, but not a top-rated destination.', useIf: 'Use if the child needs an early reward stop.', skipIf: 'Skip if GTA traffic is slow; protect Brockville lunch and Montreal arrival.', duration: '20-25 min', foodPlan: 'Snack only; do not make this lunch.', parking: 'On-site visitor parking, 262 Orchard Rd, Colborne, ON', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=The+Big+Apple+Colborne', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g5414486-d586711-Reviews-The_Big_Apple-Colborne_Ontario.html' },
+      { date: '2026-08-14', time: '11:30', segment: 'Vaughan to Montreal', name: '1000 Islands Restaurant & Pizzeria', type: 'Food', priority: 'Top food Plan B', rating: 4.6, reviews: 361, why: 'Higher TripAdvisor lunch option in Brockville than the current pizza fallback.', useIf: 'Use if you want a stronger rated sit-down lunch near the route.', skipIf: 'Skip if it adds downtown parking stress or timing slips past 12:45.', duration: '45-60 min', foodPlan: 'Proper lunch: pizza, pasta, Greek comfort food.', parking: 'Downtown Brockville street/lot parking nearby; confirm live map.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=1000+Islands+Restaurant+%26+Pizzeria+Brockville', taUrl: 'https://www.tripadvisor.ca/Restaurant_Review-g181758-d765948-Reviews-1000_Islands_Restaurant_Pizzeria-Brockville_Ontario.html' },
+      { date: '2026-08-14', time: '12:40', segment: 'Vaughan to Montreal', name: 'Brockville Railway Tunnel', type: 'Attraction', priority: 'Top short attraction', rating: 4.6, reviews: 637, why: 'Free, short, memorable movement break by the waterfront.', useIf: 'Use only if lunch finishes early and Montreal ETA remains comfortable.', skipIf: 'Skip first if anyone is tired or traffic is heavy.', duration: '20-35 min', foodPlan: 'No meal; pair with Brockville lunch.', parking: 'Waterfront/downtown parking near Market St W.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Brockville+Railway+Tunnel', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g181758-d1236724-Reviews-Brockville_Railway_Tunnel-Brockville_Ontario.html' },
+      { date: '2026-08-14', time: '17:45', segment: 'Montreal evening', name: 'Time Out Market Montreal', type: 'Food', priority: 'Easy family dinner', rating: 3.9, reviews: 162, why: 'Not the highest-rated food, but very practical with choices, seating and indoor comfort.', useIf: 'Use when the family wants easy food after check-in.', skipIf: 'Skip for Lloyd if arrival is late or everyone is cooked.', duration: '45-75 min', foodPlan: 'Light dinner: everyone picks simple food.', parking: 'Walk from Marriott; do not move the car.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Time+Out+Market+Montreal', taUrl: 'https://www.tripadvisor.ca/Restaurant_Review-g155032-d19271060-Reviews-Time_Out_Market_Montreal-Montreal_Quebec.html' },
+      { date: '2026-08-15', time: '11:30', segment: 'Montreal to Quebec City', name: 'Parc de la Chute-Montmorency', type: 'Attraction', priority: 'Priority', rating: 4.4, reviews: 10473, why: 'Major scenic stop before the Quebec City hotel, with strong traveler feedback and easy child appeal.', useIf: 'Use as Plan A unless weather or construction makes it unpleasant.', skipIf: 'Skip cable car/extra walking before skipping the whole stop.', duration: '75-120 min', foodPlan: 'Lunch at or near the park.', parking: 'Lower-site P1/P2 visitor parking, 5300 Boulevard Sainte-Anne.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Parc+de+la+Chute-Montmorency+P1+P2', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g155033-d155582-Reviews-Parc_de_la_Chute_Montmorency-Quebec_City_Quebec.html' },
+      { date: '2026-08-15', time: '12:45', segment: 'Montreal to Quebec City', name: 'Les Cafes de Julie', type: 'Food', priority: 'Top light food Plan B', rating: 4.8, reviews: 44, why: 'Much stronger TripAdvisor score than the Manoir restaurant nearby; better if you want a quick light lunch.', useIf: 'Use if Manoir feels too slow or you want more attraction time.', skipIf: 'Skip if you need guaranteed seated lunch inside the park.', duration: '35-45 min', foodPlan: 'Light lunch: soup, sandwich, coffee, sweets.', parking: 'Near Montmorency; verify live parking before detouring.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Les+Cafes+de+Julie+Quebec+City', taUrl: 'https://www.tripadvisor.ca/Restaurant_Review-g155033-d6702385-Reviews-Les_Cafes_de_Julie-Quebec_City_Quebec.html' },
+      { date: '2026-08-15', time: '17:10', segment: 'Quebec City evening', name: 'Terrasse Dufferin', type: 'Attraction', priority: 'Top easy walk', rating: 4.6, reviews: 3740, why: 'Classic Old Quebec view walk that stays short and scenic.', useIf: 'Use if everyone has energy after Cofortel check-in.', skipIf: 'Skip if parking looks difficult or child needs hotel downtime.', duration: '30-45 min', foodPlan: 'Pair with light dinner nearby.', parking: 'Park once at Stationnement De Beaucours or Hotel-de-Ville garage.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Terrasse+Dufferin+Quebec+City', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g155033-d155589-Reviews-Terrasse_Dufferin-Quebec_City_Quebec.html' },
+      { date: '2026-08-15', time: '18:15', segment: 'Quebec City evening', name: 'La Buche', type: 'Food', priority: 'Strong local dinner', rating: 4.3, reviews: 2383, why: 'Very popular Quebecois dinner near Old Quebec sights.', useIf: 'Use with a reservation and an early dinner time.', skipIf: 'Skip if the wait is long; choose a simpler nearby meal.', duration: '60-75 min', foodPlan: 'Light or proper dinner depending on lunch size.', parking: 'Walk from Old Quebec parking.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=La+Buche+Quebec+City', taUrl: 'https://www.tripadvisor.ca/Restaurant_Review-g155033-d8330527-Reviews-La_Buche-Quebec_City_Quebec.html' },
+      { date: '2026-08-16', time: '09:10', segment: 'Quebec City to Fredericton', name: 'Quais de Kamouraska / Kamouraska Quai Miller', type: 'Attraction', priority: 'Requested scenic stop', rating: 4.4, reviews: 44, why: 'Requested waterfront stop; TripAdvisor lists Quais de Kamouraska as a local attraction.', useIf: 'Use as a short St. Lawrence reset before lunch.', skipIf: 'Skip only for severe weather or if departure slips badly.', duration: '20-25 min', foodPlan: 'No meal; scenic walk only.', parking: 'Public parking around Avenue LeBlanc / Rue du Quai.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Quais+de+Kamouraska+Avenue+LeBlanc', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g1172165-d8536022-Reviews-Quais_de_Kamouraska-Kamouraska_Bas_Saint_Laurent_Quebec.html' },
+      { date: '2026-08-16', time: '10:30', segment: 'Quebec City to Fredericton', name: "L'Estaminet", type: 'Food', priority: 'Substantial lunch', rating: 4.2, reviews: 488, why: 'Reliable rated lunch in Riviere-du-Loup before the long NB stretch.', useIf: "Use as the day's proper meal.", skipIf: 'Skip only if service wait threatens Fredericton arrival; use quick fallback nearby.', duration: '50-60 min', foodPlan: 'Proper lunch: pasta, burgers, salads, pub plates.', parking: 'Street/nearby parking in Riviere-du-Loup; confirm live map.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=L%27estaminet+Riviere-du-Loup', taUrl: 'https://www.tripadvisor.ca/Restaurant_Review-g182149-d772494-Reviews-L_estaminet-Riviere_du_Loup_Bas_Saint_Laurent_Quebec.html' },
+      { date: '2026-08-16', time: '11:45', segment: 'Quebec City to Fredericton', name: 'Parc des Chutes', type: 'Attraction', priority: 'Top stretch Plan B', rating: 4.3, reviews: 347, why: 'Waterfall and trails; best if lunch is fast and legs need movement.', useIf: 'Use only if you leave Riviere-du-Loup on time.', skipIf: 'Skip if Fredericton arrival would pass 18:00.', duration: '25-45 min', foodPlan: 'No meal; washroom/stretch if available.', parking: 'Park near Rue Frontenac access.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Parc+des+Chutes+Riviere-du-Loup', taUrl: 'https://www.tripadvisor.ca/ShowUserReviews-g182149-d3370299-r690514046-Parc_des_Chutes-Riviere_du_Loup_Bas_Saint_Laurent_Quebec.html' },
+      { date: '2026-08-16', time: '13:30', segment: 'Quebec City to Fredericton', name: 'Grand Falls Gorge', type: 'Attraction', priority: 'Optional scenic reset', rating: 4.2, reviews: 329, why: 'TripAdvisor ranks it No.1 in Grand Falls; a strong scenic break but adds time.', useIf: 'Use only if drivers feel fresh and hotel ETA remains safe.', skipIf: 'Skip for any fatigue; this is a long driving day.', duration: '35-50 min', foodPlan: 'No meal; quick scenic walk.', parking: 'Visitor parking around 25 Madawaska Rd.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Grand+Falls+Gorge+25+Madawaska+Road', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g212305-d1237726-Reviews-Grand_Falls_Gorge-Grand_Falls_New_Brunswick.html' },
+      { date: '2026-08-16', time: '15:20', segment: 'Quebec City to Fredericton', name: 'Hartland Covered Bridge', type: 'Attraction', priority: 'Fast photo stop', rating: 4.4, reviews: 290, why: "World's longest covered bridge; useful low-effort driver reset.", useIf: 'Use instead of Grand Falls if you want a quicker stop.', skipIf: 'Skip if anyone wants straight hotel recovery.', duration: '15-25 min', foodPlan: 'No meal; photo/stretch only.', parking: 'Hartland visitor parking near bridge / Highway 105 side.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Hartland+Covered+Bridge+visitor+parking', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g1093799-d1229394-Reviews-Hartland_Covered_Bridge-Hartland_New_Brunswick.html' },
+      { date: '2026-08-16', time: '18:45', segment: 'Fredericton evening', name: 'STMR.36 BBQ & Social', type: 'Food', priority: 'Strategic hotel dinner', rating: 3.7, reviews: 68, why: 'Convenient on-site dinner after the longest outbound drive, but TripAdvisor score is not strong.', useIf: 'Use only when the family needs zero extra driving.', skipIf: 'If energy remains, consider Isaac’s Way instead after checking live hours.', duration: '45-60 min', foodPlan: 'Light dinner: small BBQ plate, soup, salad, kids option.', parking: 'On-site at Delta Fredericton.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=STMR.36+BBQ+Fredericton', taUrl: 'https://www.tripadvisor.ca/Restaurant_Review-g154957-d21316892-Reviews-STMR_36_BBQ_Social-Fredericton_New_Brunswick.html' },
+      { date: '2026-08-17', time: '09:45', segment: 'Fredericton to Charlottetown', name: 'Magnetic Hill Park', type: 'Attraction', priority: 'Kid-friendly quick stop', rating: 3.7, reviews: 661, why: 'Fun optical illusion, close to route, low walking, but the rating makes it strategic only.', useIf: 'Use if staffed access and timing are confirmed.', skipIf: 'Skip if closed, crowded or Cape Jourimain becomes the better stop.', duration: '25-40 min', foodPlan: 'No meal; nearby washrooms if open.', parking: 'Magnetic Hill visitor area, Mountain Road.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Magnetic+Hill+Park+Moncton', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g154958-d183715-Reviews-Magnetic_Hill_Park-Moncton_New_Brunswick.html' },
+      { date: '2026-08-17', time: '12:15', segment: 'Before Confederation Bridge', name: 'Cape Jourimain Nature Centre', type: 'Attraction', priority: 'Top rest stop before bridge', rating: 4.3, reviews: 78, why: 'Clean facilities, bridge view, beach and lighthouse trail; good family reset.', useIf: 'Use if you want a calmer stop before PEI.', skipIf: 'Skip if you already used Magnetic Hill and Hampton arrival would slip.', duration: '35-60 min', foodPlan: 'Light lunch/snack only if cafe is open; keep dinner as proper meal.', parking: 'Cape Jourimain visitor parking.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Cape+Jourimain+Nature+Centre', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g4332393-d4431312-Reviews-Cape_Jourimain_Nature_Centre-Bayfield_New_Brunswick.html' },
+      { date: '2026-08-17', time: '16:50', segment: 'PEI dinner', name: 'New Glasgow Lobster Suppers', type: 'Food', priority: 'Proper dinner', rating: 4.2, reviews: 1105, why: 'Classic PEI family lobster supper with many reviews.', useIf: "Use as the day's substantial meal.", skipIf: 'Skip only if the wait is too long; use The Mill or PEI Preserve Company nearby.', duration: '75-100 min', foodPlan: 'Proper dinner: lobster supper or seafood/comfort plates.', parking: 'On-site restaurant parking.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=New+Glasgow+Lobster+Suppers', taUrl: 'https://www.tripadvisor.ca/Restaurant_Review-g1800168-d770333-Reviews-New_Glasgow_Lobster_Supper-New_Glasgow_Prince_Edward_Island.html' },
+      { date: '2026-08-17', time: '18:30', segment: 'Charlottetown evening', name: 'Victoria Park / Prince Edward Battery', type: 'Attraction', priority: 'Easy sunset add-on', rating: 4.1, reviews: 48, why: 'Low-pressure waterfront walk/playground near hotel after check-in.', useIf: 'Use only if the child still has energy.', skipIf: 'Skip first; hotel pool/rest beats another outing.', duration: '20-40 min', foodPlan: 'Dessert or snack only.', parking: 'Victoria Park parking around 45-51 Victoria Park Roadway.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Prince+Edward+Battery+Charlottetown', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g155023-d590362-Reviews-Prince_Edward_Battery-Charlottetown_Prince_Edward_Island.html' },
+      { date: '2026-08-18', time: '08:30', segment: 'Charlottetown / Cavendish loop', name: 'Green Gables', type: 'Attraction', priority: 'Priority', rating: 4.3, reviews: 1657, why: 'Signature PEI stop with house, grounds and short Haunted Woods walk.', useIf: 'Use early to avoid crowds.', skipIf: 'Shorten the trail before skipping the site.', duration: '75-120 min', foodPlan: 'Hotel breakfast before leaving; lunch later.', parking: 'Green Gables Heritage Place visitor parking.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Green+Gables+Heritage+Place+Cavendish', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g499311-d186971-Reviews-Green_Gables-Cavendish_Prince_Edward_Island.html' },
+      { date: '2026-08-18', time: '10:45', segment: 'Cavendish coast', name: 'Cavendish Beach', type: 'Attraction', priority: 'Top family beach', rating: 4.5, reviews: 955, why: 'TripAdvisor reviews call it family-friendly with good amenities and parking.', useIf: 'Use if weather is good and the child wants beach time.', skipIf: 'Skip for rain, wind, or tiredness.', duration: '45-90 min', foodPlan: 'No full meal; beach snack only.', parking: 'Cavendish Beach lot in PEI National Park.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Cavendish+Beach+PEI+parking', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g499311-d186975-Reviews-Cavendish_Beach-Cavendish_Prince_Edward_Island.html' },
+      { date: '2026-08-18', time: '12:30', segment: 'New Glasgow / North Rustico', name: 'Prince Edward Island Preserve Company', type: 'Food', priority: 'Top lunch Plan B', rating: 4.4, reviews: 1002, why: 'Strong rated, scenic lunch alternative near New Glasgow.', useIf: 'Use for proper lunch if dinner will be light.', skipIf: 'Skip if buses/crowds are heavy; use a quicker North Rustico stop.', duration: '50-75 min', foodPlan: 'Proper lunch: chowder, sandwiches, preserves dessert.', parking: 'On-site parking at New Glasgow.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Prince+Edward+Island+Preserve+Company+New+Glasgow', taUrl: 'https://www.tripadvisor.ca/Restaurant_Review-g1800168-d1873580-Reviews-Prince_Edward_Island_Preserve_Company-New_Glasgow_Prince_Edward_Island.html' },
+      { date: '2026-08-18', time: '18:00', segment: 'Charlottetown dinner', name: 'Slaymaker & Nichols Gastro House', type: 'Food', priority: 'Memorable dinner', rating: 4.5, reviews: 117, why: 'High-rated Charlottetown dinner; good for the one proper meal if lunch was light.', useIf: 'Reserve and use if everyone can handle downtown parking.', skipIf: 'Skip for simple food if Old Home Week traffic is rough.', duration: '75-90 min', foodPlan: 'Proper dinner: gastropub/seafood dishes; order light if lunch was heavy.', parking: 'Downtown paid parking; walk from selected garage.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Slaymaker+%26+Nichols+Charlottetown', taUrl: 'https://www.tripadvisor.ca/Restaurant_Review-g155023-d19503722-Reviews-Slaymaker_Nichols_Gastro_House-Charlottetown_Prince_Edward_Island.html' },
+      { date: '2026-08-19', time: '09:00', segment: 'Charlottetown to Hopewell / Moncton', name: 'Sackville Waterfowl Park', type: 'Attraction / rest', priority: 'Top rest before Hopewell', rating: 4.7, reviews: 172, why: 'Best quality rest stop before Hopewell: boardwalk, washrooms nearby, nature reset.', useIf: 'Use as the controlled 20-minute pre-Hopewell break.', skipIf: 'Skip only if tide timing is at risk; then go straight to Hopewell.', duration: '15-25 min', foodPlan: 'No meal; snack/washroom only.', parking: 'Sackville Waterfowl Park parking.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Sackville+Waterfowl+Park', taUrl: 'https://www.tripadvisor.ca/Attractions-g154956-Activities-c57-New_Brunswick.html' },
+      { date: '2026-08-19', time: '10:15', segment: 'Hopewell tide window', name: 'Hopewell Rocks', type: 'Attraction', priority: 'Priority', rating: 4.6, reviews: 322, why: 'The main tide experience; TripAdvisor admission page shows strong recommendation rate.', useIf: 'Use exactly inside the tide plan.', skipIf: 'Do not replace this with optional stops unless weather/fatigue cancels the day.', duration: '2-3 h', foodPlan: 'Lunch at/near park after ocean floor.', parking: 'Hopewell Rocks visitor parking, 131 Discovery Rd.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Hopewell+Rocks+visitor+parking', taUrl: 'https://www.tripadvisor.ca/AttractionProductReview-g499179-d11991515-Hopewell_Rocks_Admission-Hopewell_Cape_Albert_County_New_Brunswick.html' },
+      { date: '2026-08-19', time: '14:15', segment: 'Hopewell to Moncton', name: 'Albert County Museum', type: 'Attraction', priority: 'Optional only', rating: 4.5, reviews: 85, why: 'Logical short indoor/outdoor add-on near Hopewell if you finish early.', useIf: 'Use only if Hopewell ends early and Moncton ETA stays easy.', skipIf: 'Skip for pool/rest at Best Western.', duration: '30-45 min', foodPlan: 'No meal; snack only.', parking: 'On-site visitor parking, 3940 Route 114.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Albert+County+Museum+Hopewell+Cape', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g499179-d2254756-Reviews-Albert_County_Museum-Hopewell_Cape_Albert_County_New_Brunswick.html' },
+      { date: '2026-08-19', time: '18:00', segment: 'Moncton dinner', name: 'Tide & Boar Gastropub', type: 'Food', priority: 'Dinner option', rating: 4.1, reviews: 1041, why: 'Reliable Moncton gastropub choice with many reviews.', useIf: 'Use if lunch was light and family wants proper dinner.', skipIf: 'Skip if everyone needs simple food near hotel.', duration: '60-75 min', foodPlan: 'Proper dinner or light shared plates.', parking: 'Downtown Moncton parking; check live availability.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Tide+%26+Boar+Gastropub+Moncton', taUrl: 'https://www.tripadvisor.ca/Restaurants-g154958-Moncton_New_Brunswick.html' },
+      { date: '2026-08-19', time: '18:10', segment: 'Moncton dinner backup', name: 'Pump House Brewpub', type: 'Food', priority: 'Higher-rated backup', rating: 4.2, reviews: 1223, why: 'Slightly higher-rated casual Moncton backup; good with kids if available.', useIf: 'Use if Tide & Boar is full or too slow.', skipIf: 'Skip if downtown parking is poor.', duration: '60-75 min', foodPlan: 'Casual dinner: pub food, pizza, salads.', parking: 'Downtown Moncton parking; verify live map.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Pump+House+Brewpub+Moncton', taUrl: 'https://www.tripadvisor.ca/Restaurants-g154958-Moncton_New_Brunswick.html' },
+      { date: '2026-08-20', time: '10:45', segment: 'Moncton to Quebec City', name: 'Hartland Covered Bridge', type: 'Attraction', priority: 'Fast photo stop', rating: 4.4, reviews: 290, why: 'Efficient stop near the highway on a long return drive.', useIf: 'Use if you skipped it outbound or need a movement break.', skipIf: 'Skip if anyone wants an earlier DoubleTree arrival.', duration: '15-25 min', foodPlan: 'No meal.', parking: 'Hartland visitor parking near bridge.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Hartland+Covered+Bridge+visitor+parking', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g1093799-d1229394-Reviews-Hartland_Covered_Bridge-Hartland_New_Brunswick.html' },
+      { date: '2026-08-20', time: '12:45', segment: 'Moncton to Quebec City', name: 'Pizza Le Patrimoine', type: 'Food', priority: 'Top Edmundston lunch', rating: 4.7, reviews: 352, why: 'Much stronger TripAdvisor food option in Edmundston than the route placeholder.', useIf: "Use if you want the day's proper lunch without a major detour.", skipIf: 'Skip if it is closed or would delay DoubleTree arrival; use a simple chain meal.', duration: '45-60 min', foodPlan: 'Proper lunch: pizza, Italian comfort food, salads.', parking: 'Restaurant parking / nearby Edmundston parking; verify live.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Pizza+Le+Patrimoine+Edmundston', taUrl: 'https://www.tripadvisor.ca/Restaurant_Review-g182168-d1916906-Reviews-Pizza_Le_Patrimoine-Edmundston_New_Brunswick.html' },
+      { date: '2026-08-20', time: '14:15', segment: 'Moncton to Quebec City', name: 'Parc des Chutes', type: 'Attraction', priority: 'Stretch Plan B', rating: 4.3, reviews: 347, why: 'Good nature break if the long return day is running ahead.', useIf: 'Use only if arrival at DoubleTree remains before dinner.', skipIf: 'Skip first; hotel recovery matters more.', duration: '25-40 min', foodPlan: 'No meal.', parking: 'Park near Rue Frontenac access.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Parc+des+Chutes+Riviere-du-Loup', taUrl: 'https://www.tripadvisor.ca/ShowUserReviews-g182149-d3370299-r690514046-Parc_des_Chutes-Riviere_du_Loup_Bas_Saint_Laurent_Quebec.html' },
+      { date: '2026-08-21', time: '10:00', segment: 'Quebec City to Vaughan', name: 'Fromagerie Victoria', type: 'Food / quick stop', priority: 'Strategic poutine stop', rating: 3.9, reviews: 74, why: 'Convenient Quebec food stop near the route; not destination-grade by rating.', useIf: 'Use for a quick cheese curd/poutine break if breakfast was early.', skipIf: 'Skip if you want to protect lunch farther west.', duration: '20-30 min', foodPlan: 'Snack/light food only.', parking: 'Levis area parking; confirm exact location live.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Fromagerie+Victoria+Levis', taUrl: 'https://www.tripadvisor.ca/Restaurant_Review-g182163-d6913530-Reviews-Fromagerie_Victoria-Levis_Chaudiere_Appalaches_Quebec.html' },
+      { date: '2026-08-21', time: '11:30', segment: 'Quebec City to Vaughan', name: 'Scores Boucherville', type: 'Food', priority: 'Simple proper lunch', rating: null, reviews: null, why: 'Simple family lunch near the route with chicken/salad options.', useIf: "Use as the day's proper lunch if the family wants predictable food.", skipIf: 'Skip if traffic around Montreal is bad; push to a highway-area alternative.', duration: '45-60 min', foodPlan: 'Proper lunch: rotisserie chicken/salad bar.', parking: 'Restaurant parking in Boucherville.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Restaurant+Scores+Boucherville', taUrl: 'https://www.tripadvisor.ca/Restaurant_Review-g182198-d770803-Reviews-Restaurant_Scores-Boucherville_Quebec.html' },
+      { date: '2026-08-21', time: '14:30', segment: '401 westbound', name: 'ONroute Mallorytown North', type: 'Fuel / washroom only', priority: 'Do not eat here', rating: 2.2, reviews: 6, why: 'TripAdvisor feedback is weak; use only for fuel, washroom or fatigue safety.', useIf: 'Use only as a safety/fuel stop.', skipIf: 'Do not use for lunch or dinner unless absolutely necessary.', duration: '10-20 min', foodPlan: 'No meal; emergency snack only.', parking: 'ONroute Mallorytown North westbound.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=ONroute+Mallorytown+North', taUrl: 'https://www.tripadvisor.ca/Restaurant_Review-g1174591-d20471594-Reviews-ONroute_Mallorytown_North-Mallorytown_Ontario.html' },
+      { date: '2026-08-21', time: '18:00', segment: '401 westbound', name: 'The Big Apple', type: 'Attraction / snack', priority: 'Strategic return break', rating: 3.5, reviews: 951, why: 'Final kid-friendly stretch before the last drive home.', useIf: 'Use only if it helps prevent late-day meltdown.', skipIf: 'Skip if traffic is heavy or home ETA is already late.', duration: '15-25 min', foodPlan: 'Snack/dessert only.', parking: 'On-site visitor parking.', mapsUrl: 'https://www.google.com/maps/search/?api=1&query=The+Big+Apple+Colborne', taUrl: 'https://www.tripadvisor.ca/Attraction_Review-g5414486-d586711-Reviews-The_Big_Apple-Colborne_Ontario.html' }
+    ],
+    hotelsCrossCheck: [
+      { date: '2026-08-14', city: 'Montreal', hotel: 'Montreal Marriott Chateau Champlain', rating: 4.1, reviews: 2617, taUrl: 'https://www.tripadvisor.ca/Hotel_Review-g155032-d185746-Reviews-Montreal_Marriott_Chateau_Champlain-Montreal_Quebec.html' },
+      { date: '2026-08-15', city: 'Quebec City', hotel: 'Hotel Cofortel', rating: 4.4, reviews: 897, taUrl: 'https://www.tripadvisor.ca/Hotel_Review-g10850433-d1309009-Reviews-Hotel_Cofortel-L_Ancienne_Lorette_Quebec.html' },
+      { date: '2026-08-16', city: 'Fredericton', hotel: 'Delta Hotels by Marriott Fredericton', rating: 4.4, reviews: 943, taUrl: 'https://www.tripadvisor.ca/Hotel_Review-g154957-d182691-Reviews-Delta_Hotels_by_Marriott_Fredericton-Fredericton_New_Brunswick.html' },
+      { date: '2026-08-17', city: 'Charlottetown', hotel: 'Hampton Inn & Suites Charlottetown', rating: 4.4, reviews: 154, taUrl: 'https://www.tripadvisor.ca/Hotel_Review-g155023-d17675210-Reviews-Hampton_Inn_Suites_Charlottetown-Charlottetown_Prince_Edward_Island.html' },
+      { date: '2026-08-18', city: 'Charlottetown', hotel: "Canadas Best Value Inn & Suites Charlottetown", rating: 3.6, reviews: 331, taUrl: 'https://www.tripadvisor.ca/Hotel_Review-g155023-d226269-Reviews-Canadas_Best_Value_Inn_Suites_Charlottetown-Charlottetown_Prince_Edward_Island.html' },
+      { date: '2026-08-19', city: 'Moncton', hotel: 'Best Western Plus Moncton', rating: null, reviews: null, taUrl: 'https://www.tripadvisor.ca/Hotel_Review-g154958-d281344-Reviews-Best_Western_Plus_Moncton-Moncton_New_Brunswick.html' },
+      { date: '2026-08-20', city: 'Quebec City', hotel: 'DoubleTree by Hilton Quebec Resort', rating: null, reviews: 152, taUrl: 'https://www.tripadvisor.ca/Hotel_Review-g155033-d575089-Reviews-DoubleTree_by_Hilton_Quebec_Resort-Quebec_City_Quebec.html' }
+    ],
+    sourceNotes: [
+      { topic: 'TripAdvisor ratings', note: 'Ratings and review counts are snapshots from current TripAdvisor pages/search snippets visible during planning on 2026-07-17. Some pages did not expose a numeric rating in the snippet; those rows keep the TripAdvisor URL but leave rating blank.' },
+      { topic: 'Route logic', note: 'Stops are in driving order and meant as Plan B choices. Pick the best one for time, weather and child energy instead of adding every row.' },
+      { topic: 'Low-rated stops', note: 'Low-rated highway/convenience stops are not recommendations for food; they remain only for safety, washroom, fuel or timing.' },
+      { topic: 'Booked hotels', note: 'Hotels are already booked by the family and are treated as fixed anchors, not shopping recommendations.' }
+    ]
+  };
+
+  function planBRatingChip(rating, reviews) {
+    var ratingHtml = rating
+      ? '<span class="ta-rating' + (rating >= 4.5 ? '' : rating >= 4.0 ? ' ta-ok' : ' ta-low') + '">★ ' + Number(rating).toFixed(1) + '</span>'
+      : '<span class="tag">TripAdvisor page linked</span>';
+    return ratingHtml + (reviews ? '<span class="tag">' + escapeHtml(String(reviews)) + ' reviews</span>' : '');
+  }
+
+  function planBTypeBucket(type) {
+    var t = normalize(type);
+    if (t.indexOf('food') !== -1) return 'Food';
+    if (t.indexOf('fuel') !== -1) return 'Fuel / washroom';
+    return 'Attraction';
+  }
+
+  function planBStopCard(stop) {
+    var catClass = categoryClass(stop.type);
+    return [
+      '<article class="data-card"><h3>', escapeHtml(stop.time), ' — ', escapeHtml(stop.name), '</h3>',
+      '<p>', catClass ? '<span class="tag ' + catClass + '">' + escapeHtml(planBTypeBucket(stop.type)) + '</span>' : '',
+      '<span class="tag">', escapeHtml(stop.priority), '</span>',
+      planBRatingChip(stop.rating, stop.reviews), '</p>',
+      '<p>', escapeHtml(stop.why), '</p>',
+      '<dl>',
+      '<dt>Use if</dt><dd>', escapeHtml(stop.useIf), '</dd>',
+      '<dt>Skip if</dt><dd>', escapeHtml(stop.skipIf), '</dd>',
+      '<dt>Duration</dt><dd>', escapeHtml(stop.duration), '</dd>',
+      '<dt>Food plan</dt><dd>', escapeHtml(stop.foodPlan), '</dd>',
+      '<dt>Parking</dt><dd>', escapeHtml(stop.parking), '</dd>',
+      '</dl>',
+      '<div class="links">', externalLink(stop.mapsUrl, 'Map'), externalLink(stop.taUrl, 'TripAdvisor'), '</div>',
+      '</article>'
+    ].join('');
+  }
+
+  function mountPlanBSection() {
+    var section = document.getElementById('planb');
+    var typeOptions = ['Food', 'Attraction', 'Fuel / washroom'];
+    section.innerHTML = [
+      '<h2 id="planb-heading" class="section-heading">TripAdvisor Plan B — rated alternates &amp; upgrades</h2>',
+      '<p class="section-intro">Top-rated and strategically useful alternatives along the same booked-hotel route, built from a TripAdvisor snapshot taken 2026-07-17. Hotels stay fixed and safe; use at most one or two Plan B upgrades per day.</p>',
+      '<div class="card full ok"><h2>How to use Plan B</h2><ul class="offline-list">',
+      planBData.rules.map(function (rule) { return '<li><strong>' + escapeHtml(rule.rule) + ':</strong> ' + escapeHtml(rule.note) + '</li>'; }).join(''),
+      '</ul></div>',
+      '<div class="card full" style="margin-top:16px"><h2>Day-by-day focus</h2><div style="overflow-x:auto"><table><thead><tr><th>Date</th><th>Booked overnight</th><th>Plan B focus</th><th>Best upgrade if ahead</th><th>First thing to skip</th></tr></thead><tbody>',
+      planBData.dailyFocus.map(function (row) {
+        var day = sourceDay(row.date);
+        return '<tr><td>' + escapeHtml(day ? day.dateLabel : row.date) + '</td><td>' + escapeHtml(row.overnight) + '</td><td>' + escapeHtml(row.focus) + '</td><td>' + escapeHtml(row.upgrade) + '</td><td>' + escapeHtml(row.skip) + '</td></tr>';
+      }).join(''),
+      '</tbody></table></div></div>',
+      '<div class="control-grid" style="margin-top:16px" aria-label="Plan B filters">',
+      '<label for="planbDay">Day<select id="planbDay"><option value="">All days</option>', operationalPlan.days.map(function (day) { return '<option value="' + escapeHtml(day.id) + '">' + escapeHtml(day.label) + '</option>'; }).join(''), '</select></label>',
+      '<label for="planbType">Type<select id="planbType"><option value="">All types</option>', typeOptions.map(function (type) { return '<option value="' + escapeHtml(type) + '">' + escapeHtml(type) + '</option>'; }).join(''), '</select></label>',
+      '<label for="planbSearch">Search<input id="planbSearch" type="search" placeholder="Stop, city, or note" autocomplete="off"></label>',
+      '</div>',
+      '<div id="planbResultStatus" class="status-line" role="status" aria-live="polite"></div>',
+      '<div id="planbResult"></div>',
+      '<div class="card full" style="margin-top:16px"><h2>Booked hotels — TripAdvisor cross-check</h2><p class="muted">Hotels are already booked and fixed; ratings are shown only for reference, not as shopping recommendations.</p><div style="overflow-x:auto"><table><thead><tr><th>Date</th><th>City</th><th>Hotel</th><th>TripAdvisor</th></tr></thead><tbody>',
+      planBData.hotelsCrossCheck.map(function (hotel) {
+        var day = sourceDay(hotel.date);
+        return '<tr><td>' + escapeHtml(day ? day.dateLabel : hotel.date) + '</td><td>' + escapeHtml(hotel.city) + '</td><td>' + escapeHtml(hotel.hotel) + '</td><td>' + planBRatingChip(hotel.rating, hotel.reviews) + ' ' + externalLink(hotel.taUrl, 'TripAdvisor') + '</td></tr>';
+      }).join(''),
+      '</tbody></table></div></div>',
+      '<div class="card full" style="margin-top:16px"><h2>Source notes</h2><ul class="offline-list">',
+      planBData.sourceNotes.map(function (note) { return '<li><strong>' + escapeHtml(note.topic) + ':</strong> ' + escapeHtml(note.note) + '</li>'; }).join(''),
+      '</ul></div>'
+    ].join('');
+    document.getElementById('planbDay').addEventListener('change', function (event) { uiFilters.planbDay = event.target.value; renderPlanBContent(); });
+    document.getElementById('planbType').addEventListener('change', function (event) { uiFilters.planbType = event.target.value; renderPlanBContent(); });
+    document.getElementById('planbSearch').addEventListener('input', function (event) { uiFilters.planbSearch = event.target.value; renderPlanBContent(); });
+    renderPlanBContent();
+  }
+
+  function renderPlanBContent() {
+    var query = normalize(uiFilters.planbSearch);
+    var filtered = planBData.stops.filter(function (stop) {
+      if (uiFilters.planbDay && stop.date !== uiFilters.planbDay) return false;
+      if (uiFilters.planbType && planBTypeBucket(stop.type) !== uiFilters.planbType) return false;
+      var text = normalize([stop.name, stop.segment, stop.why, stop.useIf, stop.skipIf, stop.foodPlan].join(' '));
+      return !query || text.indexOf(query) !== -1;
+    });
+    document.getElementById('planbResultStatus').textContent = 'Showing ' + filtered.length + ' of ' + planBData.stops.length + ' Plan B stops.';
+    var groups = operationalPlan.days.map(function (day) {
+      return { id: day.id, label: day.label, items: filtered.filter(function (stop) { return stop.date === day.id; }) };
+    });
+    document.getElementById('planbResult').innerHTML = filtered.length
+      ? groups.filter(function (group) { return group.items.length; }).map(function (group) {
+          return '<div class="day-group" data-day="' + escapeHtml(group.id) + '"><h3 class="day-group-heading">' + escapeHtml(group.label) + '</h3><div class="attr-grid">' + group.items.map(planBStopCard).join('') + '</div></div>';
+        }).join('')
+      : '<div class="empty-state">No Plan B stops match. Clear a filter or search term.</div>';
   }
 
   function mountFoodSection() {
