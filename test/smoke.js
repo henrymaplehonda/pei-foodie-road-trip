@@ -230,9 +230,9 @@ function check(name, ok, detail) {
   check('Aug 21 has a fatigue-based overnight checkpoint', aug21Missing.length === 0, 'missing=' + aug21Missing.join(', '));
   check('Aug 21 fallback stays westbound', aug21Text.includes('Mallorytown North') && aug21Text.includes('Hampton Inn Kingston') && !aug21Text.includes('Mallorytown South') && !aug21Text.includes('Cornwall'));
   const allDayTexts = [aug14Text, aug15Text, aug16Text, aug17Text, aug18Text, aug19Text, aug20Text, aug21Text];
-  check('every day exposes one hotel anchor and a three-meal contract', allDayTexts.every((text) => {
+  check('every day exposes one hotel anchor and a hotel-breakfast plus lunch/dinner contract', allDayTexts.every((text) => {
     const normalized = text.toLowerCase();
-    return normalized.includes('hotel anchor') && normalized.includes('breakfast, lunch & dinner') && normalized.includes('breakfast') && normalized.includes('lunch') && normalized.includes('dinner');
+    return normalized.includes('hotel anchor') && normalized.includes('hotel breakfast + two balanced meals') && normalized.includes('breakfast') && normalized.includes('lunch') && normalized.includes('dinner') && !normalized.includes('brunch');
   }));
   check('every day offers route-side attractions with strict gates and named parking', allDayTexts.every((text) => text.includes('Along-the-way options') && text.includes('Go / no-go gate') && text.includes('Closest named parking')));
   check('optional route attractions cover child resets, weather flexibility and short history stops', aug14Text.includes('Lake Ontario Park') && aug17Text.includes('Bore Park tidal bore viewpoint') && aug18Text.includes('Gardens of Hope & Butterfly House') && aug18Text.includes('Cavendish Boardwalk') && aug19Text.includes('Albert County Museum & RB Bennett Centre') && aug19Text.includes('Steeves House Museum') && aug20Text.includes('Republique Provincial Park') && aug21Text.includes('Fort Chambly National Historic Site'));
@@ -260,12 +260,20 @@ function check(name, ok, detail) {
   check('Aug 21 default route stays westbound and excludes backward or split-only stops', route21.destination === 'Vaughan, ON' && route21.waypoints.includes('678 Highway 401 Westbound') && !route21.waypoints.includes('Brockville') && !route21.waypoints.includes('209 King St W'));
   check('active-day routes respect the mobile Maps waypoint limit', [route14, route15, route16, route17, route18, route19, route21].every((route) => route.segmentCount >= 1 && route.maxWaypoints <= 3));
   check('day summary is compact and hotel/meal anchored', (await page.locator('#dayResult .day-fact').count()) === 4 && (await page.locator('#dayResult .hotel-anchor').count()) === 1 && (await page.locator('#dayResult .meal-contract-item').count()) === 3 && (await page.locator('#dayResult .meal-plan-card').count()) === 0);
-  const visibleStopCount = await page.locator('#dayResult .timeline .stop').count();
-  check('stop cards keep named destinations, directions and concise details', visibleStopCount > 0 && (await page.locator('#dayResult .stop-destination').count()) === visibleStopCount && (await page.locator('#dayResult details.stop-more').count()) === visibleStopCount && (await page.locator('#dayResult .stop-primary-actions a').count()) > 0 && (await page.locator('#dayResult .priority-badge').count()) > 0 && (await page.locator('#dayResult .kind-badge').count()) === 0);
+  const visibleStopCount = await page.locator('#dayResult .day-map .map-stop').count();
+  check('the day plan is a route map whose stops reveal details on click', visibleStopCount > 0 && (await page.locator('#dayResult .day-map details.map-node').count()) === visibleStopCount && (await page.locator('#dayResult .map-node-title').count()) === visibleStopCount && (await page.locator('#dayResult .stop-destination').count()) === visibleStopCount && (await page.locator('#dayResult .stop-primary-actions a').count()) > 0 && (await page.locator('#dayResult .priority-badge').count()) > 0 && (await page.locator('#dayResult .kind-badge').count()) === 0);
+  const firstStopNode = page.locator('#dayResult .day-map details.map-node').first();
+  check('map stops start collapsed and expand when clicked', !(await firstStopNode.evaluate((el) => el.open)));
+  await firstStopNode.locator('summary').click();
+  check('clicking a stop opens its details', await firstStopNode.evaluate((el) => el.open) && await firstStopNode.locator('.map-detail .stop-primary-actions a').first().isVisible());
   check('meal and attraction logistics stay available inside expandable details', (await page.locator('#dayResult .practical-grid').count()) >= 1);
   check('day navigation buttons render', (await page.locator('#previousDay').count()) === 1 && (await page.locator('#nextDay').count()) === 1);
   await page.click('#previousDay');
   check('previous-day control changes the selected day', (await page.locator('#daySelectV2').inputValue()) === '2026-08-20');
+
+  await page.goto(base + '/index.html#live', { waitUntil: 'networkidle' });
+  const liveMapStops = await page.locator('#live .day-map .map-stop').count();
+  check('Today view echoes the day route map with a highlighted next stop', liveMapStops > 0 && (await page.locator('#live .day-map .day-map-head h3').textContent()).includes('route') && (await page.locator('#live .day-map .is-next .map-next-flag').count()) === 1 && (await page.locator('#live .day-map details.map-node[open]').count()) === 0 && (await page.locator('#live .day-map [data-stop-action]').count()) > 0);
 
   await page.goto(base + '/index.html#sanity', { waitUntil: 'networkidle' });
   check('high-risk drive cards start expanded', (await page.locator('#sanity details.warn[open]').count()) >= 1);

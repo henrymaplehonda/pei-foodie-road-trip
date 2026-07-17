@@ -214,6 +214,7 @@
       id: details.id,
       meal: details.meal,
       title: details.title,
+      style: details.style || '',
       selectedStopId: details.selectedStopId,
       backup: details.backup || '',
       reserve: details.reserve || '',
@@ -466,7 +467,7 @@
           sourceStop('2026-08-14', 'Easy dinner: Time Out Market', { id: 'd1-dinner', time: '17:45–18:15 flexible', zone: 'ET', kind: 'Dinner / walking outing', priority: 'required', routeEligible: false, leg: 'About 1 km / 15 min on foot each way from the Marriott', notes: 'Walk—do not move the parked car. Time Out Market is open until 22:00 Friday. Lloyd at the hotel is the zero-walk fallback if hotel arrival is after 17:15 or the child is done.', mapUrl: 'https://www.google.com/maps/dir/?api=1&origin=1050+de+la+Gauchetiere+West%2C+Montreal%2C+QC+H3B+4C9&destination=705+Saint-Catherine+St+W%2C+Montreal%2C+QC+H3B+4G5&travelmode=walking', sourceUrl: 'https://www.timeoutmarket.com/montreal/' })
         ],
         meals: [
-          mealSlot({ id: 'd1-breakfast', meal: 'Breakfast', title: 'Breakfast at home before departure', selectedStopId: 'd1-depart', backup: 'Packed breakfast in the car only if the home start runs late.' }),
+          mealSlot({ id: 'd1-breakfast', meal: 'Breakfast', title: 'Departure breakfast before leaving Vaughan', selectedStopId: 'd1-depart', backup: 'Leave 15 minutes later rather than skipping breakfast.' }),
           mealSlot({ id: 'd1-snack', meal: 'Morning snack', title: 'ONroute Odessa — eastbound quick stop', selectedStopId: 'd1-odessa', backup: 'Packed snack in the car.' }),
           mealSlot({ id: 'd1-lunch', meal: 'Lunch', title: 'Tata’s House of Pizza & Pasta', selectedStopId: 'd1-lunch', backup: 'Boston Pizza Brockville, 2000 Parkedale Avenue — proper sit-down fallback.' }),
           mealSlot({ id: 'd1-dinner', meal: 'Dinner', title: 'Time Out Market Montréal', selectedStopId: 'd1-dinner', backup: 'Lloyd at the hotel for zero extra travel; Ma Poule Mouillée only if you arrive early.' })
@@ -530,7 +531,7 @@
         stops: [
           sourceStop('2026-08-16', 'Depart Québec City', { id: 'd3-depart', time: '07:00', zone: 'ET', title: 'Depart Hôtel Cofortel', address: "6500 Boul. Wilfrid-Hamel, L'Ancienne-Lorette, QC G2E 2J1", city: "L'Ancienne-Lorette, QC", priority: 'required', notes: 'Wake 06:00, use the included hotel breakfast from 06:15–06:40, and make 07:00 the actual wheels-moving time.', food: 'Complimentary hotel continental breakfast; service starts at 05:00.', mapUrl: mapSearchUrl("6500 Boul. Wilfrid-Hamel, L'Ancienne-Lorette, QC G2E 2J1"), sourceUrl: 'https://cofortel.com/en/' }),
           customStop({ id: 'd3-kamouraska', dayId: '2026-08-16', time: '09:10–09:35', zone: 'ET', title: 'Visit Kamouraska Quai Miller', locationName: 'Kamouraska Quai Miller', parkingName: 'Quai de Kamouraska public parking — Avenue LeBlanc', parkingAddress: 'Avenue LeBlanc, Kamouraska, QC G0L 1M0', kind: 'Scenic heritage wharf / movement break', priority: 'required', address: 'Avenue LeBlanc, Kamouraska, QC G0L 1M0', city: 'Kamouraska, QC', leg: 'About 185 km / 2 h 10 from Québec City; about 55 km / 40 min to Rivière-du-Loup', timeBudget: '20-25 min', notes: 'This is the requested St. Lawrence stop. Use the named public day-parking area on Avenue LeBlanc, walk the restored heritage wharf and interpretation panels, take photos, and leave by 09:35 to protect the proper lunch in Rivière-du-Loup.', food: 'No meal here; hotel breakfast is already complete and lunch remains at L’Estaminet.', kidPlan: 'Short waterfront walk with close supervision around the wharf edge.', mapUrl: mapSearchUrl('Quai de Kamouraska public parking, Avenue LeBlanc, Kamouraska, QC G0L 1M0'), sourceUrl: 'https://www.tourismekamouraska.com/tourisme-responsable/' }),
-          foodStop('2026-08-16', 'L’Estaminet', { id: 'd3-brunch', time: '10:15', zone: 'ET', kind: 'Brunch / early lunch', priority: 'required', timeBudget: '45-60 min', notes: 'Canonical Sunday stop. Allow the meal time before calculating the New Brunswick arrival.' }),
+          foodStop('2026-08-16', 'L’Estaminet', { id: 'd3-lunch', time: '10:15', zone: 'ET', kind: 'Lunch / seated restaurant', priority: 'required', timeBudget: '45-60 min', notes: 'Early proper lunch after the hotel breakfast. Allow the meal time before calculating the New Brunswick arrival.' }),
           customStop({ id: 'd3-edmundston', dayId: '2026-08-16', time: '14:30', zone: 'AT', title: 'Edmundston service + driver swap', kind: 'Fuel / washroom / driver swap', priority: 'required', address: '100 Grey Rock Road, Edmundston, NB E7C 0B6', city: 'Edmundston, NB', leg: 'About 120 km / 1 h 45–1 h 50 from Rivière-du-Loup; Atlantic Time is one hour ahead', timeBudget: '20 min', notes: 'Required movement and driver-swap break. Official Shell listing shows 24-hour V-Power 91. Fill if at/below a quarter tank or displayed range approaches 120–150 km.', food: 'Shop, washroom, water and road snack.', kidPlan: 'Walk for 10 minutes before the next driving block.', mapUrl: mapSearchUrl('100 Grey Rock Road, Edmundston, NB E7C 0B6'), sourceUrl: 'https://find.shell.com/ca/fuel/10071398-grey-rock-road-edmundston/en_CA' }),
           customStop({ id: 'd3-hartland', dayId: '2026-08-16', time: '16:20', zone: 'AT', title: 'Hartland Covered Bridge photo stop', locationName: 'Hartland Covered Bridge', parkingName: 'Hartland Covered Bridge east-side riverside parking', parkingAddress: '365 Main St, Hartland, NB E7P 2N1', kind: 'Photo stop / stretch', priority: 'required', address: '365 Main St, Hartland, NB E7P 2N1', city: 'Hartland, NB', leg: 'About 170 km / 1 h 45 from Edmundston; about 120 km / 1 h 20 to Fredericton', timeBudget: '15-20 min', notes: 'Use the east-side riverside arrival point. Keep this short; it is the second movement break, not another full attraction visit.', food: 'No meal plan.', kidPlan: 'Drive through or take a short riverside walk.', mapUrl: mapSearchUrl('Hartland Covered Bridge east side, 365 Main St, Hartland, NB E7P 2N1'), sourceUrl: 'https://tourismnewbrunswick.ca/listing/hartland-covered-bridge' }),
           sourceStop('2026-08-16', 'Check in: Delta Hotels by Marriott Fredericton', { id: 'd3-hotel', time: '17:50–18:15', zone: 'AT', title: 'Check in: Delta Hotels by Marriott Fredericton', address: '225 Woodstock Road, Fredericton, NB E3B 2H8', city: 'Fredericton, NB', priority: 'required', leg: 'About 125 km / 1 h 25 from Hartland', notes: 'Confirmed king + sofa-bed room for 2 adults + 1 child. Register the vehicle; official self-parking is paid. This arrival already includes the proper lunch and movement breaks, so check in and sit down at STMR.36—no downtown add-on.', food: 'STMR.36 is the proper seated dinner; The Diplomat is the nearby fallback.', kidPlan: 'King + sofa-bed room and indoor-pool reset if energy remains.', mapUrl: mapSearchUrl('225 Woodstock Road, Fredericton, NB E3B 2H8'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yfcdf-delta-hotels-fredericton/overview/' }),
@@ -538,7 +539,7 @@
         ],
         meals: [
           mealSlot({ id: 'd3-breakfast', meal: 'Breakfast', title: 'Hôtel Cofortel included breakfast', selectedStopId: 'd3-depart', backup: 'Packed breakfast only if hotel service unexpectedly fails.' }),
-          mealSlot({ id: 'd3-brunch', meal: 'Brunch', title: 'Resto-Pub L’Estaminet', selectedStopId: 'd3-brunch', backup: 'A quick Rivière-du-Loup stop if timing changes.' }),
+          mealSlot({ id: 'd3-lunch', meal: 'Lunch', title: 'Resto-Pub L’Estaminet', selectedStopId: 'd3-lunch', backup: 'A quick Rivière-du-Loup lunch stop if timing changes.' }),
           mealSlot({ id: 'd3-dinner', meal: 'Dinner', title: 'STMR.36 seated dinner at Delta', selectedStopId: 'd3-hotel', backup: 'The Diplomat is the nearby sit-down fallback; Wolastoq Wharf only after Sunday hours and arrival timing are confirmed.', conditional: false })
         ]
       }),
@@ -564,7 +565,7 @@
         stops: [
           sourceStop('2026-08-17', 'Depart Fredericton', { id: 'd4-depart', time: '08:00', zone: 'AT', title: 'Depart Delta Hotels by Marriott Fredericton', address: '225 Woodstock Road, Fredericton, NB E3B 2H8', city: 'Fredericton, NB', priority: 'required', notes: 'Wake 06:15, finish packing before the 06:30 on-site breakfast, check out by 07:40 and make 08:00 the actual wheels-moving time. Use a packed breakfast if service runs slowly.', food: 'Grove Café or STMR.36 breakfast; packed backup and road snack.', mapUrl: mapSearchUrl('225 Woodstock Road, Fredericton, NB E3B 2H8'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yfcdf-delta-hotels-fredericton/dining/' }),
           sourceStop('2026-08-17', 'Magnetic Hill', { id: 'd4-magnetic', time: '09:50–10:20 only if staffed', zone: 'AT', locationName: 'Magnetic Hill Illusion', parkingName: 'Magnetic Hill Illusion entrance / visitor parking', parkingAddress: '2846 Mountain Road, Moncton, NB E1G 2W7', priority: 'optional', skipAt: 30, saves: '30 min', address: '2846 Mountain Road, Moncton, NB E1G 2W7', city: 'Moncton, NB', leg: 'About 170 km / 1 h 50 from Fredericton', timeBudget: '20-30 min', notes: 'Short on-time kid novelty. The City confirms the summer season but does not publish a daily clock; call shortly before travel and continue to Tony’s if the gate is not operating.', mapUrl: mapSearchUrl('Magnetic Hill Illusion entrance, 2846 Mountain Road, Moncton, NB E1G 2W7'), sourceUrl: 'https://www.moncton.ca/en/magnetic-hill-illusion', ticket: ticketGuidance.magneticHill }),
-          foodStop('2026-08-17', 'Tony’s Bistro', { id: 'd4-lunch', time: '10:40–11:40', zone: 'AT', kind: 'Brunch / early lunch', priority: 'required', timeBudget: '45-60 min', notes: 'Official Monday hours are 08:00–15:00. This early meal removes the old idle gap and protects the bridge, hotel and walk-in supper; leave by 11:40.' }),
+          foodStop('2026-08-17', 'Tony’s Bistro', { id: 'd4-lunch', time: '10:40–11:40', zone: 'AT', kind: 'Lunch / seated restaurant', priority: 'required', timeBudget: '45-60 min', notes: 'Official Monday hours are 08:00–15:00. This early proper lunch removes the old idle gap and protects the bridge, hotel and dinner; leave by 11:40.' }),
           sourceStop('2026-08-17', 'Cape Jourimain', { id: 'd4-cape', time: '12:45–13:25', zone: 'AT', locationName: 'Cape Jourimain Nature Centre', parkingName: 'Cape Jourimain Nature Centre visitor parking', parkingAddress: '5039 Route 16, Bayfield, NB E4M 3Z8', priority: 'required', timeBudget: '30-40 min', notes: 'This is the day’s one priority experience and a useful washroom/movement break. Official Monday hours are 10:00–17:00. Use the signed visitor-centre parking, bridge viewpoint and shortest family trail; shorten to 25 minutes if the hotel ETA moves past 15:30.', mapUrl: mapSearchUrl('Cape Jourimain Nature Centre visitor parking, 5039 Route 16, Bayfield, NB E4M 3Z8') }),
           sourceStop('2026-08-17', 'Check in: Hampton Inn & Suites Charlottetown', { id: 'd4-hotel', time: '15:15 arrival request · 16:00 guaranteed · leave 16:20', zone: 'AT', title: 'Check in: Hampton Inn & Suites Charlottetown', address: '300 Capital Drive, Charlottetown, PE C1E 1E8', city: 'Charlottetown, PE', priority: 'required', leg: 'About 60 km / 50-60 min from Cape Jourimain including bridge traffic', notes: 'Confirmed two-queen room for 2 adults + 1 child, with free parking and hot breakfast. Treat 15:15 as an early-room request; check-in is guaranteed at 16:00. Unload only what is needed, use the washroom and leave at 16:20. Reconfirm tomorrow’s luggage-hold fallback before leaving.', food: 'Capital Drive services nearby; free hot breakfast tomorrow.', kidPlan: 'Quick room and bathroom reset only; pool is after dinner only if energy and posted hours fit.', mapUrl: mapSearchUrl('300 Capital Drive, Charlottetown, PE C1E 1E8'), sourceUrl: 'https://www.hilton.com/en/hotels/yqmchhx-hampton-suites-charlottetown/' }),
           foodStop('2026-08-17', 'New Glasgow Lobster Suppers', { id: 'd4-dinner', time: '16:50–17:00 walk-in target', zone: 'AT', kind: 'Dinner', priority: 'required', timeBudget: '90-120 min including queue', notes: '2026 service is 16:00–19:30. A family of three is walk-in; reservations are limited to groups of 8+. Arriving before 17:00 gives the best chance of a family-friendly finish. Use Capital Drive takeout if the quoted wait threatens bedtime.', reservation: 'No family reservation; groups of 8+ only.' }),
@@ -747,44 +748,44 @@
 
   var mealContracts = {
     '2026-08-14': {
-      breakfast: { title: 'Breakfast at home', detail: 'Before the 06:45 departure.', backup: 'Packed breakfast only if the home start slips.' },
-      lunch: { title: 'Tata’s House of Pizza & Pasta', detail: '11:40–12:35 · proper seated lunch in Brockville.', backup: 'Boston Pizza Brockville.' },
-      dinner: { title: 'Time Out Market Montréal', detail: '17:45–18:15 · walk from the Marriott.', backup: 'Sit down at Lloyd inside the Marriott.' }
+      breakfast: { style: 'Departure breakfast', title: 'Breakfast before leaving Vaughan', detail: 'Aug 14 starts from home before the first hotel night; all following breakfasts are at the hotel.', backup: 'Leave 15 minutes later rather than skipping breakfast.' },
+      lunch: { style: 'Substantial dine', title: 'Tata’s House of Pizza & Pasta', detail: '11:40–12:35 · the day’s full seated restaurant meal.', backup: 'Boston Pizza Brockville.' },
+      dinner: { style: 'Light meal', title: 'Time Out Market Montréal', detail: '17:45–18:15 · one simple vendor meal, then walk back.', backup: 'One light plate at Lloyd inside the Marriott.' }
     },
     '2026-08-15': {
-      breakfast: { title: 'Lloyd at the Marriott', detail: '06:30–07:10 · hotel breakfast, fee.', backup: 'Hotel grab-and-go only if service slips.' },
-      lunch: { title: 'Restaurant-terrasse du Manoir', detail: '12:45 · proper seated lunch at Montmorency.', backup: 'Cochon Dingue Beauport.' },
-      dinner: { title: 'La Bûche', detail: '18:15 reservation · Old Québec.', backup: 'Cochon Dingue Champlain.' }
+      breakfast: { style: 'Hotel breakfast', title: 'Lloyd at the Marriott', detail: '06:30–07:10 · eat at the hotel before checkout.', backup: 'Use the hotel’s quickest breakfast option and shift departure if needed.' },
+      lunch: { style: 'Substantial dine', title: 'Restaurant-terrasse du Manoir', detail: '12:45 · the day’s full seated restaurant meal at Montmorency.', backup: 'Cochon Dingue Beauport.' },
+      dinner: { style: 'Light meal', title: 'La Bûche', detail: '18:15 · share a starter and one main; keep the Old Québec dinner intentionally small.', backup: 'A light order at Cochon Dingue Champlain.' }
     },
     '2026-08-16': {
-      breakfast: { title: 'Hôtel Cofortel breakfast', detail: '06:15–06:40 · included; service starts 05:00.', backup: 'Packed breakfast only if service fails.' },
-      lunch: { title: 'L’Estaminet', detail: '10:15–11:15 · proper brunch / early lunch.', backup: 'A substantial Rivière-du-Loup meal.' },
-      dinner: { title: 'STMR.36 at Delta', detail: '18:45 · seated restaurant dinner.', backup: 'The Diplomat, 0.3 km from the hotel.' }
+      breakfast: { style: 'Hotel breakfast', title: 'Hôtel Cofortel breakfast', detail: '06:15–06:40 · included hotel breakfast before departure.', backup: 'If service is disrupted, ask the hotel for its available breakfast option.' },
+      lunch: { style: 'Substantial dine', title: 'L’Estaminet', detail: '10:15–11:00 · early proper lunch and the day’s full restaurant meal.', backup: 'A full lunch at St-Hubert Rivière-du-Loup.' },
+      dinner: { style: 'Light meal', title: 'STMR.36 at Delta', detail: '18:45 · one small BBQ plate or shareable bites on site.', backup: 'A light order at the Delta lobby bar or Drift if open.' }
     },
     '2026-08-17': {
-      breakfast: { title: 'Delta hotel breakfast', detail: '06:30–07:20 at STMR.36 or Grove.', backup: 'Packed breakfast only if service runs late.' },
-      lunch: { title: 'Tony’s Bistro', detail: '10:40–11:40 · proper brunch / lunch.', backup: 'A substantial Moncton lunch before departure.' },
-      dinner: { title: 'New Glasgow Lobster Suppers', detail: '16:50 walk-in · allow 90–120 minutes.', backup: 'Lobster on the Wharf in Charlottetown.' }
+      breakfast: { style: 'Hotel breakfast', title: 'Delta hotel breakfast', detail: '06:30–07:20 at STMR.36 or Grove before checkout.', backup: 'Use Grove’s quickest hotel breakfast and shift departure if needed.' },
+      lunch: { style: 'Light meal', title: 'Tony’s Bistro', detail: '10:40–11:25 · soup, sandwich or one savoury bakery plate.', backup: 'A simple Moncton café lunch.' },
+      dinner: { style: 'Substantial dine', title: 'New Glasgow Lobster Suppers', detail: '16:50 walk-in · the day’s full restaurant experience.', backup: 'Lobster on the Wharf in Charlottetown.' }
     },
     '2026-08-18': {
-      breakfast: { title: 'Hampton hot breakfast', detail: '06:15–06:50 · included; confirm opening time.', backup: 'Request takeaway or use the packed safety backup.' },
-      lunch: { title: 'Blue Mussel Café', detail: '11:30 · proper North Rustico lunch.', backup: 'Fisherman’s Wharf or a Cavendish sit-down meal.' },
-      dinner: { title: 'Slaymaker & Nichols', detail: '18:30 reservation · Charlottetown.', backup: 'Lobster on the Wharf.' }
+      breakfast: { style: 'Hotel breakfast', title: 'Hampton hot breakfast', detail: 'Eat the included hotel breakfast before checkout.', backup: 'Shift the morning departure to the confirmed breakfast opening.' },
+      lunch: { style: 'Light meal', title: 'Blue Mussel Café', detail: '11:30 · chowder or shared mussels plus a simple child plate.', backup: 'A light order at Fisherman’s Wharf.' },
+      dinner: { style: 'Substantial dine', title: 'Slaymaker & Nichols', detail: '18:30 reservation · the day’s full restaurant meal.', backup: 'Lobster on the Wharf.' }
     },
     '2026-08-19': {
-      breakfast: { title: 'Canadas Best Value Inn breakfast', detail: 'Included hot breakfast; confirm an early service time.', backup: 'Packed breakfast is the tide-protection exception.' },
-      lunch: { title: 'High Tide Restaurant', detail: '13:30 · full-service lunch after the ocean-floor walk.', backup: 'Gusto Italian Grill & Bar in Moncton.' },
-      dinner: { title: 'Tide & Boar', detail: '18:00 reservation · downtown Moncton.', backup: 'Gusto Italian Grill & Bar.' }
+      breakfast: { style: 'Hotel breakfast', title: 'Canadas Best Value Inn breakfast', detail: 'Use the included hot hotel breakfast before the tide drive.', backup: 'Confirm an early service time with the hotel; keep the meal concise.' },
+      lunch: { style: 'Substantial dine', title: 'High Tide Restaurant', detail: '13:30 · the day’s full restaurant meal after the ocean-floor walk.', backup: 'Gusto Italian Grill & Bar in Moncton.' },
+      dinner: { style: 'Light meal', title: 'Tide & Boar', detail: '18:00 · soup, salad or one shared appetizer with a child plate.', backup: 'A light order at Gusto Italian Grill & Bar.' }
     },
     '2026-08-20': {
-      breakfast: { title: 'Best Western full breakfast', detail: 'Included; confirm service early enough for 06:45.', backup: 'Request breakfast-to-go or use the packed safety backup.' },
-      lunch: { title: 'Frank’s Bar & Grill', detail: '12:15–13:10 · proper seated lunch and driver reset in Edmundston.', backup: 'Boston Pizza Edmundston.' },
-      dinner: { title: 'Le Dijon at DoubleTree', detail: '18:45–19:00 · seated on-site restaurant dinner.', backup: 'Normandin Charlesbourg dining room, open to 21:00.' }
+      breakfast: { style: 'Hotel breakfast', title: 'Best Western full breakfast', detail: 'Eat the included hotel breakfast, then leave around 07:15.', backup: 'Confirm opening at check-in and shift departure to finish breakfast.' },
+      lunch: { style: 'Substantial dine', title: 'Frank’s Bar & Grill', detail: '12:45–13:40 · the day’s full restaurant meal and driver reset.', backup: 'Boston Pizza Edmundston.' },
+      dinner: { style: 'Light meal', title: 'Le Dijon at DoubleTree', detail: '19:00 · soup, salad or the lightest current plate on site.', backup: 'A light plate at Normandin Charlesbourg.' }
     },
     '2026-08-21': {
-      breakfast: { title: 'DoubleTree hotel breakfast', detail: 'Use Le Dijon only if it can finish before 06:30.', backup: 'Hotel takeaway or packed breakfast is the long-drive safety exception.' },
-      lunch: { title: 'Scores Restaurant Boucherville', detail: '11:00–11:50 · proper seated South Shore lunch.', backup: 'La Cage Boucherville.' },
-      dinner: { title: 'Dinner after the final drive', detail: 'Proper dinner at home, or sit down in Kingston after the safety split.', backup: 'Choose the Kingston restaurant before leaving Mallorytown.' }
+      breakfast: { style: 'Hotel breakfast', title: 'DoubleTree hotel breakfast', detail: 'Eat at Le Dijon, then target a 07:15 departure.', backup: 'Confirm opening the night before and shift departure to finish breakfast.' },
+      lunch: { style: 'Substantial dine', title: 'Scores Restaurant Boucherville', detail: '11:30–12:20 · the day’s full seated restaurant meal.', backup: 'La Cage Boucherville.' },
+      dinner: { style: 'Light meal', title: 'Light dinner after the final drive', detail: 'A simple meal at home, or a light Kingston order after choosing the safety overnight.', backup: 'Choose a quick Kingston option before leaving Mallorytown.' }
     }
   };
 
@@ -1185,8 +1186,8 @@
       'Family logistics': 'Reserve 18:15. Walk from De Beaucours parking; allow 0–15 minutes after the reservation time.',
       'Backup': 'Cochon Dingue Champlain.'
     },
-    'd3-brunch': {
-      'Cuisine / order': 'Québec bistro brunch / early lunch; choose one substantial hot plate before the long drive.',
+    'd3-lunch': {
+      'Cuisine / order': 'Québec bistro lunch; choose one substantial hot plate before the long drive.',
       'Planning allowance': 'About C$20–35 per adult before tax/tip; confirm the current menu.',
       'Family logistics': 'Child-friendly seated reset with nearby parking. Sunday demand can add 10–25 minutes; leave by the planned cutoff.',
       'Backup': 'St-Hubert Rivière-du-Loup for a reliable seated meal.'
@@ -1198,7 +1199,7 @@
       'Backup': 'The Diplomat, 253 Woodstock Road.'
     },
     'd4-lunch': {
-      'Cuisine / order': 'Bistro and pâtisserie brunch; choose a substantial savoury plate plus a pastry to share.',
+      'Cuisine / order': 'Bistro lunch; choose a substantial savoury plate plus a pastry to share if wanted.',
       'Planning allowance': 'About C$20–35 per adult before tax/tip; confirm the current menu.',
       'Family logistics': 'Child-friendly; use nearby street or lot parking. Budget 10–25 minutes for a Monday table and leave by 11:40.',
       'Backup': 'Cora Moncton for a seated breakfast/lunch.'
@@ -1284,10 +1285,10 @@
   function renderMealContract(day) {
     var contract = mealContracts[day.id];
     if (!contract) return '';
-    return '<section class="meal-contract" aria-label="Daily meal plan"><h3>Breakfast, lunch & dinner</h3><div class="meal-contract-grid">' +
+    return '<section class="meal-contract" aria-label="Daily meal plan"><h3>Hotel breakfast + two balanced meals</h3><p class="small muted">One substantial restaurant meal per day. The other meal stays light.</p><div class="meal-contract-grid">' +
       ['breakfast', 'lunch', 'dinner'].map(function (meal) {
         var item = contract[meal];
-        return '<div class="meal-contract-item"><span>' + escapeHtml(meal) + '</span><strong>' + escapeHtml(item.title) + '</strong><p>' + escapeHtml(item.detail) + '</p><small><strong>Backup:</strong> ' + escapeHtml(item.backup) + '</small></div>';
+        return '<div class="meal-contract-item"><span>' + escapeHtml(meal) + ' · ' + escapeHtml(item.style) + '</span><strong>' + escapeHtml(item.title) + '</strong><p>' + escapeHtml(item.detail) + '</p><small><strong>Backup:</strong> ' + escapeHtml(item.backup) + '</small></div>';
       }).join('') + '</div></section>';
   }
 
@@ -2086,28 +2087,23 @@
     }).join('') + '</div>';
   }
 
-  function renderStopCard(day, stop) {
+  function stopPriorityLabel(stop) {
+    return stop.choiceGated ? 'Choice branch' : stop.priority === 'optional' ? 'Optional' : stop.priority === 'conditional' ? 'Fallback' : 'Plan A';
+  }
+
+  function stopDetailBody(day, stop) {
     var currentStatus = stopStatus(stop.id);
-    var classes = 'stop priority-' + stop.priority + ' ' + (currentStatus === 'done' ? 'is-complete' : '') + (currentStatus === 'skipped' ? ' is-skipped' : '');
-    var priorityLabel = stop.choiceGated ? 'Choice branch' : stop.priority === 'optional' ? 'Optional' : stop.priority === 'conditional' ? 'Fallback' : 'Plan A';
-    var priorityBadge = stop.priority === 'required' && !stop.choiceGated ? '' : '<span class="priority-badge ' + escapeHtml(stop.priority) + '">' + escapeHtml(priorityLabel) + '</span>';
     var arrivalName = stop.parkingName || stop.locationName || stop.title;
     var arrivalAddress = stop.parkingAddress || stop.address;
     var arrivalLabel = stop.parkingName ? 'Park at' : 'Go to';
     var directionsLabel = stop.parkingName ? 'Parking directions' : 'Directions';
     return [
-      '<article class="', classes, '">',
-      '<div class="time">', escapeHtml(stop.time), stop.zone ? '<br><span class="type">' + escapeHtml(stop.zone) + '</span>' : '', '</div>',
-      '<div>',
-      '<div class="stop-heading">', priorityBadge, '<h3>', escapeHtml(stop.title), '</h3></div>',
-      '<p class="stop-quick-meta"><strong>', escapeHtml(stop.city), '</strong> · ', escapeHtml(stop.kind), '</p>',
       '<p class="stop-destination"><strong>', arrivalLabel, ':</strong> ', escapeHtml(arrivalName), '</p>',
       '<p class="stop-leg">', escapeHtml(stop.leg || 'Start here'), stop.timeBudget ? ' · <strong>' + escapeHtml(stop.timeBudget) + '</strong>' : '', '</p>',
       stop.skipAt ? '<p class="small"><strong>Late rule:</strong> Skip at ' + escapeHtml(stop.skipAt) + '+ minutes late' + (stop.saves ? ' to save about ' + escapeHtml(stop.saves) : '') + '.</p>' : '',
       renderTicketGuidance(stop.ticket),
       '<div class="stop-primary-actions">', externalLink(stop.mapUrl, directionsLabel, 'button primary'),
       '<button type="button" class="button subtle" data-stop-action="toggle" data-stop-id="', escapeHtml(stop.id), '" aria-pressed="', currentStatus === 'done' ? 'true' : 'false', '">', currentStatus === 'done' ? 'Undo' : 'Done', '</button></div>',
-      '<details class="stop-more"><summary>Location & details</summary>',
       stop.locationName ? '<p><strong>Location:</strong> ' + escapeHtml(stop.locationName) + '</p>' : '',
       arrivalAddress ? '<p><strong>' + (stop.parkingName ? 'Parking / arrival address:' : 'Address:') + '</strong> ' + escapeHtml(arrivalAddress) + '</p>' : '',
       renderParkingEntrance(stop.parkingEntrance),
@@ -2119,9 +2115,44 @@
       '<div class="stop-details-actions">', externalLink(stop.sourceUrl, 'Source', 'button subtle'),
       '<button type="button" class="button subtle" data-stop-action="skip" data-stop-id="', escapeHtml(stop.id), '" aria-pressed="', currentStatus === 'skipped' ? 'true' : 'false', '">Skip stop</button>',
       arrivalAddress ? '<button type="button" class="copy-address" data-stop-action="copy" data-address="' + escapeHtml(arrivalAddress) + '">Copy address</button>' : '',
-      '</div></details>',
-      '</div>',
-      '</article>'
+      '</div>'
+    ].join('');
+  }
+
+  function renderDayMapNode(day, stop, index, nextId) {
+    var currentStatus = stopStatus(stop.id);
+    var priorityLabel = stopPriorityLabel(stop);
+    var badge = stop.priority === 'required' && !stop.choiceGated ? '' : '<span class="priority-badge ' + escapeHtml(stop.priority) + '">' + escapeHtml(priorityLabel) + '</span>';
+    var isNext = stop.id === nextId && currentStatus === 'pending';
+    var statusClass = currentStatus === 'done' ? ' is-complete' : currentStatus === 'skipped' ? ' is-skipped' : '';
+    var dotGlyph = currentStatus === 'done' ? '✓' : currentStatus === 'skipped' ? '✕' : String(index + 1);
+    var statusTag = currentStatus === 'done' ? ' · Done' : currentStatus === 'skipped' ? ' · Skipped' : '';
+    var subText = [stop.city, stop.kind].filter(Boolean).map(escapeHtml).join(' · ') + statusTag;
+    return [
+      '<li class="map-stop priority-', escapeHtml(stop.priority), statusClass, isNext ? ' is-next' : '', '">',
+      '<span class="map-dot" aria-hidden="true">', dotGlyph, '</span>',
+      '<details class="map-node" data-stop-id="', escapeHtml(stop.id), '">',
+      '<summary class="map-summary">',
+      index > 0 && stop.leg ? '<span class="map-leg">' + escapeHtml(stop.leg) + '</span>' : '',
+      '<span class="map-node-head"><span class="map-time">', escapeHtml(stop.time), stop.zone ? ' ' + escapeHtml(stop.zone) : '', '</span>', badge, isNext ? '<span class="map-next-flag">Up next</span>' : '', '</span>',
+      '<span class="map-node-title">', escapeHtml(stop.title), '</span>',
+      '<span class="map-node-sub">', subText, '</span>',
+      '</summary>',
+      '<div class="map-detail">', stopDetailBody(day, stop), '</div>',
+      '</details>',
+      '</li>'
+    ].join('');
+  }
+
+  function renderDayRouteMap(day, stops, heading) {
+    if (!stops.length) return '<div class="empty-state">No stops match. Try clearing the stop type or search field.</div>';
+    var nextId = (nextStop(day) || {}).id;
+    return [
+      '<div class="card full day-map">',
+      '<div class="day-map-head"><h3>', escapeHtml(heading || 'Route map'), '</h3><p class="small muted">Every stop in order, optional stops included. Tap a stop for directions and details.</p></div>',
+      '<ol class="map-list">',
+      stops.map(function (stop, index) { return renderDayMapNode(day, stop, index, nextId); }).join(''),
+      '</ol></div>'
     ].join('');
   }
 
@@ -2151,7 +2182,7 @@
       renderMealPlan(day),
       '<details class="day-detail-panel"', normalize(day.risk) === 'high' ? ' open' : '', '><summary>Driving & safety notes</summary><div><p><strong>Wake:</strong> ', escapeHtml(day.wakeTime), ' · <strong>Driver plan:</strong> ', escapeHtml(day.driverPlan), '</p><p><strong>Safety fallback:</strong> ', escapeHtml(day.emergency), '</p>', timeZoneChanges ? '<p><strong>Time change:</strong> ' + escapeHtml(day.timeZoneNote) + '</p>' : '', '</div></details>',
       '</div>',
-      filtered.length ? '<div class="timeline">' + filtered.map(function (stop) { return renderStopCard(day, stop); }).join('') + '</div>' : '<div class="empty-state">No stops match. Try clearing the stop type or search field.</div>',
+      renderDayRouteMap(day, filtered),
       '<div class="day-nav-actions"><button type="button" class="button subtle" id="previousDay"', operationalPlan.days[0].id === day.id ? ' disabled' : '', '>← Previous day</button><button type="button" class="button subtle" id="nextDay"', operationalPlan.days[operationalPlan.days.length - 1].id === day.id ? ' disabled' : '', '>Next day →</button></div>'
     ].join('');
     document.getElementById('dayResult').innerHTML = body;
@@ -2883,6 +2914,7 @@
       '<label for="liveDay">Day<select id="liveDay">', operationalPlan.days.map(function (item) { return '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(dayOptionLabel(item)) + '</option>'; }).join(''), '</select></label>',
       '<label for="liveMode">Schedule<select id="liveMode"><option value="preview">Planning</option><option value="on-time">On schedule</option><option value="ahead30">30 min ahead</option><option value="ahead60">60+ min ahead</option><option value="late30">30+ min late</option><option value="late60">60+ min late</option></select></label>',
       '</div>',
+      renderDayRouteMap(day, visibleStops(day), 'Today’s route'),
       renderTodayRouteOption(day),
       renderTodayMealChoice(day),
       renderFreshnessCard(day),
@@ -2918,6 +2950,25 @@
         persist();
         renderDayContent();
         renderLive();
+      });
+    });
+    section.querySelectorAll('.day-map [data-stop-action]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var stopId = button.dataset.stopId;
+        var action = button.dataset.stopAction;
+        if (action === 'toggle') {
+          tripState.stops[stopId] = stopStatus(stopId) === 'done' ? 'pending' : 'done';
+          persist();
+          renderDayContent();
+          renderLive();
+        } else if (action === 'skip') {
+          tripState.stops[stopId] = stopStatus(stopId) === 'skipped' ? 'pending' : 'skipped';
+          persist();
+          renderDayContent();
+          renderLive();
+        } else if (action === 'copy') {
+          copyText(button.dataset.address || '').then(function () { setStatus('Address copied to the clipboard.'); });
+        }
       });
     });
     section.querySelectorAll('[data-route-choice]').forEach(function (button) {
