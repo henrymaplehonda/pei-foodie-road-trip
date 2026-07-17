@@ -218,6 +218,8 @@ function check(name, ok, detail) {
     const normalized = text.toLowerCase();
     return normalized.includes('hotel anchor') && normalized.includes('breakfast, lunch & dinner') && normalized.includes('breakfast') && normalized.includes('lunch') && normalized.includes('dinner');
   }));
+  check('every day offers route-side attractions with strict gates and named parking', allDayTexts.every((text) => text.includes('Along-the-way options') && text.includes('Go / no-go gate') && text.includes('Closest named parking')));
+  check('optional route attractions cover child resets, weather flexibility and short history stops', aug14Text.includes('Lake Ontario Park') && aug17Text.includes('Bore Park tidal bore viewpoint') && aug18Text.includes('Gardens of Hope & Butterfly House') && aug18Text.includes('Cavendish Boardwalk') && aug19Text.includes('Albert County Museum & RB Bennett Centre') && aug19Text.includes('Steeves House Museum') && aug20Text.includes('Republique Provincial Park') && aug21Text.includes('Fort Chambly National Historic Site'));
   check('the plan uses proper restaurant dinners instead of room service', allDayTexts.every((text) => !text.toLowerCase().includes('room service')) && aug16Text.includes('STMR.36 at Delta') && aug20Text.includes('Proper dinner: Le Dijon dining room'));
   check('the active itinerary contains no rejected attraction or self-catered lunch', allDayTexts.every((text) => {
     const normalized = text.toLowerCase();
