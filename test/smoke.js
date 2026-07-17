@@ -228,10 +228,10 @@ function check(name, ok, detail) {
   check('Aug 20 protects early departure, proper lunch, recovery and on-site dinner', aug20Text.includes('Wake 05:30') && aug20Text.includes('Frank’s Bar & Grill') && aug20Text.includes('100 Rice Street') && aug20Text.toLowerCase().includes('quarter tank') && aug20Text.includes('DoubleTree by Hilton Quebec Resort') && aug20Text.includes('16:30–17:15') && aug20Text.includes('Le Dijon'));
 
   const aug21Text = await dayText('2026-08-21');
-  const aug21Requirements = ['06:30 wheels moving', 'DoubleTree hotel breakfast', 'Scores Restaurant Boucherville', '14:00 overnight checkpoint', 'About 190 km / 2 h', '20:00', 'fatigue'];
+  const aug21Requirements = ['06:30 wheels moving', 'DoubleTree hotel breakfast', 'Scores Restaurant Boucherville', '14:00 fatigue checkpoint', 'About 190 km / 2 h', '20:00', 'fatigue'];
   const aug21Missing = aug21Requirements.filter((item) => !aug21Text.toLowerCase().includes(item.toLowerCase()));
-  check('Aug 21 has a fatigue-based overnight checkpoint', aug21Missing.length === 0, 'missing=' + aug21Missing.join(', '));
-  check('Aug 21 fallback stays westbound', aug21Text.includes('Mallorytown North') && aug21Text.includes('Hampton Inn Kingston') && !aug21Text.includes('Mallorytown South') && !aug21Text.includes('Cornwall'));
+  check('Aug 21 has a fatigue-based rest checkpoint', aug21Missing.length === 0, 'missing=' + aug21Missing.join(', '));
+  check('Aug 21 stays westbound and suggests no overnight hotel', aug21Text.includes('Mallorytown North') && !aug21Text.includes('Hampton Inn Kingston') && !aug21Text.includes('Kingston safety') && !aug21Text.includes('Mallorytown South') && !aug21Text.includes('Cornwall'));
   const allDayTexts = [aug14Text, aug15Text, aug16Text, aug17Text, aug18Text, aug19Text, aug20Text, aug21Text];
   check('every day exposes one hotel anchor and a hotel-breakfast plus lunch/dinner contract', allDayTexts.every((text) => {
     const normalized = text.toLowerCase();
