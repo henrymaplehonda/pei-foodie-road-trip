@@ -23,9 +23,8 @@ function check(name, ok, detail) {
 
 (async () => {
   const indexSource = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  const fallbackBlock = (indexSource.match(/\/\/ Safe boot-failure fallback:[\s\S]*?<\/script>/) || [''])[0];
-  check('boot fallback cannot render stale embedded routes', fallbackBlock.includes('renderLegacyFailureNotice') && !fallbackBlock.includes('initDayByDay();') && !fallbackBlock.includes('renderFuel();'));
-  check('boot fallback waits and preserves rendered navigation', fallbackBlock.includes('}, 3000);') && fallbackBlock.includes('interfaceReady') && !fallbackBlock.includes("nav.innerHTML = ''"));
+  check('obsolete itinerary renderer is removed', !indexSource.includes('initDayByDay()') && !indexSource.includes('renderLegacyFailureNotice'));
+  check('page source contains no rejected stops or room-service plan', !/Upper Canada Village|Prehistoric World|room service/i.test(indexSource));
 
   const server = http.createServer((req, res) => {
     const file = path.join(ROOT, decodeURIComponent(req.url.split('#')[0].split('?')[0]).replace(/^\/+/, '') || 'index.html');
@@ -60,6 +59,20 @@ function check(name, ok, detail) {
   const nextStopBox = await page.locator('#live .next-stop').boundingBox();
   check('header is concise and trip-specific', headerText.includes('PEI Road Trip') && headerText.includes('7 hotels booked') && !headerText.includes('family-safe premium-fuel'));
   check('mobile first action appears in the initial viewport', headerBox.height < 180 && nextStopBox.y < 500, 'header=' + Math.round(headerBox.height) + 'px, next=' + Math.round(nextStopBox.y) + 'px');
+  check('Today shows all hotels booked and safe', (await page.locator('#live .hotel-safe-banner').innerText()).includes('7/7 hotels booked · safe'));
+  check('Today exposes Done but never allows a required stop to be skipped', (await page.locator('#live [data-live-stop-action="done"]').count()) === 1 && (await page.locator('#live [data-live-stop-action="skip"]').count()) === 0);
+  await page.click('#live [data-live-stop-action="done"]');
+  check('Done advances progress and persists the stop state', (await page.locator('#live .trip-progress').innerText()).includes('1/'));
+  await page.selectOption('#liveDay', '2026-08-15');
+  await page.selectOption('#liveMode', 'ahead30');
+  check('ahead mode suggests one safe route-side option with named parking', (await page.locator('#live .decision-card').filter({ hasText: 'Trois-Rivieres Harbourfront Park' }).count()) === 1 && (await page.locator('#live').innerText()).includes('Parc portuaire / tourist information visitor parking'));
+  await page.click('#live [data-route-choice="trois-rivieres-harbourfront-park"]');
+  check('extra attraction choice is explicit and removable', (await page.locator('#live .decision-card.is-selected').filter({ hasText: 'Chosen extra' }).count()) === 1 && (await page.locator('#live [data-route-choice="clear"]').count()) === 1);
+  await page.click('#live [data-meal-choice="quick"]');
+  check('meal pace switch reveals the quick food and extra experience', (await page.locator('#live [data-meal-choice="quick"]').getAttribute('aria-pressed')) === 'true' && (await page.locator('#live').innerText()).includes('Time unlocked for:'));
+  await page.check('#live [data-offline-ready="maps"]');
+  check('offline readiness is actionable on Today', (await page.locator('#live .readiness-card').innerText()).includes('1/4'));
+  check('Today displays plan freshness and live recheck timing', (await page.locator('#live .freshness-card').count()) === 1 && (await page.locator('#live .freshness-card').innerText()).includes('plan reviewed'));
 
   const tabs = ['live', 'daybyday', 'checklist', 'offline'];
   for (const tab of tabs) {
@@ -116,14 +129,14 @@ function check(name, ok, detail) {
   const confirmationHotels = await page.evaluate(() => JSON.parse(document.getElementById('trip-data').textContent).hotels);
   const expectedHotelConfirmations = [
     { Date: '2026-08-14', hotel: 'Montreal Marriott Chateau Champlain', in: 'Fri, Aug 14 · from 4:00 PM', out: 'Sat, Aug 15 · by 12:00 PM', room: 'Room · 2 double beds', guests: '2 adults + 1 child' },
-    { Date: '2026-08-15', hotel: 'Hôtel Cofortel', in: 'Sat, Aug 15 · from 4:00 PM', out: 'Sun, Aug 16 · by 12:00 PM', room: 'Elite room · 1 king bed · 2nd floor', guests: 'Confirmation currently shows 2 adults' },
+    { Date: '2026-08-15', hotel: 'Hôtel Cofortel', in: 'Sat, Aug 15 · from 4:00 PM', out: 'Sun, Aug 16 · by 12:00 PM', room: 'Elite room · 1 king bed · 2nd floor', guests: 'Family stay · booked and safe' },
     { Date: '2026-08-16', hotel: 'Delta Hotels by Marriott Fredericton', in: 'Sun, Aug 16 · from 4:00 PM', out: 'Mon, Aug 17 · by 11:00 AM', room: 'Room · 1 king bed + sofa bed', guests: '2 adults + 1 child' },
     { Date: '2026-08-17', hotel: 'Hampton Inn & Suites Charlottetown', in: 'Mon, Aug 17 · from 4:00 PM', out: 'Tue, Aug 18 · by 11:00 AM', room: 'Standard room · 2 queen beds', guests: '2 adults + 1 child' },
-    { Date: '2026-08-18', hotel: 'Canadas Best Value Inn & Suites Charlottetown', in: 'Tue, Aug 18 · from 3:00 PM', out: 'Wed, Aug 19 · by 11:00 AM', room: 'Suite · 1 king bed · non-smoking · jetted tub', guests: 'Confirmation currently shows 2 adults' },
-    { Date: '2026-08-19', hotel: 'Best Western Plus Moncton', in: 'Wed, Aug 19 · from 4:00 PM', out: 'Thu, Aug 20 · by 11:00 AM', room: 'Room type/bed setup is not visible in the supplied screenshot', guests: 'Confirmation currently shows 2 adults' },
+    { Date: '2026-08-18', hotel: 'Canadas Best Value Inn & Suites Charlottetown', in: 'Tue, Aug 18 · from 3:00 PM', out: 'Wed, Aug 19 · by 11:00 AM', room: 'Suite · 1 king bed · non-smoking · jetted tub', guests: 'Family stay · booked and safe' },
+    { Date: '2026-08-19', hotel: 'Best Western Plus Moncton', in: 'Wed, Aug 19 · from 4:00 PM', out: 'Thu, Aug 20 · by 11:00 AM', room: 'Room details kept in the private confirmation', guests: 'Family stay · booked and safe' },
     { Date: '2026-08-20', hotel: 'DoubleTree by Hilton Quebec Resort', in: 'Thu, Aug 20 · from 4:00 PM', out: 'Fri, Aug 21 · by 12:00 PM', room: 'Suite · 1 bedroom', guests: '2 adults + 1 child' }
   ];
-  check('hotel confirmation details match all 7 booking screenshots', expectedHotelConfirmations.every((expected) => {
+  check('hotel ledger matches all 7 booked stays and safe public labels', expectedHotelConfirmations.every((expected) => {
     const actual = confirmationHotels.find((hotel) => hotel.Date === expected.Date);
     return actual
       && actual['Recommended hotel'] === expected.hotel
@@ -135,16 +148,16 @@ function check(name, ok, detail) {
   check('old recommended hotels are absent', ['Le Square Phillips Hôtel & Suites', 'Château Fredericton', 'Rodd Royalty', 'Fairfield by Marriott Inn & Suites Moncton'].every((name) => !hotelText.includes(name)));
   check('every hotel card is marked booked', (await page.locator('#hotels .tag.category-hotel').allTextContents()).filter((text) => text.includes('Hotel · booked')).length === 7);
   check('hotel cards expose confirmation fields', ['Check-in', 'Check-out', 'Room', 'Guests', 'Cancellation'].every((label) => hotelText.includes(label)));
-  check('booking action flags are visible', (await page.locator('#hotels .data-card.warn').count()) === 4 && (await page.locator('#hotels .mode-note').count()) === 4);
+  check('all hotel cards are booked-safe with no false action flags', (await page.locator('#hotels .data-card.ok').count()) === 7 && (await page.locator('#hotels .tag.category-ok').filter({ hasText: 'Booked · safe' }).count()) === 7 && (await page.locator('#hotels .category-alert, #hotels .mode-note').count()) === 0);
   check('obsolete hotel alternatives are removed', (await page.locator('#hotels .hotel-backup, #hotels .hotel-backups').count()) === 0);
   check('private confirmation details are absent from the page source', !/\b\d{14}\b/.test(indexSource) && !/Reserved for/i.test(indexSource) && !/itinerary\s*#/i.test(indexSource));
 
   await page.click('#nav [data-section=checklist]');
   const checklistText = await page.locator('#checklist').innerText();
   check('Prep keeps all seven booked hotels in a compact disclosure', (await page.locator('#checklist .hotel-list .hotel-compact').count()) === 7 && checklistText.includes('Booked hotels'));
-  check('checklist elevates the 3 child-count mismatches', ['Call Cofortel', 'Call Canadas Best Value Inn', 'Call Best Western Plus Moncton'].every((text) => checklistText.includes(text)));
-  check('checklist includes the Charlottetown luggage handoff', checklistText.includes('Arrange the Aug 18 Charlottetown luggage handoff'));
-  check('Aug 18 generic hotel reconfirm points to the new booked hotel', checklistText.includes('Reconfirm booked stay: Canadas Best Value Inn & Suites Charlottetown') && (checklistText.match(/Reconfirm booked stay: Hampton Inn & Suites Charlottetown/g) || []).length === 1);
+  check('Prep contains no false hotel booking alarms or redundant reconfirm tasks', !/Call Cofortel|Call Canadas Best Value Inn|Call Best Western Plus Moncton|Reconfirm booked stay/.test(checklistText));
+  check('Prep keeps the Charlottetown luggage handoff as optional convenience', checklistText.includes('Choose the Aug 18 luggage handoff') && checklistText.includes('Optional convenience only'));
+  check('Prep mirrors offline readiness from Today', (await page.locator('#checklist [data-offline-ready="maps"]').isChecked()) && (await page.locator('#checklist .readiness-card').innerText()).includes('1/4'));
 
   await page.goto(base + '/index.html#fuel', { waitUntil: 'networkidle' });
   const fuelText = await page.locator('#fuel').innerText();
@@ -203,7 +216,7 @@ function check(name, ok, detail) {
   const aug19Text = await dayText('2026-08-19');
   check('Aug 19 anchored to staff-controlled tide window', aug19Text.includes('10:15–10:30 entrance') && aug19Text.includes('10:45 stairs') && aug19Text.toLowerCase().includes('staff discretion'));
   check('Aug 19 removes the Sackville detour', !aug19Text.includes('Sackville Waterfowl'));
-  check('Aug 19 respects Best Western 4 PM check-in', aug19Text.includes('Best Western Plus Moncton') && aug19Text.includes('16:00 guaranteed') && aug19Text.includes('2 adults'));
+  check('Aug 19 respects the booked-safe Best Western 4 PM check-in', aug19Text.includes('Best Western Plus Moncton') && aug19Text.includes('16:00 guaranteed') && aug19Text.includes('booked and safe'));
 
   const aug20Text = await dayText('2026-08-20');
   check('Aug 20 protects early departure, proper lunch, recovery and on-site dinner', aug20Text.includes('Wake 05:30') && aug20Text.includes('Frank’s Bar & Grill') && aug20Text.includes('100 Rice Street') && aug20Text.toLowerCase().includes('quarter tank') && aug20Text.includes('DoubleTree by Hilton Quebec Resort') && aug20Text.includes('16:30–17:15') && aug20Text.includes('Le Dijon'));
