@@ -555,6 +555,8 @@ main{max-width:960px;padding:24px 16px 52px}
 .trip-pin-wrap{background:transparent;border:0}
 .trip-pin{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--pin,#333);color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);font-weight:800;font-size:12px;line-height:1;font-family:"Avenir Next",Inter,system-ui,sans-serif}
 .trip-pin.is-optional{background:#fff;color:var(--pin,#333);border:2px dashed var(--pin,#333);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.trip-pin.is-idea{width:24px;height:24px;background:#fff;color:var(--pin,#1f8f6e);border:2px dashed var(--pin,#1f8f6e);font-size:13px;box-shadow:0 1px 3px rgba(0,0,0,.28)}
+.trip-legend-idea{display:inline-flex;align-items:center;justify-content:center;background:var(--panel)!important;border:1px dashed var(--ok);color:var(--ok);font-size:10px;line-height:1;box-shadow:none}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--ink);box-shadow:0 4px 18px rgba(0,0,0,.32)}
 .leaflet-popup-content{margin:12px 14px;color:var(--ink)}
 .leaflet-popup-close-button{color:var(--muted)!important}
@@ -568,7 +570,9 @@ main{max-width:960px;padding:24px 16px 52px}
 .trip-pop-flag{display:inline-block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--warn);border:1px solid var(--warn);border-radius:999px;padding:1px 6px;vertical-align:middle;margin-left:4px}
 .trip-pop-meta{margin:2px 0 0;font-size:12px;color:var(--muted)}
 .trip-pop-addr{margin:2px 0 0;font-size:12px;color:var(--ink)}
-.trip-pop-links{margin:4px 0 0}
+.trip-pop-note{margin:4px 0 0;font-size:12px;color:var(--ink)}
+.trip-pop-gate{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.trip-pop-links{margin:4px 0 0;display:flex;flex-wrap:wrap;gap:4px 10px}
 a.trip-pop-dir{font-size:12px;font-weight:700;color:var(--accent2)}
 @media(max-width:640px){.trip-map{height:340px}.trip-map-field,.trip-map-check,.trip-map-controls .button{font-size:12px}}
 @media(max-width:410px){.trip-map-controls{gap:8px}.trip-map-field{flex:1 1 100%}.trip-map-field select{width:100%}}

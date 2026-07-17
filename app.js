@@ -1031,7 +1031,7 @@
 
   var routeOptionsByDay = {
     '2026-08-14': {
-      rule: 'Choose at most one route-side option. Check live traffic first; the booked Montreal hotel and proper meals stay protected.',
+      rule: 'Several ideas along the 401, but choose at most one. Check live traffic first; the booked Montreal hotel and proper meals stay protected.',
       options: [{
         name: 'Lake Ontario Park',
         routePoint: 'Between ONroute Odessa and Brockville lunch',
@@ -1041,11 +1041,34 @@
         gate: 'Go only if the live Montreal hotel ETA remains 16:45 or earlier. Replace another stretch break; do not stack stops.',
         parking: 'Lake Ontario Park visitor parking, 920 King Street West, Kingston, ON',
         map: mapSearchUrl('Lake Ontario Park visitor parking, 920 King Street West, Kingston, ON'),
-        source: 'https://www.cityofkingston.ca/activities-and-recreation/parks-trails-and-sports-fields-and-courts/parks/'
+        source: 'https://www.cityofkingston.ca/activities-and-recreation/parks-trails-and-sports-fields-and-courts/parks/',
+        coords: [44.22011, -76.53036]
+      }, {
+        name: 'Fort Henry National Historic Site',
+        routePoint: 'At Kingston, near the Odessa service break',
+        why: 'A restored 19th-century British fortress above the St. Lawrence with open ramparts and summer living-history demonstrations kids enjoy.',
+        visit: '60-90 min',
+        routeImpact: 'Planning estimate: +20-30 min off the 401 at Kingston plus the visit; paid admission. Verify live Maps.',
+        gate: 'Use only as the single optional stop of the day, when both drivers are fresh and the Montreal ETA stays 16:30 or earlier. Then skip The Big Apple.',
+        parking: 'Fort Henry visitor parking, 1 Fort Henry Drive, Kingston, ON K7K 5G8',
+        map: mapSearchUrl('Fort Henry, 1 Fort Henry Drive, Kingston, ON K7K 5G8'),
+        source: 'https://www.forthenry.com/',
+        coords: [44.23088, -76.45902]
+      }, {
+        name: 'Brockville Railway Tunnel',
+        routePoint: 'At the Brockville lunch stop, on the St. Lawrence waterfront',
+        why: 'Canada’s first railway tunnel, now a free, flat, lit walk under downtown Brockville with a light-and-sound display—an easy, memorable leg-stretch beside lunch.',
+        visit: '30-45 min',
+        routeImpact: 'Negligible—it is beside the Brockville lunch; verify parking in live Maps.',
+        gate: 'Use instead of a longer lunch or another stretch break, only if the live Montreal ETA stays 16:45 or earlier.',
+        parking: 'Blockhouse Island / railway tunnel south portal parking, Blockhouse Island Parkway, Brockville, ON',
+        map: mapSearchUrl('Brockville Railway Tunnel, Blockhouse Island Parkway, Brockville, ON'),
+        source: 'https://brockvilletourism.com/',
+        coords: [44.59141, -75.68403]
       }]
     },
     '2026-08-15': {
-      rule: 'A mid-drive stretch here is optional now that breakfast is at the hotel. Add this only as a short leg-stretch and keep Montmorency Falls and the 16:00 hotel access protected.',
+      rule: 'A few easy ideas around Québec City—pick at most one. Keep Montmorency Falls, the La Bûche dinner and the 16:00 hotel access protected.',
       options: [{
         name: 'Trois-Rivieres Harbourfront Park',
         routePoint: 'At the Trois-Rivieres break, before Montmorency Falls',
@@ -1055,11 +1078,34 @@
         gate: 'Leave the harbourfront by 10:30. Skip immediately if Montreal traffic has already used the timing buffer.',
         parking: 'Parc portuaire / tourist information visitor parking, 1400 Rue du Fleuve, Trois-Rivieres, QC',
         map: mapSearchUrl('Parc portuaire tourist information parking, 1400 Rue du Fleuve, Trois-Rivieres, QC'),
-        source: 'https://www.tourismetroisrivieres.com/en/what-to-do/harbourfront-park'
+        source: 'https://www.tourismetroisrivieres.com/en/what-to-do/harbourfront-park',
+        coords: [46.34251, -72.53632]
+      }, {
+        name: 'Plains of Abraham (Battlefields Park)',
+        routePoint: 'In Québec City, beside Old Québec',
+        why: 'A large, free clifftop parkland with wide lawns, walking paths and river views—an easy, low-cost alternative to a crowded Old Québec walk.',
+        visit: '30-60 min',
+        routeImpact: 'Minimal within Québec City; free grounds, the museum is optional and paid.',
+        gate: 'Use instead of, or right after, the Dufferin Terrace walk. Keep the La Bûche dinner and the 16:00 Cofortel access protected.',
+        parking: 'Plains of Abraham / Discovery Pavilion parking, 835 Avenue Wilfrid-Laurier, Québec, QC G1R 2L3',
+        map: mapSearchUrl('Plains of Abraham Discovery Pavilion, 835 Avenue Wilfrid-Laurier, Quebec, QC'),
+        source: 'https://www.theplainsofabraham.ca/',
+        coords: [46.79766, -71.22883]
+      }, {
+        name: 'Basilica of Sainte-Anne-de-Beaupré',
+        routePoint: 'Just past Montmorency Falls on Boulevard Sainte-Anne',
+        why: 'A grand, free-to-enter basilica with striking mosaics and stained glass, a short drive beyond Montmorency along the same shoreline road.',
+        visit: '30-45 min',
+        routeImpact: 'Planning estimate: +30-40 min return past Montmorency (it is a short backtrack); verify live Maps.',
+        gate: 'Use only if Montmorency and lunch finish early and everyone has energy. Turn back if it would squeeze the Old Québec afternoon or the 18:15 dinner.',
+        parking: 'Sanctuaire Sainte-Anne-de-Beaupré visitor parking, 10018 Avenue Royale, Sainte-Anne-de-Beaupré, QC G0A 3C0',
+        map: mapSearchUrl('Sanctuaire Sainte-Anne-de-Beaupre, 10018 Avenue Royale, Sainte-Anne-de-Beaupre, QC'),
+        source: 'https://sanctuairesainteanne.org/',
+        coords: [47.02408, -70.92832]
       }]
     },
     '2026-08-16': {
-      rule: 'High-driving day: choose this only as a deliberate swap for Hartland and every other optional stop. It is never an add-on.',
+      rule: 'High-driving day: choose at most one, and only as a deliberate swap for Hartland and every other optional stop. Never an add-on.',
       options: [{
         name: 'New Brunswick Botanical Garden',
         routePoint: 'At Edmundston, before the Hartland corridor',
@@ -1069,11 +1115,22 @@
         gate: 'Use only if Kamouraska ran on time, both drivers feel fresh and live Fredericton hotel ETA remains 18:00 or earlier. Then skip Hartland.',
         parking: 'New Brunswick Botanical Garden main visitor parking, 15 Isidore-Boucher Boulevard, Edmundston, NB E7B 1V6',
         map: mapSearchUrl('New Brunswick Botanical Garden main parking, 15 Isidore-Boucher Boulevard, Edmundston, NB E7B 1V6'),
-        source: 'https://jardinnbgarden.com/en/opening-hours/'
+        source: 'https://jardinnbgarden.com/en/opening-hours/',
+        coords: [47.43951, -68.39269]
+      }, {
+        name: 'Parc des Chutes de Rivière-du-Loup',
+        routePoint: 'In Rivière-du-Loup, beside the lunch stop',
+        why: 'A 33 m waterfall with a footbridge, shaded trails and lookouts right in town—an easy, free leg-stretch beside the Rivière-du-Loup lunch.',
+        visit: '30-45 min',
+        routeImpact: 'Negligible—it is in Rivière-du-Loup at the lunch stop; verify parking in live Maps.',
+        gate: 'Use as a short walk after lunch, only if Kamouraska ran on time and the live Fredericton hotel ETA stays 18:00 or earlier. Then skip Hartland.',
+        parking: 'Parc des Chutes visitor parking, Rue Frontenac, Rivière-du-Loup, QC',
+        map: mapSearchUrl('Parc des Chutes, Rue Frontenac, Riviere-du-Loup, QC'),
+        coords: [47.83344, -69.52898]
       }]
     },
     '2026-08-17': {
-      rule: 'Choose Bore Park or Magnetic Hill, never both. The tide clock—not spare time—decides whether this option works.',
+      rule: 'A few Moncton ideas, but pick at most one—Bore Park, Magnetic Hill or the Zoo, never a stack. The tide and hotel clock, not spare time, decide.',
       options: [{
         name: 'Bore Park tidal bore viewpoint',
         routePoint: 'In Moncton, before Cape Jourimain and PEI',
@@ -1083,7 +1140,19 @@
         gate: 'Go only when the official predicted wave is within 20 minutes of arrival. Replace Magnetic Hill and leave immediately after the wave.',
         parking: 'Treitz Haus / Bore Park visitor parking, 10 Bendview Court, Moncton, NB',
         map: mapSearchUrl('Treitz Haus Bore Park visitor parking, 10 Bendview Court, Moncton, NB'),
-        source: 'https://www.resurgo.ca/learn-discover/tidal-bore-presentations'
+        source: 'https://www.resurgo.ca/learn-discover/tidal-bore-presentations',
+        coords: [46.08969, -64.77066]
+      }, {
+        name: 'Magnetic Hill Zoo',
+        routePoint: 'In Moncton, beside the Magnetic Hill area',
+        why: 'The Maritimes’ largest zoo—a genuine kid highlight with shaded paths, if you want more than the quick Magnetic Hill illusion stop.',
+        visit: '90-120 min',
+        routeImpact: 'Planning estimate: +10-15 min from Magnetic Hill plus a longer visit; paid admission. Verify live Maps.',
+        gate: 'Use instead of Cape Jourimain and every other optional stop, only if lunch was quick and the Charlottetown hotel ETA stays 17:00 or earlier.',
+        parking: 'Magnetic Hill Zoo visitor parking, 125 Magic Mountain Road, Moncton, NB E1G 2W7',
+        map: mapSearchUrl('Magnetic Hill Zoo, 125 Magic Mountain Road, Moncton, NB E1G 2W7'),
+        source: 'https://magnetichillzoo.ca/',
+        coords: [46.13808, -64.88466]
       }]
     },
     '2026-08-18': {
@@ -1097,7 +1166,8 @@
         gate: 'Use when the beach is shortened by at least 45 minutes. Arrive by 16:00 and protect the hotel switch and dinner.',
         parking: 'Prince Edward Island Preserve Company main visitor parking, 2841 New Glasgow Road, New Glasgow, PE C0A 1N0',
         map: mapSearchUrl('Prince Edward Island Preserve Company visitor parking, 2841 New Glasgow Road, New Glasgow, PE C0A 1N0'),
-        source: 'https://preservecompany.com/pages/hours-of-operation'
+        source: 'https://preservecompany.com/pages/hours-of-operation',
+        coords: [46.40913, -63.34818]
       }, {
         name: 'Cavendish Boardwalk',
         routePoint: 'In Cavendish, beside the day\'s main activity area',
@@ -1107,11 +1177,22 @@
         gate: 'Use instead of beach time or a longer Avonlea browse. Do not combine it with the Butterfly House option.',
         parking: 'Cavendish Boardwalk free visitor parking, 9139 Cavendish Road, Cavendish, PE C0A 1N0',
         map: mapSearchUrl('Cavendish Boardwalk free parking, 9139 Cavendish Road, Cavendish, PE C0A 1N0'),
-        source: 'https://cavendishboardwalk.com/'
+        source: 'https://cavendishboardwalk.com/',
+        coords: [46.48129, -63.41107]
+      }, {
+        name: 'Avonlea Village',
+        routePoint: 'In Cavendish, near Green Gables',
+        why: 'An Anne-of-Green-Gables-themed village of shops, treats and open lawn—an easy, low-key backup if Green Gables is busy or the beach is cut short.',
+        visit: '45-60 min',
+        routeImpact: 'Negligible within Cavendish; free to walk the grounds.',
+        gate: 'Use instead of beach time or the Butterfly House option, arriving by 16:00 so the hotel switch and Slaymaker dinner stay protected.',
+        parking: 'Avonlea Village visitor parking, 8779 Route 6, Cavendish, PE C0A 1N0',
+        map: mapSearchUrl('Avonlea Village, 8779 Route 6, Cavendish, PE C0A 1N0'),
+        coords: [46.48908, -63.39025]
       }]
     },
     '2026-08-19': {
-      rule: 'Choose one Route 114 museum only after Hopewell floor access and lunch are complete. Both are easy to skip.',
+      rule: 'Ideas along Route 114 after Hopewell, but choose at most one—only after the ocean floor and lunch are done. All are easy to skip.',
       options: [{
         name: 'Albert County Museum & RB Bennett Centre',
         routePoint: 'Immediately after Hopewell Rocks, before Hillsborough',
@@ -1121,7 +1202,8 @@
         gate: 'Leave by 15:00 and confirm live Best Western ETA no later than 16:15. Otherwise protect hotel pool time.',
         parking: 'Albert County Museum on-site visitor parking, 3940 Route 114, Hopewell Cape, NB E4H 3J8',
         map: mapSearchUrl('Albert County Museum visitor parking, 3940 Route 114, Hopewell Cape, NB E4H 3J8'),
-        source: 'https://www.albertcountymuseum.com/hours-admissions-index'
+        source: 'https://www.albertcountymuseum.com/hours-admissions-index',
+        coords: [45.84892, -64.5782]
       }, {
         name: 'Steeves House Museum',
         routePoint: 'On Route 114 in Hillsborough, before Moncton',
@@ -1131,11 +1213,23 @@
         gate: 'Choose this instead of Albert County Museum and leave by 15:20. Skip if anyone prefers the hotel reset.',
         parking: 'Steeves House Museum visitor parking, 40 Mill Street, Hillsborough, NB E4H 2Z8',
         map: mapSearchUrl('Steeves House Museum visitor parking, 40 Mill Street, Hillsborough, NB E4H 2Z8'),
-        source: 'https://www.steeveshousemuseum.ca/visit'
+        source: 'https://www.steeveshousemuseum.ca/visit',
+        coords: [45.92527, -64.64388]
+      }, {
+        name: 'Cape Enrage',
+        routePoint: 'A signed detour off Route 915, south of Hopewell Rocks',
+        why: 'A dramatic clifftop lighthouse with Bay of Fundy views, a beach and optional zipline—a big-payoff scenic stop for a good-weather, on-time day.',
+        visit: '45-75 min',
+        routeImpact: 'Planning estimate: +40-55 min round trip off Route 915; verify live Maps and 2026 hours.',
+        gate: 'Only replace both museums and every other stop, when the ocean floor finished early, weather is clear and the Best Western ETA stays 16:15 or earlier.',
+        parking: 'Cape Enrage visitor parking, 650 Cape Enrage Road, Waterside, NB E4H 4Z5',
+        map: mapSearchUrl('Cape Enrage, 650 Cape Enrage Road, Waterside, NB E4H 4Z5'),
+        source: 'https://www.capenrage.ca/',
+        coords: [45.59465, -64.78084]
       }]
     },
     '2026-08-20': {
-      rule: 'Longest drive: this is a child movement swap at the Edmundston break, never an additional sightseeing stop.',
+      rule: 'Longest drive: at most one, and only as a child movement swap—never an added sightseeing stop. Kings Landing is a bigger commitment; use it only with a big time cushion.',
       options: [{
         name: 'Republique Provincial Park playground & riverside trail',
         routePoint: 'At Edmundston lunch, before the Quebec-bound drive',
@@ -1145,7 +1239,19 @@
         gate: 'Use only if lunch finishes early, both drivers are alert and live DoubleTree ETA remains 16:45 or earlier. Skip every other optional stop.',
         parking: 'Republique Provincial Park day-use parking, 31 Isidore-Boucher Boulevard, Edmundston, NB',
         map: mapSearchUrl('Republique Provincial Park day-use parking, 31 Isidore-Boucher Boulevard, Edmundston, NB'),
-        source: 'https://www.parcsnb.ca/en/parks/8/republique-provincial-park'
+        source: 'https://www.parcsnb.ca/en/parks/8/republique-provincial-park',
+        coords: [47.44127, -68.39394]
+      }, {
+        name: 'Kings Landing Historical Settlement',
+        routePoint: 'Just west of Fredericton on the TransCanada, early in the day',
+        why: 'A large riverside living-history village with costumed interpreters and animals—a genuine highlight, but a real time commitment on the longest driving day.',
+        visit: '2-3 hours',
+        routeImpact: 'Right off the TransCanada; paid admission and a long visit. Verify 2026 hours in live Maps.',
+        gate: 'Only if you deliberately shorten the day by leaving Moncton very early and both drivers accept a late DoubleTree arrival. Skip if in any doubt—this is the day to just drive.',
+        parking: 'Kings Landing visitor parking, 5804 Route 102, Prince William, NB E6K 0A5',
+        map: mapSearchUrl('Kings Landing, 5804 Route 102, Prince William, NB E6K 0A5'),
+        source: 'https://www.kingslanding.nb.ca/',
+        coords: [45.87703, -66.97803]
       }]
     },
     '2026-08-21': {
@@ -1159,7 +1265,8 @@
         gate: 'Use only after committing to and securing the Kingston overnight before leaving Quebec City. Verify 2026 hours that morning.',
         parking: 'Fort Chambly P1/P2 visitor lots, accessed from Avenue Bourgogne; attraction address 2 Richelieu Street, Chambly, QC J3L 2B9',
         map: mapSearchUrl('Fort Chambly P1 P2 visitor parking, Avenue Bourgogne, Chambly, QC J3L 2B9'),
-        source: 'https://parks.canada.ca/lhn-nhs/qc/fortchambly/visit/directions'
+        source: 'https://parks.canada.ca/lhn-nhs/qc/fortchambly/visit/directions',
+        coords: [45.44862, -73.27591]
       }]
     }
   };
@@ -2139,7 +2246,7 @@
   var tripMap = {
     map: null, tiles: null, routeLayer: null, markerLayer: null,
     built: false, unavailable: false, model: null, markers: [],
-    filters: { day: 'all', type: 'all', optional: true, route: true }
+    filters: { day: 'all', type: 'all', optional: true, ideas: true, route: true }
   };
 
   function buildTripMapModel() {
@@ -2188,12 +2295,48 @@
       loc.allOptional = loc.stops.every(function (s) { return s.optional; });
       loc.title = lead.locationName || lead.title;
     });
-    tripMap.model = { ordered: ordered, locations: locations, missing: missing };
+    // Append the per-day "Along-the-way options" as separate, un-numbered idea
+    // pins (★) so the plan can be changed anywhere. They reuse routeOptionsByDay
+    // — the same data the itinerary's option panels render — and never join the
+    // numbered driving sequence or the route line.
+    var ideaCount = 0;
+    Object.keys(routeOptionsByDay).forEach(function (dayId) {
+      var plan = routeOptionsByDay[dayId];
+      (plan.options || []).forEach(function (option) {
+        if (!option.coords) return;
+        ideaCount += 1;
+        var info = {
+          id: 'idea-' + slug(dayId + '-' + option.name),
+          dayId: dayId, day: dayMeta[dayId], title: option.name, locationName: option.name,
+          kind: 'Optional idea', time: option.visit || 'Flexible', zone: '',
+          address: option.parking || '', city: '', mapUrl: option.map || '',
+          category: 'attraction', optional: true, routeEligible: false, isIdea: true,
+          note: option.why || '', gate: option.gate || '', routePoint: option.routePoint || '',
+          source: option.source || '', coords: option.coords
+        };
+        var days = {};
+        days[dayId] = true;
+        locations.push({
+          key: 'idea-' + info.id, coords: option.coords, seq: null, isIdea: true,
+          allOptional: true, category: 'attraction', title: option.name, stops: [info], days: days
+        });
+      });
+    });
+    tripMap.model = { ordered: ordered, locations: locations, missing: missing, ideaCount: ideaCount };
     return tripMap.model;
   }
 
   function tripMarkerIcon(loc) {
     var cat = MAP_CATEGORIES[loc.category] || MAP_CATEGORIES.other;
+    if (loc.isIdea) {
+      // Un-numbered star marks a route-side "swap-in" idea, distinct from the
+      // numbered scheduled stops.
+      return L.divIcon({
+        className: 'trip-pin-wrap',
+        html: '<span class="trip-pin is-idea" style="--pin:' + cat.color + '">★</span>',
+        iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -12]
+      });
+    }
     var cls = 'trip-pin' + (loc.allOptional ? ' is-optional' : '');
     return L.divIcon({
       className: 'trip-pin-wrap',
@@ -2206,23 +2349,29 @@
     var rows = loc.stops.map(function (s) {
       var cat = MAP_CATEGORIES[s.category] || MAP_CATEGORIES.other;
       var dirUrl = safeExternalUrl(s.mapUrl);
-      var link = dirUrl
-        ? '<a class="trip-pop-dir" href="' + escapeHtml(dirUrl) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Get directions ↗</a>'
-        : '<span class="muted small">No map link available</span>';
+      var sourceUrl = s.isIdea ? safeExternalUrl(s.source) : '';
+      var links = [];
+      if (dirUrl) links.push('<a class="trip-pop-dir" href="' + escapeHtml(dirUrl) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Get directions ↗</a>');
+      if (sourceUrl) links.push('<a class="trip-pop-dir" href="' + escapeHtml(sourceUrl) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Official info ↗</a>');
+      var linkHtml = links.length ? links.join(' · ') : '<span class="muted small">No map link available</span>';
       return [
         '<li class="trip-pop-stop">',
         '<span class="trip-pop-dot" style="background:', cat.color, '"></span>',
         '<div class="trip-pop-body">',
-        '<p class="trip-pop-title">', escapeHtml(s.title), s.optional ? ' <span class="trip-pop-flag">Optional</span>' : '', '</p>',
+        '<p class="trip-pop-title">', escapeHtml(s.title), s.optional ? ' <span class="trip-pop-flag">' + (s.isIdea ? 'Idea' : 'Optional') + '</span>' : '', '</p>',
         '<p class="trip-pop-meta">Day ', String(s.day ? s.day.index : '?'), ' · ', escapeHtml(cat.label), ' · ', escapeHtml(s.time || 'Flexible'), s.zone ? ' ' + escapeHtml(s.zone) : '', '</p>',
+        s.isIdea && s.routePoint ? '<p class="trip-pop-meta">' + escapeHtml(s.routePoint) + '</p>' : '',
+        s.isIdea && s.note ? '<p class="trip-pop-note">' + escapeHtml(s.note) + '</p>' : '',
         s.address ? '<p class="trip-pop-addr">' + escapeHtml(s.address) + '</p>' : '',
-        '<p class="trip-pop-links">', link, '</p>',
+        s.isIdea && s.gate ? '<p class="trip-pop-gate"><strong>Go / no-go:</strong> ' + escapeHtml(s.gate) + '</p>' : '',
+        '<p class="trip-pop-links">', linkHtml, '</p>',
         '</div></li>'
       ].join('');
     }).join('');
-    return '<div class="trip-pop"><p class="trip-pop-head">Stop ' + loc.seq +
-      (loc.stops.length > 1 ? ' · ' + loc.stops.length + ' visits' : '') +
-      '</p><ul class="trip-pop-list">' + rows + '</ul></div>';
+    var head = loc.isIdea
+      ? 'Optional idea'
+      : 'Stop ' + loc.seq + (loc.stops.length > 1 ? ' · ' + loc.stops.length + ' visits' : '');
+    return '<div class="trip-pop"><p class="trip-pop-head">' + head + '</p><ul class="trip-pop-list">' + rows + '</ul></div>';
   }
 
   // Route line: route-eligible stops in chronological order, dropping repeated
@@ -2247,12 +2396,12 @@
     if (fallback) { fallback.textContent = message; fallback.removeAttribute('hidden'); }
   }
 
-  function updateTripMapStatus(shownLocations, shownStops) {
+  function updateTripMapStatus(shownStops, shownIdeas) {
     var status = document.getElementById('tripMapStatus');
     if (!status) return;
-    var total = tripMap.model ? tripMap.model.locations.length : 0;
     var missing = tripMap.model ? tripMap.model.missing.length : 0;
-    var text = 'Showing ' + shownStops + ' stops at ' + shownLocations + ' of ' + total + ' map locations.';
+    var text = 'Showing ' + shownStops + ' scheduled stop' + (shownStops === 1 ? '' : 's') +
+      ' and ' + shownIdeas + ' optional idea' + (shownIdeas === 1 ? '' : 's') + '.';
     if (missing) text += ' ' + missing + ' stop' + (missing === 1 ? '' : 's') + ' without coordinates are listed in the day plans below.';
     status.textContent = text;
   }
@@ -2268,24 +2417,27 @@
     if (!tripMap.built) return;
     var filters = tripMap.filters;
     var fitCoords = [];
-    var shownLocations = 0;
     var shownStops = 0;
+    var shownIdeas = 0;
     tripMap.markerLayer.clearLayers();
     tripMap.markers.forEach(function (entry) {
       var loc = entry.loc;
       var dayOk = filters.day === 'all' || loc.days[filters.day];
       var typeOk = filters.type === 'all' || loc.stops.some(function (s) { return s.category === filters.type; });
-      var optionalOk = filters.optional || !loc.allOptional;
+      var optionalOk = loc.isIdea ? filters.ideas : (filters.optional || !loc.allOptional);
       if (dayOk && typeOk && optionalOk) {
         tripMap.markerLayer.addLayer(entry.marker);
         fitCoords.push(loc.coords);
-        shownLocations += 1;
-        shownStops += loc.stops.filter(function (s) {
-          if (filters.day !== 'all' && s.dayId !== filters.day) return false;
-          if (filters.type !== 'all' && s.category !== filters.type) return false;
-          if (!filters.optional && s.optional) return false;
-          return true;
-        }).length;
+        if (loc.isIdea) {
+          shownIdeas += 1;
+        } else {
+          shownStops += loc.stops.filter(function (s) {
+            if (filters.day !== 'all' && s.dayId !== filters.day) return false;
+            if (filters.type !== 'all' && s.category !== filters.type) return false;
+            if (!filters.optional && s.optional) return false;
+            return true;
+          }).length;
+        }
       }
     });
     tripMap.routeLayer.clearLayers();
@@ -2296,7 +2448,7 @@
         pts.forEach(function (p) { fitCoords.push(p); });
       }
     }
-    updateTripMapStatus(shownLocations, shownStops);
+    updateTripMapStatus(shownStops, shownIdeas);
     if (fit) fitTripMap(fitCoords);
   }
 
@@ -2363,7 +2515,8 @@
       var cat = MAP_CATEGORIES[key];
       return '<span class="trip-legend-item"><span class="trip-legend-dot" style="background:' + cat.color + '"></span>' + escapeHtml(cat.label) + '</span>';
     });
-    items.push('<span class="trip-legend-item"><span class="trip-legend-dot trip-legend-optional"></span>Optional (hollow pin)</span>');
+    items.push('<span class="trip-legend-item"><span class="trip-legend-dot trip-legend-optional"></span>Optional stop (hollow pin)</span>');
+    items.push('<span class="trip-legend-item"><span class="trip-legend-dot trip-legend-idea">★</span>Route-side idea</span>');
     return items.join('');
   }
 
@@ -2377,11 +2530,12 @@
     return [
       '<div class="card full trip-map-card" role="group" aria-label="Complete trip route map">',
       '<div class="trip-map-head"><h3>Complete route · Vaughan → PEI → Vaughan</h3>',
-      '<p class="small muted">One interactive map of every stop across all 8 days, in driving order. Numbered pins are required stops, hollow pins are optional. Tap a pin for the day, timing, address and directions.</p></div>',
+      '<p class="small muted">One interactive map of every stop across all 8 days, in driving order. Numbered pins are scheduled stops (hollow = optional); ★ stars are extra route-side ideas you can swap in any day. Tap any pin for the day, timing, address, go/no-go rule and directions.</p></div>',
       '<div class="trip-map-controls">',
       '<label class="trip-map-field">Day<select id="tripMapDay"><option value="all">Show entire trip</option>', dayOptions, '</select></label>',
       '<label class="trip-map-field">Stop type<select id="tripMapType"><option value="all">All stop types</option>', typeOptions, '</select></label>',
-      '<label class="trip-map-check"><input type="checkbox" id="tripMapOptional" checked> Optional attractions</label>',
+      '<label class="trip-map-check"><input type="checkbox" id="tripMapOptional" checked> Optional stops</label>',
+      '<label class="trip-map-check"><input type="checkbox" id="tripMapIdeas" checked> Route-side ideas</label>',
       '<label class="trip-map-check"><input type="checkbox" id="tripMapRoute" checked> Route line</label>',
       '<button type="button" class="button subtle" id="tripMapFit">Fit route to screen</button>',
       '<button type="button" class="button subtle" id="tripMapReset">Show entire trip</button>',
@@ -2398,19 +2552,22 @@
     var dayField = document.getElementById('tripMapDay');
     var typeField = document.getElementById('tripMapType');
     var optionalField = document.getElementById('tripMapOptional');
+    var ideasField = document.getElementById('tripMapIdeas');
     var routeField = document.getElementById('tripMapRoute');
     var fitButton = document.getElementById('tripMapFit');
     var resetButton = document.getElementById('tripMapReset');
     if (dayField) dayField.addEventListener('change', function () { tripMap.filters.day = dayField.value; refreshTripMap(true); });
     if (typeField) typeField.addEventListener('change', function () { tripMap.filters.type = typeField.value; refreshTripMap(true); });
     if (optionalField) optionalField.addEventListener('change', function () { tripMap.filters.optional = optionalField.checked; refreshTripMap(false); });
+    if (ideasField) ideasField.addEventListener('change', function () { tripMap.filters.ideas = ideasField.checked; refreshTripMap(false); });
     if (routeField) routeField.addEventListener('change', function () { tripMap.filters.route = routeField.checked; refreshTripMap(false); });
     if (fitButton) fitButton.addEventListener('click', function () { refreshTripMap(true); });
     if (resetButton) resetButton.addEventListener('click', function () {
-      tripMap.filters = { day: 'all', type: 'all', optional: true, route: true };
+      tripMap.filters = { day: 'all', type: 'all', optional: true, ideas: true, route: true };
       if (dayField) dayField.value = 'all';
       if (typeField) typeField.value = 'all';
       if (optionalField) optionalField.checked = true;
+      if (ideasField) ideasField.checked = true;
       if (routeField) routeField.checked = true;
       refreshTripMap(true);
     });
