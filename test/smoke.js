@@ -216,7 +216,8 @@ function check(name, ok, detail) {
   // Aug 19 tide plan is wired through
   const aug19Text = await dayText('2026-08-19');
   check('Aug 19 anchored to staff-controlled tide window', aug19Text.includes('10:15–10:30 entrance') && aug19Text.includes('10:45 stairs') && aug19Text.toLowerCase().includes('staff discretion'));
-  check('Aug 19 removes the Sackville detour', !aug19Text.includes('Sackville Waterfowl'));
+  check('Aug 19 includes a tide-safe named rest before Hopewell', aug19Text.includes('Required rest: Sackville Waterfowl Park') && aug19Text.includes('Tantramar Visitor Information Centre parking') && aug19Text.includes('hard leave 09:20') && aug19Text.includes('34 Mallard Drive'));
+  check('Aug 19 keeps the earlier attraction as an either-or fallback', aug19Text.includes('Fallback rest: Marine Rail Historical Park') && aug19Text.includes('only instead of Sackville') && aug19Text.includes('41 Borden Avenue'));
   check('Aug 19 respects the booked-safe Best Western 4 PM check-in', aug19Text.includes('Best Western Plus Moncton') && aug19Text.includes('16:00 guaranteed') && aug19Text.includes('booked and safe'));
 
   const aug20Text = await dayText('2026-08-20');
@@ -239,7 +240,7 @@ function check(name, ok, detail) {
     const normalized = text.toLowerCase();
     return !normalized.includes('upper canada village') && !normalized.includes('prehistoric world') && !normalized.includes('packed lunch') && !normalized.includes('cooler lunch') && !normalized.includes('packed picnic');
   }));
-  check('attraction stops expose named visitor parking', aug15Text.includes('Montmorency Falls lower-site P1/P2 visitor parking') && aug18Text.includes('Green Gables Visitor Centre parking') && aug18Text.includes('Cavendish Main Beach visitor parking') && aug19Text.includes('Hopewell Rocks main visitor parking'));
+  check('attraction stops expose named visitor parking', aug15Text.includes('Montmorency Falls lower-site P1/P2 visitor parking') && aug18Text.includes('Green Gables Visitor Centre parking') && aug18Text.includes('Cavendish Main Beach visitor parking') && aug19Text.includes('Tantramar Visitor Information Centre parking') && aug19Text.includes('Hopewell Rocks main visitor parking'));
   const route14 = await dayRoute('2026-08-14');
   const route15 = await dayRoute('2026-08-15');
   const route16 = await dayRoute('2026-08-16');
@@ -253,6 +254,7 @@ function check(name, ok, detail) {
     route17.destination.includes('300 Capital Drive') &&
     route18.destination.includes('20 Capital Drive') &&
     route19.destination.includes('300 Lewisville Road'));
+  check('Aug 19 default route includes Sackville but excludes the either-or Marine Rail fallback', route19.waypoints.includes('34 Mallard Drive') && !route19.waypoints.includes('41 Borden Avenue'));
   check('Aug 16 default route ends at Delta, not the conditional dinner branch', route16.destination.includes('225 Woodstock Road'));
   check('Aug 21 default route stays westbound and excludes backward or split-only stops', route21.destination === 'Vaughan, ON' && route21.waypoints.includes('678 Highway 401 Westbound') && !route21.waypoints.includes('Brockville') && !route21.waypoints.includes('209 King St W'));
   check('active-day routes respect the mobile Maps waypoint limit', [route14, route15, route16, route17, route18, route19, route21].every((route) => route.segmentCount >= 1 && route.maxWaypoints <= 3));
