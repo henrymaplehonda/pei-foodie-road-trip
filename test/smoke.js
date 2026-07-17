@@ -127,6 +127,7 @@ function check(name, ok, detail) {
   const hotelText = await page.locator('#hotels').innerText();
   check('hotel ledger contains the 7 exact booked properties', bookedHotelNames.every((name) => hotelText.includes(name)));
   const confirmationHotels = await page.evaluate(() => JSON.parse(document.getElementById('trip-data').textContent).hotels);
+  check('hotel source data marks every stay booked and safe', confirmationHotels.every((hotel) => hotel.Status === 'Booked · safe' && !hotel.Attention));
   const expectedHotelConfirmations = [
     { Date: '2026-08-14', hotel: 'Montreal Marriott Chateau Champlain', in: 'Fri, Aug 14 · from 4:00 PM', out: 'Sat, Aug 15 · by 12:00 PM', room: 'Room · 2 double beds', guests: '2 adults + 1 child' },
     { Date: '2026-08-15', hotel: 'Hôtel Cofortel', in: 'Sat, Aug 15 · from 4:00 PM', out: 'Sun, Aug 16 · by 12:00 PM', room: 'Elite room · 1 king bed · 2nd floor', guests: 'Family stay · booked and safe' },
