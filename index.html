@@ -305,6 +305,20 @@ main{max-width:960px;padding:24px 16px 52px}
 .meal-contract-item strong{display:block;margin-top:3px;line-height:1.35}
 .meal-contract-item p{margin:3px 0 0;font-size:14px}
 .meal-contract-item small{display:block;margin-top:5px;color:var(--muted);line-height:1.35}
+.meal-flex{margin:12px 0 0;border:1px solid #b8d7d4;border-radius:12px;background:#f1faf9}
+.meal-flex>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;padding:10px 12px;cursor:pointer;color:var(--accent2)}
+.meal-flex>summary span{font-size:13px;font-weight:700;color:var(--muted)}
+.meal-flex-body{padding:0 12px 12px}
+.meal-flex-rule{margin:0 0 9px;font-size:14px}
+.meal-flex-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.meal-flex-card{padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.meal-flex-card h4{margin:6px 0 2px;font-size:16px}
+.meal-flex-card p{margin:5px 0;font-size:14px}
+.meal-flex-card .time-gain{color:#0a6254;font-weight:800}
+.meal-flex-card .extra-experience{margin-top:9px;padding-top:8px;border-top:1px solid var(--line)}
+.meal-flex-card .extra-experience strong{display:block;color:var(--accent2)}
+.meal-flex-card .action-bar{margin-top:9px}
+:root[data-theme="dark"] .meal-flex{background:var(--surface-alt);border-color:var(--line)}
 .key-rule{border-left:4px solid var(--warn);padding:9px 11px;margin:12px 0 0;background:#fff8ed;border-radius:8px;font-size:14px}
 .active-meal-backups{margin:12px 0 0;border:1px solid #f4c98b;border-radius:10px;background:#fff8ed;padding:10px 12px}
 .active-meal-backups p{margin:4px 0}
@@ -389,7 +403,7 @@ main{max-width:960px;padding:24px 16px 52px}
   .section-heading{font-size:25px}
   .primary-controls{grid-template-columns:1fr 1fr}
   .day-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .hotel-anchor-grid,.meal-contract-grid,.day-pacing-grid,.practical-grid{grid-template-columns:1fr}
+  .hotel-anchor-grid,.meal-contract-grid,.meal-flex-grid,.day-pacing-grid,.practical-grid{grid-template-columns:1fr}
   .stop{grid-template-columns:68px minmax(0,1fr);gap:10px}
   .stop .time{display:block;font-size:15px}
   .stop .time br{display:block}
@@ -1440,6 +1454,153 @@ setTimeout(function () {
     }
   };
 
+  var mealFlexByDay = {
+    '2026-08-14': {
+      rule: 'Call ahead and use this only if Boboli can have the order ready within 30 minutes. It replaces Tata’s lunch; the seated lunch remains Plan A.',
+      options: [{
+        meal: 'Lunch shortcut',
+        foodName: 'Boboli',
+        foodAddress: '32 King Street West, Brockville, ON K6V 3P6',
+        order: 'Fresh sandwich or soup at the café; eat there. This is not a packed lunch.',
+        window: '25–35 min',
+        saved: 'Estimated 20–30 min saved',
+        foodMap: mapSearchUrl('Boboli, 32 King Street West, Brockville, ON K6V 3P6'),
+        foodSource: 'https://brockvilletourism.com/directory/boboli/',
+        experience: 'Brockville Railway Tunnel — south portal',
+        experienceDetail: 'Walk 20–30 minutes inside the free, stroller-friendly tunnel. Public washrooms are on nearby Blockhouse Island, not inside the tunnel.',
+        parking: 'Blockhouse Island / Water Street public parking, 1 Water Street, Brockville, ON',
+        experienceMap: mapSearchUrl('Brockville Railway Tunnel south portal parking, 1 Water Street, Brockville, ON'),
+        experienceSource: 'https://brockvilletourism.com/things-to-do/brockville-railway-tunnel/'
+      }]
+    },
+    '2026-08-15': {
+      rule: 'Use the shortcut at Montmorency, then add the funicular only after the Cofortel room and luggage are secure.',
+      options: [{
+        meal: 'Lunch shortcut',
+        foodName: 'Station Sandwicherie at La Manufacture',
+        foodAddress: '5300 Boulevard Sainte-Anne, Québec, QC G1C 1S1',
+        order: 'Fresh sandwich, bakery item and drink at the falls; eat on site.',
+        window: '25–35 min',
+        saved: 'Estimated 25–35 min saved',
+        foodMap: mapSearchUrl('Station Sandwicherie La Manufacture, 5300 Boulevard Sainte-Anne, Québec, QC G1C 1S1'),
+        foodSource: 'https://www.sepaq.com/destinations/parc-chute-montmorency/quoi-faire/restaurants-repas.dot?language_id=1',
+        experience: 'Old Québec Funicular + Petit-Champlain',
+        experienceDetail: 'Add one funicular ride and a short lower-town look, about 25–35 minutes total. Verify the posted fare and operating status that day.',
+        parking: 'Stationnement De Beaucours garage, 39 Rue Saint-Louis, Québec, QC G1R 3Z2',
+        experienceMap: mapSearchUrl('Stationnement De Beaucours, 39 Rue Saint-Louis, Québec, QC G1R 3Z2'),
+        experienceSource: 'https://www.funiculaire.ca/'
+      }]
+    },
+    '2026-08-16': {
+      rule: 'This is a high-driving day. A simpler dinner buys recovery—not another off-site attraction.',
+      options: [{
+        meal: 'Dinner shortcut',
+        foodName: 'Drift Pool + Patio at Delta Fredericton',
+        foodAddress: '225 Woodstock Road, Fredericton, NB E3B 2H8',
+        order: 'Choose a simple poolside plate; if the patio is weather-closed, make a quick light order in STMR.36. No room service.',
+        window: '35–45 min',
+        saved: 'Estimated 20–30 min saved',
+        foodMap: mapSearchUrl('Delta Hotels Fredericton, 225 Woodstock Road, Fredericton, NB E3B 2H8'),
+        foodSource: 'https://www.marriott.com/en-us/hotels/yfcdf-delta-hotels-fredericton/dining/',
+        experience: 'Delta indoor pool + early bedtime',
+        experienceDetail: 'Use the saved time for a short swim or immediate sleep. Do not add Grand Falls Gorge or downtown sightseeing.',
+        parking: 'Delta Hotels Fredericton registered guest parking, 225 Woodstock Road, Fredericton, NB E3B 2H8',
+        experienceMap: mapSearchUrl('Delta Hotels Fredericton, 225 Woodstock Road, Fredericton, NB E3B 2H8'),
+        experienceSource: 'https://www.marriott.com/en-us/hotels/yfcdf-delta-hotels-fredericton/overview/'
+      }]
+    },
+    '2026-08-17': {
+      rule: 'Choose this instead of New Glasgow Lobster Suppers, not in addition to it. Keep the food-hall arrival before its 19:00 close.',
+      options: [{
+        meal: 'Dinner shortcut',
+        foodName: 'Founders Food Hall & Market',
+        foodAddress: '6 Prince Street, Charlottetown, PE C1A 4P5',
+        order: 'Let each person choose one simple vendor meal; sit inside and leave dessert for later.',
+        window: '35–45 min',
+        saved: 'Estimated 45–70 min plus less rural driving',
+        foodMap: mapSearchUrl('Founders Food Hall & Market, 6 Prince Street, Charlottetown, PE C1A 4P5'),
+        foodSource: 'https://foundersfoodhall.com/visit-us/hours/',
+        experience: 'Victoria Park playground + harbour boardwalk',
+        experienceDetail: 'Use 30–40 minutes for the accessible playground and a short waterfront walk, then return to Hampton.',
+        parking: 'Victoria Park playground / pool parking, 51 Victoria Park Roadway, Charlottetown, PE',
+        experienceMap: mapSearchUrl('Victoria Park playground parking, 51 Victoria Park Roadway, Charlottetown, PE'),
+        experienceSource: 'https://www.charlottetown.ca/leisure___recreation/parks_and_trails/parks_and_playgrounds'
+      }]
+    },
+    '2026-08-18': {
+      rule: 'This replaces Blue Mussel lunch. Use the saved time inside Avonlea or at the beach; do not add another distant PEI stop.',
+      options: [{
+        meal: 'Lunch shortcut',
+        foodName: 'Avonlea Village eateries',
+        foodAddress: '8779 Route 6, Cavendish, PE C0A 1N0',
+        order: 'Choose one quick-service lunch from the on-site eateries; everyone can choose separately.',
+        window: '30–40 min',
+        saved: 'Estimated 35–50 min saved',
+        foodMap: mapSearchUrl('Avonlea Village, 8779 Route 6, Cavendish, PE C0A 1N0'),
+        foodSource: 'https://avonlea.ca/info/',
+        experience: 'Avonlea Village historic buildings and shops',
+        experienceDetail: 'Admission is free. Spend 30–40 minutes exploring the village after lunch, or transfer that time to Cavendish Beach.',
+        parking: 'Avonlea Village on-site visitor parking, 8779 Route 6, Cavendish, PE C0A 1N0',
+        experienceMap: mapSearchUrl('Avonlea Village visitor parking, 8779 Route 6, Cavendish, PE C0A 1N0'),
+        experienceSource: 'https://avonlea.ca/'
+      }]
+    },
+    '2026-08-19': {
+      rule: 'Use this only after the ocean-floor walk. The saved time makes Magnetic Hill possible, but it replaces the hotel pool block.',
+      options: [{
+        meal: 'Lunch shortcut',
+        foodName: 'Low Tide Café at Hopewell Rocks',
+        foodAddress: '131 Discovery Road, Hopewell Cape, NB E4H 4Z5',
+        order: 'Use the staffed barbecue for a simple hot lunch; if the weather-dependent barbecue is closed, keep High Tide Restaurant. Snacks and ice cream alone are not lunch.',
+        window: '25–35 min',
+        saved: 'Estimated 20–30 min saved',
+        foodMap: mapSearchUrl('Low Tide Cafe, Hopewell Rocks, 131 Discovery Road, Hopewell Cape, NB E4H 4Z5'),
+        foodSource: 'https://www.thehopewellrocks.ca/en/parks/33/hopewell-rocks-provincial-park/entities',
+        experience: 'Magnetic Hill Illusion',
+        experienceDetail: 'Allow 30–40 minutes and confirm staffed access. Choose Magnetic Hill or the Best Western pool—never both before dinner.',
+        parking: 'Magnetic Hill Illusion entrance / visitor parking, 2846 Mountain Road, Moncton, NB E1G 2W7',
+        experienceMap: mapSearchUrl('Magnetic Hill Illusion entrance, 2846 Mountain Road, Moncton, NB E1G 2W7'),
+        experienceSource: 'https://www.moncton.ca/en/magnetic-hill-illusion'
+      }]
+    },
+    '2026-08-20': {
+      rule: 'This is the longest drive. The shortcut protects the DoubleTree recovery block; no extra attraction is recommended.',
+      options: [{
+        meal: 'Lunch shortcut',
+        foodName: 'St-Hubert Express Edmundston',
+        foodAddress: '10 Mahsus Court, Edmundston, NB E7C 0B6',
+        order: 'Counter-service rotisserie chicken, wrap, sandwich or child meal; eat inside and use the washroom.',
+        window: '30–35 min',
+        saved: 'Estimated 20–25 min saved',
+        foodMap: mapSearchUrl('St-Hubert Express, 10 Mahsus Court, Edmundston, NB E7C 0B6'),
+        foodSource: 'https://www.st-hubert.com/en/restaurants/nb/edmundston/10-mahsus-court',
+        experience: 'DoubleTree pool / quiet room recovery',
+        experienceDetail: 'Put every saved minute into the planned 16:30–17:15 recovery period. Do not spend it on Grand Falls or Old Québec.',
+        parking: 'DoubleTree guest parking, 7900 Rue du Marigot, Québec City, QC G1G 6T8',
+        experienceMap: mapSearchUrl('DoubleTree Quebec Resort, 7900 Rue du Marigot, Québec City, QC G1G 6T8'),
+        experienceSource: 'https://www.hilton.com/en/hotels/yqbqcdt-doubletree-quebec-resort/'
+      }]
+    },
+    '2026-08-21': {
+      rule: 'Use this only if everyone is comfortable with an early substantial meal. The saved time supports the safety plan and final movement stop.',
+      options: [{
+        meal: 'Early lunch shortcut',
+        foodName: 'Fromagerie Lemaire — Saint-Cyrille',
+        foodAddress: '2095 Route 122, Saint-Cyrille-de-Wendover, QC J1Z 1B9',
+        order: 'Share a poutine and add a chicken sandwich or children’s plate; eat inside, then skip Scores Boucherville.',
+        window: '30–35 min at about 09:15',
+        saved: 'Estimated 35–50 min saved',
+        foodMap: mapSearchUrl('Fromagerie Lemaire, 2095 Route 122, Saint-Cyrille-de-Wendover, QC J1Z 1B9'),
+        foodSource: 'https://www.fromagerie-lemaire.ca/menu-restaurant-fromagerie-lemaire/',
+        experience: 'The Big Apple final movement stop',
+        experienceDetail: 'Keep the existing 20–25 minute play-and-washroom stop only if both drivers remain safe. The Kingston overnight decision still overrides it.',
+        parking: 'The Big Apple visitor parking, 262 Orchard Road, Colborne, ON K0K 1S0',
+        experienceMap: mapSearchUrl('The Big Apple visitor parking, 262 Orchard Road, Colborne, ON K0K 1S0'),
+        experienceSource: 'https://thebigapple.ca/'
+      }]
+    }
+  };
+
   var stopPractical = {
     'd1-lunch': {
       'Cuisine / order': 'Family Italian-Canadian · pizza, pasta, fish and chips or souvlaki.',
@@ -1635,6 +1796,25 @@ setTimeout(function () {
         var item = contract[meal];
         return '<div class="meal-contract-item"><span>' + escapeHtml(meal) + '</span><strong>' + escapeHtml(item.title) + '</strong><p>' + escapeHtml(item.detail) + '</p><small><strong>Backup:</strong> ' + escapeHtml(item.backup) + '</small></div>';
       }).join('') + '</div></section>';
+  }
+
+  function renderMealFlex(day) {
+    var plan = mealFlexByDay[day.id];
+    if (!plan || !plan.options || !plan.options.length) return '';
+    return [
+      '<details class="meal-flex"><summary><strong>Simple food + extra time</strong><span>Best optional switch</span></summary><div class="meal-flex-body">',
+      '<p class="meal-flex-rule"><strong>Senior-planner rule:</strong> ', escapeHtml(plan.rule), '</p>',
+      '<div class="meal-flex-grid">', plan.options.map(function (option) {
+        return [
+          '<article class="meal-flex-card"><span class="tag category-food">', escapeHtml(option.meal), '</span>',
+          '<h4>', escapeHtml(option.foodName), '</h4><p>', escapeHtml(option.foodAddress), '</p>',
+          '<p>', escapeHtml(option.order), '</p><p><strong>', escapeHtml(option.window), '</strong> · <span class="time-gain">', escapeHtml(option.saved), '</span></p>',
+          '<div class="extra-experience"><strong>Use the time for: ', escapeHtml(option.experience), '</strong>',
+          '<p>', escapeHtml(option.experienceDetail), '</p><p><strong>Arrival / parking:</strong> ', escapeHtml(option.parking), '</p></div>',
+          '<div class="action-bar">', externalLink(option.foodMap, 'Quick food map', 'button subtle'), externalLink(option.foodSource, 'Food source', 'button subtle'), externalLink(option.experienceMap, 'Extra stop map', 'button subtle'), externalLink(option.experienceSource, 'Attraction source', 'button subtle'), '</div></article>'
+        ].join('');
+      }).join(''), '</div></div></details>'
+    ].join('');
   }
 
   function renderDayPacing(day) {
@@ -2454,7 +2634,7 @@ setTimeout(function () {
       '<div class="day-summary"><p class="route-label">', escapeHtml(modeText), '</p><h2>', escapeHtml(day.label), '</h2><p class="day-route"><strong>', escapeHtml(day.routeFocus), '</strong></p>',
       '<div class="day-facts"><div class="day-fact"><span>Leave</span><strong>', escapeHtml(day.departTarget), '</strong></div><div class="day-fact"><span>Drive</span><strong>', escapeHtml(day.pureDriveTime), '</strong></div><div class="day-fact"><span>Distance</span><strong>', escapeHtml(day.driveKm), ' km</strong></div><div class="day-fact"><span>Risk</span><strong>', escapeHtml(day.risk), '</strong></div></div>',
       '<div class="day-summary-actions">', dayRouteLinks(day, 'button primary'), dayWeatherLink(day.id), '</div>',
-      renderHotelAnchor(day), renderMealContract(day), renderDayPacing(day), '</div>',
+      renderHotelAnchor(day), renderMealContract(day), renderMealFlex(day), renderDayPacing(day), '</div>',
       '<div class="key-rule"><strong>If delayed:</strong> ', escapeHtml(day.contingency), '</div>',
       renderMealPlan(day),
       '<details class="day-detail-panel"', normalize(day.risk) === 'high' ? ' open' : '', '><summary>Driving & safety notes</summary><div><p><strong>Wake:</strong> ', escapeHtml(day.wakeTime), ' · <strong>Driver plan:</strong> ', escapeHtml(day.driverPlan), '</p><p><strong>Safety fallback:</strong> ', escapeHtml(day.emergency), '</p>', timeZoneChanges ? '<p><strong>Time change:</strong> ' + escapeHtml(day.timeZoneNote) + '</p>' : '', '</div></details>',
