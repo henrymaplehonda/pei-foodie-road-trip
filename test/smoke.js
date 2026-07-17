@@ -203,6 +203,7 @@ function check(name, ok, detail) {
   const aug14Text = await dayText('2026-08-14');
   check('Aug 14 uses the eastbound plaza and a proper Brockville lunch', aug14Text.includes('ONroute Odessa') && aug14Text.includes('3745 Highway 401 Eastbound') && aug14Text.includes('Morning snack / washroom') && aug14Text.includes('Tata’s House of Pizza & Pasta') && aug14Text.includes('11 Windsor Drive') && aug14Text.includes('50-60 min'));
   check('Aug 14 adds the optional Prehistoric World dinosaur-trail visit after the Brockville lunch', aug14Text.includes('Prehistoric World') && aug14Text.includes('5446 Upper Canada Rd') && aug14Text.includes('Morrisburg'));
+  check('Aug 14 offers Kingston Penitentiary as an optional route-side visit with its tour time', aug14Text.includes('Kingston Penitentiary Tour') && aug14Text.includes('560 King Street West') && aug14Text.includes('1.5 h tour'));
 
   const aug15Text = await dayText('2026-08-15');
   check('Aug 15 protects the Manoir lunch and the 4 PM Cofortel room', aug15Text.includes('Restaurant-terrasse du Manoir Montmorency') && aug15Text.includes('children’s menu') && aug15Text.includes('16:00 check-in') && !aug15Text.includes('packed or on-site lunch'));
