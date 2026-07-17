@@ -23,7 +23,7 @@ The primary app has four focused views:
 - **Today** — next stop, navigation, Done/Skip controls, trip progress, schedule status, meal pace, freshness checks, and one safe extra-attraction suggestion when ahead.
 - **Plan** — a consolidated interactive route map of the whole Vaughan → PEI → Vaughan trip (every stop in driving order, numbered for required and hollow for optional, plus ★ route-side "idea" pins you can swap in on any day, with day/type/optional/ideas/route filters and a legend), above a hotel-anchored daily timeline with recognizable destination names, parking-target navigation, one clear breakfast/lunch/dinner plan, collapsed along-the-way options, recovery blocks, ahead suggestions, and late-mode cutoffs.
 - **Prep** — all seven booked-safe hotels, unfinished reservations and verification tasks, offline readiness, calls, and packing.
-- **Safety** — emergency numbers, the 91-AKI fuel rule, road and weather links, offline exports, and a one-tap **Print all stops** sheet (a paper/PDF stop-by-stop reference for every day that works with no internet).
+- **Safety** — emergency numbers, the 91-AKI fuel rule, road and weather links, offline exports, and a one-tap **Print all stops** sheet: a paper/PDF stop-by-stop reference for every day plus a final safety-essentials page (emergency and 24/7 lines, all hotel front desks, restaurant reservation numbers, and the planned 91-AKI fuel stops) that works with no internet.
 
 The larger food, attraction, hotel, and overview catalogues stay out of the primary navigation and are loaded only when an existing deep link requests them. This keeps normal startup fast and the phone view easy to scan.
 
