@@ -2115,7 +2115,7 @@
     var body = [
       '<div class="card full ', riskClass(day.risk), '">',
       '<div class="day-summary"><p class="route-label">', escapeHtml(modeText), '</p><h2>', escapeHtml(day.label), '</h2><p class="day-route"><strong>', escapeHtml(day.routeFocus), '</strong></p>',
-      '<div class="day-facts"><div class="day-fact"><span>Leave</span><strong>', escapeHtml(day.departTarget), '</strong></div><div class="day-fact"><span>Drive</span><strong>', escapeHtml(day.pureDriveTime), '</strong></div><div class="day-fact"><span>Distance</span><strong>', escapeHtml(day.driveKm), ' km</strong></div><div class="day-fact"><span>Risk</span><strong>', escapeHtml(day.risk), '</strong></div></div>',
+      '<div class="day-facts"><div class="day-fact"><span>Leave</span><strong>', escapeHtml(day.departTarget), '</strong></div><div class="day-fact"><span>Drive</span><strong>', escapeHtml(day.pureDriveTime), '</strong></div><div class="day-fact"><span>Distance</span><strong>', escapeHtml(day.driveKm), ' km</strong></div><div class="day-fact"><span>Risk</span><strong><span class="risk-chip ', riskClass(day.risk), '">', escapeHtml(day.risk), '</span></strong></div></div>',
       '<div class="day-summary-actions">', dayRouteLinks(day, 'button primary'), dayWeatherLink(day.id), '</div>',
       renderHotelAnchor(day), renderMealContract(day), renderMealFlex(day), renderRouteOptions(day), renderDayPacing(day), '</div>',
       '<div class="key-rule"><strong>If delayed:</strong> ', escapeHtml(day.contingency), '</div>',
@@ -2840,7 +2840,7 @@
       renderTodayBanner(day),
       renderHotelSafeBanner(day),
       '<div class="trip-control-grid">',
-      '<article class="next-stop"><p class="route-label">', escapeHtml(modeName), ' · ', escapeHtml(day.risk), ' risk</p>',
+      '<article class="next-stop"><p class="route-label">', escapeHtml(modeName), ' · <span class="risk-chip ', riskClass(day.risk), '">', escapeHtml(day.risk), ' risk</span></p>',
       next ? '<h3>' + escapeHtml(next.title) + '</h3><p class="muted next-time">' + escapeHtml(next.time) + (next.zone ? ' ' + escapeHtml(next.zone) : '') + ' · ' + escapeHtml(next.city) + '</p>' : '<h3>Day complete</h3><p class="muted">All active stops are complete.</p>',
       '<p class="small"><strong>Hotel arrival target:</strong> ', escapeHtml(tonightTarget), '</p>',
       '<div class="action-bar">', next ? externalLink(nextRoute, 'Navigate', 'button') : '', dayRouteLinks(day, 'button secondary'), '</div>',
@@ -3024,7 +3024,7 @@
     var state = taskState(item.id);
     var brief = taskBrief(item.description);
     return [
-      '<article class="checklist-row ', state.done ? 'is-done' : '', '">',
+      '<article class="checklist-row ', state.done ? 'is-done' : '', item.priority === 'Critical' ? ' is-critical' : (item.priority === 'High' ? ' is-high' : ''), '">',
       '<input id="task-', escapeHtml(item.id), '" type="checkbox" data-task-id="', escapeHtml(item.id), '" data-task-field="done" ', state.done ? 'checked' : '', ' aria-label="Mark ', escapeHtml(item.title), ' complete">',
       '<div><h3>', escapeHtml(item.title), '</h3><p class="task-meta"><span class="tag">', escapeHtml(item.category), '</span>', item.priority === 'Critical' || item.priority === 'High' ? '<span class="tag category-alert">' + escapeHtml(item.priority) + '</span>' : '', item.dueDate ? '<span class="small"><strong>By ' + escapeHtml(item.dueDate) + '</strong></span>' : '', '</p>',
       brief ? '<p>' + escapeHtml(brief) + '</p>' : '', '</div>',
@@ -3052,7 +3052,7 @@
     section.innerHTML = [
       '<h2 id="checklist-heading" class="section-heading">Prep</h2>',
       '<p class="section-intro">Bookings, confirmations, and packing—unfinished items first.</p>',
-      '<div class="checklist-toolbar"><strong>', done, '/', checklistTasks.length, ' tasks complete</strong></div>',
+      '<div class="checklist-toolbar"><strong>', done, '/', checklistTasks.length, ' tasks complete</strong><div class="progress-meter" aria-hidden="true"><span style="width:', (checklistTasks.length ? Math.round((done / checklistTasks.length) * 100) : 0), '%"></span></div></div>',
       '<input id="importProgressFile" type="file" accept="application/json" hidden>',
       '<div id="checklistStatus" class="status-line" role="status" aria-live="polite"></div>',
       renderBookedHotelSummary(),
