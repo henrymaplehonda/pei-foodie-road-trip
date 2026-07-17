@@ -12,7 +12,7 @@ Live public site: https://henrymaplehonda.github.io/pei-foodie-road-trip/
 
 - `index.html` — page shell, styles, and compact trip reference data
 - `app.js` — interactive itinerary renderer, live trip controls, consolidated route map, checklist, and offline pack
-- `vendor/leaflet/` — locally hosted Leaflet 1.9.4 (map library) so the map needs no CDN; only the OpenStreetMap tiles require a connection
+- `vendor/leaflet/` — locally hosted Leaflet 1.9.4 (map library) so the map needs no CDN; only the Google Maps map tiles require a connection
 - `manifest.webmanifest`, `sw.js`, `icon.svg` — optional hosted PWA/offline-cache support
 - `roadtrip-html-master-prompt.txt` — original planning and generation brief
 

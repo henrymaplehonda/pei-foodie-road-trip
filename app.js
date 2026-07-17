@@ -2354,10 +2354,10 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Consolidated route map. One interactive Leaflet + OpenStreetMap view of the
-  // whole Vaughan → PEI → Vaughan trip, built from the same operationalPlan stop
-  // data used everywhere else (no parallel stop list). Leaflet is vendored under
-  // vendor/leaflet, so only the map tiles need a connection — inherent to any
+  // Consolidated route map. One interactive Leaflet + Google Maps tile view of
+  // the whole Vaughan → PEI → Vaughan trip, built from the same operationalPlan
+  // stop data used everywhere else (no parallel stop list). Leaflet is vendored
+  // under vendor/leaflet, so only the map tiles need a connection — inherent to any
   // web map. Everything degrades to a clear message if the library or tiles are
   // unavailable, and the day plans below always list every stop.
   // ---------------------------------------------------------------------------
@@ -2634,9 +2634,17 @@
     try {
       var map = L.map(host, { scrollWheelZoom: false, zoomControl: true, attributionControl: true });
       tripMap.map = map;
-      tripMap.tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
+      // Google Maps road tiles (per user request). This uses Google's public
+      // map-tile endpoint directly rather than the official, key-gated Maps API,
+      // so no API key is required; it is suitable for a low-traffic personal
+      // site but is outside Google's official Maps terms. To move to the
+      // sanctioned path later, load the Google Maps JS/Tiles API with a
+      // domain-restricted key instead. The tileerror handler below keeps any
+      // blocked/offline tiles from surfacing as errors, exactly as before.
+      tripMap.tiles = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        attribution: '&copy; <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">Google Maps</a>'
       });
       // Keep offline/blocked tile gaps from surfacing as errors.
       tripMap.tiles.on('tileerror', function () {});
