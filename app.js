@@ -2526,6 +2526,44 @@
         });
       });
     });
+    // Append TripAdvisor "Plan B" rows that aren't already the same physical
+    // stop as an existing numbered/idea pin (see PLAN_B_IDEA_COORDS) as further
+    // ★ idea pins, so the map surfaces genuine alternates rather than doubling
+    // up markers on stops Plan A already uses. Two Plan B rows sharing a
+    // location (e.g. Parc des Chutes on both the outbound and return legs)
+    // collapse into one shared pin, same as hotel stops do above.
+    var planBByKey = {};
+    planBData.stops.forEach(function (stop) {
+      var coords = PLAN_B_IDEA_COORDS[stop.name];
+      if (!coords) return;
+      var dayId = stop.date;
+      ideaCount += 1;
+      var ratingNote = stop.rating
+        ? '★ ' + Number(stop.rating).toFixed(1) + ' TripAdvisor (' + stop.reviews + ' reviews) — '
+        : 'TripAdvisor — ';
+      var info = {
+        id: 'planb-' + slug(dayId + '-' + stop.name),
+        dayId: dayId, day: dayMeta[dayId], title: stop.name, locationName: stop.name,
+        kind: 'Plan B idea', time: stop.duration || 'Flexible', zone: '',
+        address: stop.parking || '', city: '', mapUrl: stop.mapsUrl || '',
+        category: planBTypeBucket(stop.type) === 'Food' ? 'food' : 'attraction',
+        optional: true, routeEligible: false, isIdea: true,
+        note: ratingNote + stop.why, gate: stop.skipIf || '', routePoint: stop.segment || '',
+        source: stop.taUrl || '', sourceLabel: 'TripAdvisor', coords: coords
+      };
+      var key = coords[0].toFixed(4) + ',' + coords[1].toFixed(4);
+      var loc = planBByKey[key];
+      if (!loc) {
+        loc = {
+          key: 'planb-' + key, coords: coords, seq: null, isIdea: true,
+          allOptional: true, category: info.category, title: stop.name, stops: [], days: {}
+        };
+        planBByKey[key] = loc;
+        locations.push(loc);
+      }
+      loc.stops.push(info);
+      loc.days[dayId] = true;
+    });
     tripMap.model = { ordered: ordered, locations: locations, missing: missing, ideaCount: ideaCount };
     return tripMap.model;
   }
@@ -2556,7 +2594,7 @@
       var sourceUrl = s.isIdea ? safeExternalUrl(s.source) : '';
       var links = [];
       if (dirUrl) links.push('<a class="trip-pop-dir" href="' + escapeHtml(dirUrl) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Get directions ↗</a>');
-      if (sourceUrl) links.push('<a class="trip-pop-dir" href="' + escapeHtml(sourceUrl) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Official info ↗</a>');
+      if (sourceUrl) links.push('<a class="trip-pop-dir" href="' + escapeHtml(sourceUrl) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">' + escapeHtml(s.sourceLabel || 'Official info') + ' ↗</a>');
       var linkHtml = links.length ? links.join(' · ') : '<span class="muted small">No map link available</span>';
       return [
         '<li class="trip-pop-stop">',
@@ -3204,6 +3242,24 @@
       { topic: 'Low-rated stops', note: 'Low-rated highway/convenience stops are not recommendations for food; they remain only for safety, washroom, fuel or timing.' },
       { topic: 'Booked hotels', note: 'Hotels are already booked by the family and are treated as fixed anchors, not shopping recommendations.' }
     ]
+  };
+
+  // Coordinates (OpenStreetMap Nominatim) for the Plan B stops that are NOT the
+  // same physical place as an existing operational stop or route-side idea —
+  // e.g. Green Gables, Hopewell Rocks and Cape Jourimain are already numbered
+  // Plan A pins, so only genuinely new alternates get a map entry here. A couple
+  // of restaurants Nominatim couldn't resolve use their same-town neighbour's
+  // coordinates, nudged slightly so they don't sit exactly on an existing pin.
+  var PLAN_B_IDEA_COORDS = {
+    '1000 Islands Restaurant & Pizzeria': [44.5873, -75.6888],
+    'Les Cafes de Julie': [46.8878, -71.1502],
+    'Parc des Chutes': [47.8334, -69.5290],
+    'Grand Falls Gorge': [47.0453, -67.7360],
+    'Prince Edward Island Preserve Company': [46.4091, -63.3482],
+    'Albert County Museum': [45.8489, -64.5782],
+    'Pump House Brewpub': [46.0897, -64.7745],
+    'Pizza Le Patrimoine': [47.3652, -68.3290],
+    'Fromagerie Victoria': [46.6781, -71.3488]
   };
 
   function planBRatingChip(rating, reviews) {
