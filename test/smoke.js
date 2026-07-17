@@ -282,7 +282,7 @@ function check(name, ok, detail) {
   // Theme toggle produces dark background
   await page.click('#themeToggle');
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  check('dark theme applies', bg === 'rgb(18, 23, 29)', bg);
+  check('dark theme applies', bg === 'rgb(16, 22, 28)', bg);
 
   check('no console/page errors', errors.length === 0, errors.join('; '));
 
