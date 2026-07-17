@@ -319,6 +319,21 @@ main{max-width:960px;padding:24px 16px 52px}
 .meal-flex-card .extra-experience strong{display:block;color:var(--accent2)}
 .meal-flex-card .action-bar{margin-top:9px}
 :root[data-theme="dark"] .meal-flex{background:var(--surface-alt);border-color:var(--line)}
+.route-options{margin:12px 0 0;border:1px solid #bdd4ec;border-radius:12px;background:#f3f8fd}
+.route-options>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;padding:10px 12px;cursor:pointer;color:#174f7a}
+.route-options>summary span{font-size:13px;font-weight:700;color:var(--muted)}
+.route-options-body{padding:0 12px 12px}
+.route-options-rule{margin:0 0 9px;font-size:14px}
+.route-options-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.route-option-card{padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.route-option-card h4{margin:6px 0 2px;font-size:16px}
+.route-option-card p{margin:5px 0;font-size:14px}
+.route-option-leg{color:#174f7a;font-weight:800}
+.route-option-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:9px}
+.route-option-meta div{padding:7px 8px;border-radius:8px;background:var(--surface-alt);font-size:13px}
+.route-option-meta span{display:block;color:var(--muted);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.route-option-card .action-bar{margin-top:9px}
+:root[data-theme="dark"] .route-options{background:var(--surface-alt);border-color:var(--line)}
 .key-rule{border-left:4px solid var(--warn);padding:9px 11px;margin:12px 0 0;background:#fff8ed;border-radius:8px;font-size:14px}
 .active-meal-backups{margin:12px 0 0;border:1px solid #f4c98b;border-radius:10px;background:#fff8ed;padding:10px 12px}
 .active-meal-backups p{margin:4px 0}
@@ -403,7 +418,7 @@ main{max-width:960px;padding:24px 16px 52px}
   .section-heading{font-size:25px}
   .primary-controls{grid-template-columns:1fr 1fr}
   .day-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .hotel-anchor-grid,.meal-contract-grid,.meal-flex-grid,.day-pacing-grid,.practical-grid{grid-template-columns:1fr}
+  .hotel-anchor-grid,.meal-contract-grid,.meal-flex-grid,.route-options-grid,.day-pacing-grid,.practical-grid{grid-template-columns:1fr}
   .stop{grid-template-columns:68px minmax(0,1fr);gap:10px}
   .stop .time{display:block;font-size:15px}
   .stop .time br{display:block}
@@ -1492,7 +1507,7 @@ setTimeout(function () {
       }]
     },
     '2026-08-16': {
-      rule: 'This is a high-driving day. A simpler dinner buys recovery—not another off-site attraction.',
+      rule: 'This is a high-driving day. A simpler dinner protects recovery; the separate on-route garden option is allowed only when its strict ETA gate passes.',
       options: [{
         meal: 'Dinner shortcut',
         foodName: 'Drift Pool + Patio at Delta Fredericton',
@@ -1564,7 +1579,7 @@ setTimeout(function () {
       }]
     },
     '2026-08-20': {
-      rule: 'This is the longest drive. The shortcut protects the DoubleTree recovery block; no extra attraction is recommended.',
+      rule: 'This is the longest drive. The shortcut protects the DoubleTree recovery block; use the separate park option only as a short movement-break swap when its strict ETA gate passes.',
       options: [{
         meal: 'Lunch shortcut',
         foodName: 'St-Hubert Express Edmundston',
@@ -1575,7 +1590,7 @@ setTimeout(function () {
         foodMap: mapSearchUrl('St-Hubert Express, 10 Mahsus Court, Edmundston, NB E7C 0B6'),
         foodSource: 'https://www.st-hubert.com/en/restaurants/nb/edmundston/10-mahsus-court',
         experience: 'DoubleTree pool / quiet room recovery',
-        experienceDetail: 'Put every saved minute into the planned 16:30–17:15 recovery period. Do not spend it on Grand Falls or Old Québec.',
+        experienceDetail: 'Default to the planned 16:30–17:15 recovery period. The separate République park option replaces a movement break; do not add Grand Falls or Old Québec.',
         parking: 'DoubleTree guest parking, 7900 Rue du Marigot, Québec City, QC G1G 6T8',
         experienceMap: mapSearchUrl('DoubleTree Quebec Resort, 7900 Rue du Marigot, Québec City, QC G1G 6T8'),
         experienceSource: 'https://www.hilton.com/en/hotels/yqbqcdt-doubletree-quebec-resort/'
@@ -1597,6 +1612,141 @@ setTimeout(function () {
         parking: 'The Big Apple visitor parking, 262 Orchard Road, Colborne, ON K0K 1S0',
         experienceMap: mapSearchUrl('The Big Apple visitor parking, 262 Orchard Road, Colborne, ON K0K 1S0'),
         experienceSource: 'https://thebigapple.ca/'
+      }]
+    }
+  };
+
+  var routeOptionsByDay = {
+    '2026-08-14': {
+      rule: 'Choose at most one route-side option. Check live traffic first; the booked Montreal hotel and proper meals stay protected.',
+      options: [{
+        name: 'Lake Ontario Park',
+        routePoint: 'Between ONroute Odessa and Brockville lunch',
+        why: 'A high-quality child reset with an accessible waterfront walk, playground, splash pad and seasonal public washrooms.',
+        visit: '35-45 min',
+        routeImpact: 'Planning estimate: +20-30 min driving; verify in live Maps.',
+        gate: 'Go only if the live Montreal hotel ETA remains 16:45 or earlier. Replace another stretch break; do not stack stops.',
+        parking: 'Lake Ontario Park visitor parking, 920 King Street West, Kingston, ON',
+        map: mapSearchUrl('Lake Ontario Park visitor parking, 920 King Street West, Kingston, ON'),
+        source: 'https://www.cityofkingston.ca/activities-and-recreation/parks-trails-and-sports-fields-and-courts/parks/'
+      }]
+    },
+    '2026-08-15': {
+      rule: 'Use this instead of the generic Trois-Rivieres stretch, not in addition to it. Keep Montmorency Falls and the 16:00 hotel access protected.',
+      options: [{
+        name: 'Trois-Rivieres Harbourfront Park',
+        routePoint: 'At the Trois-Rivieres break, before Montmorency Falls',
+        why: 'A short three-level St. Lawrence waterfront walk with harbour and Laviolette Bridge views; better than waiting beside the highway.',
+        visit: '25-35 min',
+        routeImpact: 'Planning estimate: +15-25 min city driving; verify in live Maps.',
+        gate: 'Leave the harbourfront by 10:30. Skip immediately if Montreal traffic has already used the timing buffer.',
+        parking: 'Parc portuaire / tourist information visitor parking, 1400 Rue du Fleuve, Trois-Rivieres, QC',
+        map: mapSearchUrl('Parc portuaire tourist information parking, 1400 Rue du Fleuve, Trois-Rivieres, QC'),
+        source: 'https://www.tourismetroisrivieres.com/en/what-to-do/harbourfront-park'
+      }]
+    },
+    '2026-08-16': {
+      rule: 'High-driving day: choose this only as a deliberate swap for Hartland and every other optional stop. It is never an add-on.',
+      options: [{
+        name: 'New Brunswick Botanical Garden',
+        routePoint: 'At Edmundston, before the Hartland corridor',
+        why: 'A peaceful, family-friendly garden break with themed landscapes; the August 2026 schedule lists daily hours through 20:00.',
+        visit: '60-75 min',
+        routeImpact: 'Near the route; allow the full visit time plus parking. Paid admission.',
+        gate: 'Use only if Kamouraska ran on time, both drivers feel fresh and live Fredericton hotel ETA remains 18:00 or earlier. Then skip Hartland.',
+        parking: 'New Brunswick Botanical Garden main visitor parking, 15 Isidore-Boucher Boulevard, Edmundston, NB E7B 1V6',
+        map: mapSearchUrl('New Brunswick Botanical Garden main parking, 15 Isidore-Boucher Boulevard, Edmundston, NB E7B 1V6'),
+        source: 'https://jardinnbgarden.com/en/opening-hours/'
+      }]
+    },
+    '2026-08-17': {
+      rule: 'Choose Bore Park or Magnetic Hill, never both. The tide clock—not spare time—decides whether this option works.',
+      options: [{
+        name: 'Bore Park tidal bore viewpoint',
+        routePoint: 'In Moncton, before Cape Jourimain and PEI',
+        why: 'A quick view of the Petitcodiac tidal wave; summer interpretive presentations are timed to the predicted bore.',
+        visit: '25-35 min',
+        routeImpact: 'Planning estimate: +15-25 min downtown driving; verify in live Maps.',
+        gate: 'Go only when the official predicted wave is within 20 minutes of arrival. Replace Magnetic Hill and leave immediately after the wave.',
+        parking: 'Treitz Haus / Bore Park visitor parking, 10 Bendview Court, Moncton, NB',
+        map: mapSearchUrl('Treitz Haus Bore Park visitor parking, 10 Bendview Court, Moncton, NB'),
+        source: 'https://www.resurgo.ca/learn-discover/tidal-bore-presentations'
+      }]
+    },
+    '2026-08-18': {
+      rule: 'Choose one only. These are low-stress substitutes when the beach, weather or energy level changes—not extra mileage to collect.',
+      options: [{
+        name: 'Gardens of Hope & Butterfly House',
+        routePoint: 'Between Cavendish / North Rustico and Charlottetown',
+        why: 'A compact garden and tropical butterfly experience that genuinely works for a six-year-old; the Butterfly House is listed 10:00-17:00 in season.',
+        visit: '45-60 min',
+        routeImpact: 'Small New Glasgow route adjustment; verify live Maps.',
+        gate: 'Use when the beach is shortened by at least 45 minutes. Arrive by 16:00 and protect the hotel switch and dinner.',
+        parking: 'Prince Edward Island Preserve Company main visitor parking, 2841 New Glasgow Road, New Glasgow, PE C0A 1N0',
+        map: mapSearchUrl('Prince Edward Island Preserve Company visitor parking, 2841 New Glasgow Road, New Glasgow, PE C0A 1N0'),
+        source: 'https://preservecompany.com/pages/hours-of-operation'
+      }, {
+        name: 'Cavendish Boardwalk',
+        routePoint: 'In Cavendish, beside the day\'s main activity area',
+        why: 'A very easy weather-flex stop with COWS ice cream, simple shops, clean facilities, a lawn and free parking.',
+        visit: '30-45 min',
+        routeImpact: 'Negligible within Cavendish; no separate scenic detour.',
+        gate: 'Use instead of beach time or a longer Avonlea browse. Do not combine it with the Butterfly House option.',
+        parking: 'Cavendish Boardwalk free visitor parking, 9139 Cavendish Road, Cavendish, PE C0A 1N0',
+        map: mapSearchUrl('Cavendish Boardwalk free parking, 9139 Cavendish Road, Cavendish, PE C0A 1N0'),
+        source: 'https://cavendishboardwalk.com/'
+      }]
+    },
+    '2026-08-19': {
+      rule: 'Choose one Route 114 museum only after Hopewell floor access and lunch are complete. Both are easy to skip.',
+      options: [{
+        name: 'Albert County Museum & RB Bennett Centre',
+        routePoint: 'Immediately after Hopewell Rocks, before Hillsborough',
+        why: 'Twenty-four exhibits across historic buildings make a useful family history stop without leaving the Hopewell route.',
+        visit: '45-60 min',
+        routeImpact: 'Very small Route 114 detour; paid admission.',
+        gate: 'Leave by 15:00 and confirm live Best Western ETA no later than 16:15. Otherwise protect hotel pool time.',
+        parking: 'Albert County Museum on-site visitor parking, 3940 Route 114, Hopewell Cape, NB E4H 3J8',
+        map: mapSearchUrl('Albert County Museum visitor parking, 3940 Route 114, Hopewell Cape, NB E4H 3J8'),
+        source: 'https://www.albertcountymuseum.com/hours-admissions-index'
+      }, {
+        name: 'Steeves House Museum',
+        routePoint: 'On Route 114 in Hillsborough, before Moncton',
+        why: 'A smaller historic-house visit suited to a short stop; the 2026 schedule is Wednesday-Monday, 10:00-17:00.',
+        visit: '30-40 min self-guided',
+        routeImpact: 'Minimal route change; self-guided admission is listed for age six and up.',
+        gate: 'Choose this instead of Albert County Museum and leave by 15:20. Skip if anyone prefers the hotel reset.',
+        parking: 'Steeves House Museum visitor parking, 40 Mill Street, Hillsborough, NB E4H 2Z8',
+        map: mapSearchUrl('Steeves House Museum visitor parking, 40 Mill Street, Hillsborough, NB E4H 2Z8'),
+        source: 'https://www.steeveshousemuseum.ca/visit'
+      }]
+    },
+    '2026-08-20': {
+      rule: 'Longest drive: this is a child movement swap at the Edmundston break, never an additional sightseeing stop.',
+      options: [{
+        name: 'Republique Provincial Park playground & riverside trail',
+        routePoint: 'At Edmundston lunch, before the Quebec-bound drive',
+        why: 'A fully equipped outdoor playground and an easy 1 km Petit-Temis riverside trail give the child a real reset close to the route.',
+        visit: '25-35 min',
+        routeImpact: 'Near the lunch corridor; verify day-use access and live Maps.',
+        gate: 'Use only if lunch finishes early, both drivers are alert and live DoubleTree ETA remains 16:45 or earlier. Skip every other optional stop.',
+        parking: 'Republique Provincial Park day-use parking, 31 Isidore-Boucher Boulevard, Edmundston, NB',
+        map: mapSearchUrl('Republique Provincial Park day-use parking, 31 Isidore-Boucher Boulevard, Edmundston, NB'),
+        source: 'https://www.parcsnb.ca/en/parks/8/republique-provincial-park'
+      }]
+    },
+    '2026-08-21': {
+      rule: 'Safety split only. This option is forbidden when trying to reach Vaughan the same day.',
+      options: [{
+        name: 'Fort Chambly National Historic Site',
+        routePoint: 'After Drummondville, before the Montreal bypass',
+        why: 'A compact riverside stone fort with washrooms and picnic space; it turns the planned Kingston overnight split into a better family day.',
+        visit: '45-60 min',
+        routeImpact: 'Planning estimate: +30-45 min driving plus the visit; check live traffic.',
+        gate: 'Use only after committing to and securing the Kingston overnight before leaving Quebec City. Verify 2026 hours that morning.',
+        parking: 'Fort Chambly P1/P2 visitor lots, accessed from Avenue Bourgogne; attraction address 2 Richelieu Street, Chambly, QC J3L 2B9',
+        map: mapSearchUrl('Fort Chambly P1 P2 visitor parking, Avenue Bourgogne, Chambly, QC J3L 2B9'),
+        source: 'https://parks.canada.ca/lhn-nhs/qc/fortchambly/visit/directions'
       }]
     }
   };
@@ -1812,6 +1962,27 @@ setTimeout(function () {
           '<div class="extra-experience"><strong>Use the time for: ', escapeHtml(option.experience), '</strong>',
           '<p>', escapeHtml(option.experienceDetail), '</p><p><strong>Arrival / parking:</strong> ', escapeHtml(option.parking), '</p></div>',
           '<div class="action-bar">', externalLink(option.foodMap, 'Quick food map', 'button subtle'), externalLink(option.foodSource, 'Food source', 'button subtle'), externalLink(option.experienceMap, 'Extra stop map', 'button subtle'), externalLink(option.experienceSource, 'Attraction source', 'button subtle'), '</div></article>'
+        ].join('');
+      }).join(''), '</div></div></details>'
+    ].join('');
+  }
+
+  function renderRouteOptions(day) {
+    var plan = routeOptionsByDay[day.id];
+    if (!plan || !plan.options || !plan.options.length) return '';
+    var countLabel = plan.options.length + (plan.options.length === 1 ? ' option' : ' options') + ' - choose max 1';
+    return [
+      '<details class="route-options"><summary><strong>Along-the-way options</strong><span>', escapeHtml(countLabel), '</span></summary><div class="route-options-body">',
+      '<p class="route-options-rule"><strong>Decision rule:</strong> ', escapeHtml(plan.rule), '</p>',
+      '<div class="route-options-grid">', plan.options.map(function (option) {
+        return [
+          '<article class="route-option-card"><span class="tag category-attraction">Optional - easy to skip</span>',
+          '<h4>', escapeHtml(option.name), '</h4><p class="route-option-leg">', escapeHtml(option.routePoint), '</p>',
+          '<p>', escapeHtml(option.why), '</p>',
+          '<div class="route-option-meta"><div><span>Visit</span>', escapeHtml(option.visit), '</div><div><span>Route impact</span>', escapeHtml(option.routeImpact), '</div></div>',
+          '<p><strong>Go / no-go gate:</strong> ', escapeHtml(option.gate), '</p>',
+          '<p><strong>Closest named parking:</strong> ', escapeHtml(option.parking), '</p>',
+          '<div class="action-bar">', externalLink(option.map, 'Parking map', 'button primary'), externalLink(option.source, 'Official info', 'button subtle'), '</div></article>'
         ].join('');
       }).join(''), '</div></div></details>'
     ].join('');
@@ -2634,7 +2805,7 @@ setTimeout(function () {
       '<div class="day-summary"><p class="route-label">', escapeHtml(modeText), '</p><h2>', escapeHtml(day.label), '</h2><p class="day-route"><strong>', escapeHtml(day.routeFocus), '</strong></p>',
       '<div class="day-facts"><div class="day-fact"><span>Leave</span><strong>', escapeHtml(day.departTarget), '</strong></div><div class="day-fact"><span>Drive</span><strong>', escapeHtml(day.pureDriveTime), '</strong></div><div class="day-fact"><span>Distance</span><strong>', escapeHtml(day.driveKm), ' km</strong></div><div class="day-fact"><span>Risk</span><strong>', escapeHtml(day.risk), '</strong></div></div>',
       '<div class="day-summary-actions">', dayRouteLinks(day, 'button primary'), dayWeatherLink(day.id), '</div>',
-      renderHotelAnchor(day), renderMealContract(day), renderMealFlex(day), renderDayPacing(day), '</div>',
+      renderHotelAnchor(day), renderMealContract(day), renderMealFlex(day), renderRouteOptions(day), renderDayPacing(day), '</div>',
       '<div class="key-rule"><strong>If delayed:</strong> ', escapeHtml(day.contingency), '</div>',
       renderMealPlan(day),
       '<details class="day-detail-panel"', normalize(day.risk) === 'high' ? ' open' : '', '><summary>Driving & safety notes</summary><div><p><strong>Wake:</strong> ', escapeHtml(day.wakeTime), ' · <strong>Driver plan:</strong> ', escapeHtml(day.driverPlan), '</p><p><strong>Safety fallback:</strong> ', escapeHtml(day.emergency), '</p>', timeZoneChanges ? '<p><strong>Time change:</strong> ' + escapeHtml(day.timeZoneNote) + '</p>' : '', '</div></details>',

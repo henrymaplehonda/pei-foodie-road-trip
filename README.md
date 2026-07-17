@@ -19,7 +19,7 @@ Live public site: https://henrymaplehonda.github.io/pei-foodie-road-trip/
 The primary app has four focused views:
 
 - **Today** — next stop, navigation, trip progress, and schedule status.
-- **Plan** — a hotel-anchored daily timeline with recognizable destination names, parking-target navigation, one clear breakfast/lunch/dinner plan, recovery blocks, and late-mode cutoffs.
+- **Plan** — a hotel-anchored daily timeline with recognizable destination names, parking-target navigation, one clear breakfast/lunch/dinner plan, collapsed along-the-way options, recovery blocks, and late-mode cutoffs.
 - **Prep** — seven booked hotels, unfinished confirmation tasks, calls, and packing.
 - **Safety** — emergency numbers, the 91-AKI fuel rule, road and weather links, and offline exports.
 
@@ -45,7 +45,7 @@ The seven hotel nights are booked. Reconfirm each property directly before trave
 
 The active route uses the directional plazas that match travel: ONroute Odessa eastbound on August 14 and ONroute Mallorytown North westbound on August 21. Upper Canada Village and the Morrisburg detour are removed; August 14 now uses a proper seated lunch at Tata’s in Brockville. The requested Kamouraska Quai Miller visit is a required August 16 waterfront stop before the proper Rivière-du-Loup lunch, and its route link targets named public parking on Avenue LeBlanc. The August 18 lunch uses Blue Mussel Café's new 5033 Rustico Road location and treats its live waitlist as a same-service tool only. Charlottetown is hosting Old Home Week August 14–22, so the Slaymaker dinner includes extra downtown parking time and Victoria Row is no longer part of Plan A.
 
-Hotel breakfast is preferred whenever its confirmed service window protects the departure time. Every day keeps a proper lunch and seated dinner as Plan A, while a compact “Simple food + extra time” switch offers one named quick meal and the best nearby use of the saved time. Room service and self-catered lunches are not used as meal plans. On the longest driving days, saved meal time is deliberately assigned to hotel recovery instead of another attraction.
+Hotel breakfast is preferred whenever its confirmed service window protects the departure time. Every day keeps a proper lunch and seated dinner as Plan A, while a compact “Simple food + extra time” switch offers one named quick meal and the best nearby use of the saved time. Room service and self-catered lunches are not used as meal plans. A separate collapsed “Along-the-way options” panel provides route-side attractions with visit length, route impact, a strict go/no-go gate, the closest named parking target, and official information. Choose no more than one; on the longest driving days, it replaces a break and is allowed only when the live hotel ETA remains protected.
 
 Save a cancellable Kingston safety overnight before departure. Hampton Inn Kingston at 125 Innovation Drive is the primary candidate and Holiday Inn Express Kingston West at 205 Resource Road is the backup; make the go/stop decision at westbound Mallorytown North based on fatigue, weather, traffic, and the child's condition.
 
