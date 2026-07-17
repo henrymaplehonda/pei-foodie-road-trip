@@ -3239,13 +3239,16 @@
   // Plan A pins, so only genuinely new alternates get a map entry here. A couple
   // of restaurants Nominatim couldn't resolve use their same-town neighbour's
   // coordinates, nudged slightly so they don't sit exactly on an existing pin.
+  // Three Plan B rows are deliberately left out here because they're the same
+  // physical place as an existing routeOptionsByDay idea: Parc des Chutes
+  // (= "Parc des Chutes de Rivière-du-Loup"), Prince Edward Island Preserve
+  // Company (= "Gardens of Hope & Butterfly House", same New Glasgow parking
+  // lot), and Albert County Museum (= "Albert County Museum & RB Bennett
+  // Centre").
   var PLAN_B_IDEA_COORDS = {
     '1000 Islands Restaurant & Pizzeria': [44.5873, -75.6888],
     'Les Cafes de Julie': [46.8878, -71.1502],
-    'Parc des Chutes': [47.8334, -69.5290],
     'Grand Falls Gorge': [47.0453, -67.7360],
-    'Prince Edward Island Preserve Company': [46.4091, -63.3482],
-    'Albert County Museum': [45.8489, -64.5782],
     'Pump House Brewpub': [46.0897, -64.7745],
     'Pizza Le Patrimoine': [47.3652, -68.3290],
     'Fromagerie Victoria': [46.6781, -71.3488]
