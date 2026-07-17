@@ -2059,28 +2059,23 @@
     }).join('') + '</div>';
   }
 
-  function renderStopCard(day, stop) {
+  function stopPriorityLabel(stop) {
+    return stop.choiceGated ? 'Choice branch' : stop.priority === 'optional' ? 'Optional' : stop.priority === 'conditional' ? 'Fallback' : 'Plan A';
+  }
+
+  function stopDetailBody(day, stop) {
     var currentStatus = stopStatus(stop.id);
-    var classes = 'stop priority-' + stop.priority + ' ' + (currentStatus === 'done' ? 'is-complete' : '') + (currentStatus === 'skipped' ? ' is-skipped' : '');
-    var priorityLabel = stop.choiceGated ? 'Choice branch' : stop.priority === 'optional' ? 'Optional' : stop.priority === 'conditional' ? 'Fallback' : 'Plan A';
-    var priorityBadge = stop.priority === 'required' && !stop.choiceGated ? '' : '<span class="priority-badge ' + escapeHtml(stop.priority) + '">' + escapeHtml(priorityLabel) + '</span>';
     var arrivalName = stop.parkingName || stop.locationName || stop.title;
     var arrivalAddress = stop.parkingAddress || stop.address;
     var arrivalLabel = stop.parkingName ? 'Park at' : 'Go to';
     var directionsLabel = stop.parkingName ? 'Parking directions' : 'Directions';
     return [
-      '<article class="', classes, '">',
-      '<div class="time">', escapeHtml(stop.time), stop.zone ? '<br><span class="type">' + escapeHtml(stop.zone) + '</span>' : '', '</div>',
-      '<div>',
-      '<div class="stop-heading">', priorityBadge, '<h3>', escapeHtml(stop.title), '</h3></div>',
-      '<p class="stop-quick-meta"><strong>', escapeHtml(stop.city), '</strong> · ', escapeHtml(stop.kind), '</p>',
       '<p class="stop-destination"><strong>', arrivalLabel, ':</strong> ', escapeHtml(arrivalName), '</p>',
       '<p class="stop-leg">', escapeHtml(stop.leg || 'Start here'), stop.timeBudget ? ' · <strong>' + escapeHtml(stop.timeBudget) + '</strong>' : '', '</p>',
       stop.skipAt ? '<p class="small"><strong>Late rule:</strong> Skip at ' + escapeHtml(stop.skipAt) + '+ minutes late' + (stop.saves ? ' to save about ' + escapeHtml(stop.saves) : '') + '.</p>' : '',
       renderTicketGuidance(stop.ticket),
       '<div class="stop-primary-actions">', externalLink(stop.mapUrl, directionsLabel, 'button primary'),
       '<button type="button" class="button subtle" data-stop-action="toggle" data-stop-id="', escapeHtml(stop.id), '" aria-pressed="', currentStatus === 'done' ? 'true' : 'false', '">', currentStatus === 'done' ? 'Undo' : 'Done', '</button></div>',
-      '<details class="stop-more"><summary>Location & details</summary>',
       stop.locationName ? '<p><strong>Location:</strong> ' + escapeHtml(stop.locationName) + '</p>' : '',
       arrivalAddress ? '<p><strong>' + (stop.parkingName ? 'Parking / arrival address:' : 'Address:') + '</strong> ' + escapeHtml(arrivalAddress) + '</p>' : '',
       '<p>', escapeHtml(stop.notes), '</p>',
@@ -2091,9 +2086,44 @@
       '<div class="stop-details-actions">', externalLink(stop.sourceUrl, 'Source', 'button subtle'),
       '<button type="button" class="button subtle" data-stop-action="skip" data-stop-id="', escapeHtml(stop.id), '" aria-pressed="', currentStatus === 'skipped' ? 'true' : 'false', '">Skip stop</button>',
       arrivalAddress ? '<button type="button" class="copy-address" data-stop-action="copy" data-address="' + escapeHtml(arrivalAddress) + '">Copy address</button>' : '',
-      '</div></details>',
-      '</div>',
-      '</article>'
+      '</div>'
+    ].join('');
+  }
+
+  function renderDayMapNode(day, stop, index, nextId) {
+    var currentStatus = stopStatus(stop.id);
+    var priorityLabel = stopPriorityLabel(stop);
+    var badge = stop.priority === 'required' && !stop.choiceGated ? '' : '<span class="priority-badge ' + escapeHtml(stop.priority) + '">' + escapeHtml(priorityLabel) + '</span>';
+    var isNext = stop.id === nextId && currentStatus === 'pending';
+    var statusClass = currentStatus === 'done' ? ' is-complete' : currentStatus === 'skipped' ? ' is-skipped' : '';
+    var dotGlyph = currentStatus === 'done' ? '✓' : currentStatus === 'skipped' ? '✕' : String(index + 1);
+    var statusTag = currentStatus === 'done' ? ' · Done' : currentStatus === 'skipped' ? ' · Skipped' : '';
+    var subText = [stop.city, stop.kind].filter(Boolean).map(escapeHtml).join(' · ') + statusTag;
+    return [
+      '<li class="map-stop priority-', escapeHtml(stop.priority), statusClass, isNext ? ' is-next' : '', '">',
+      '<span class="map-dot" aria-hidden="true">', dotGlyph, '</span>',
+      '<details class="map-node" data-stop-id="', escapeHtml(stop.id), '">',
+      '<summary class="map-summary">',
+      index > 0 && stop.leg ? '<span class="map-leg">' + escapeHtml(stop.leg) + '</span>' : '',
+      '<span class="map-node-head"><span class="map-time">', escapeHtml(stop.time), stop.zone ? ' ' + escapeHtml(stop.zone) : '', '</span>', badge, isNext ? '<span class="map-next-flag">Up next</span>' : '', '</span>',
+      '<span class="map-node-title">', escapeHtml(stop.title), '</span>',
+      '<span class="map-node-sub">', subText, '</span>',
+      '</summary>',
+      '<div class="map-detail">', stopDetailBody(day, stop), '</div>',
+      '</details>',
+      '</li>'
+    ].join('');
+  }
+
+  function renderDayRouteMap(day, stops, heading) {
+    if (!stops.length) return '<div class="empty-state">No stops match. Try clearing the stop type or search field.</div>';
+    var nextId = (nextStop(day) || {}).id;
+    return [
+      '<div class="card full day-map">',
+      '<div class="day-map-head"><h3>', escapeHtml(heading || 'Route map'), '</h3><p class="small muted">Every stop in order, optional stops included. Tap a stop for directions and details.</p></div>',
+      '<ol class="map-list">',
+      stops.map(function (stop, index) { return renderDayMapNode(day, stop, index, nextId); }).join(''),
+      '</ol></div>'
     ].join('');
   }
 
@@ -2123,7 +2153,7 @@
       renderMealPlan(day),
       '<details class="day-detail-panel"', normalize(day.risk) === 'high' ? ' open' : '', '><summary>Driving & safety notes</summary><div><p><strong>Wake:</strong> ', escapeHtml(day.wakeTime), ' · <strong>Driver plan:</strong> ', escapeHtml(day.driverPlan), '</p><p><strong>Safety fallback:</strong> ', escapeHtml(day.emergency), '</p>', timeZoneChanges ? '<p><strong>Time change:</strong> ' + escapeHtml(day.timeZoneNote) + '</p>' : '', '</div></details>',
       '</div>',
-      filtered.length ? '<div class="timeline">' + filtered.map(function (stop) { return renderStopCard(day, stop); }).join('') + '</div>' : '<div class="empty-state">No stops match. Try clearing the stop type or search field.</div>',
+      renderDayRouteMap(day, filtered),
       '<div class="day-nav-actions"><button type="button" class="button subtle" id="previousDay"', operationalPlan.days[0].id === day.id ? ' disabled' : '', '>← Previous day</button><button type="button" class="button subtle" id="nextDay"', operationalPlan.days[operationalPlan.days.length - 1].id === day.id ? ' disabled' : '', '>Next day →</button></div>'
     ].join('');
     document.getElementById('dayResult').innerHTML = body;
@@ -2855,6 +2885,7 @@
       '<label for="liveDay">Day<select id="liveDay">', operationalPlan.days.map(function (item) { return '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(dayOptionLabel(item)) + '</option>'; }).join(''), '</select></label>',
       '<label for="liveMode">Schedule<select id="liveMode"><option value="preview">Planning</option><option value="on-time">On schedule</option><option value="ahead30">30 min ahead</option><option value="ahead60">60+ min ahead</option><option value="late30">30+ min late</option><option value="late60">60+ min late</option></select></label>',
       '</div>',
+      renderDayRouteMap(day, visibleStops(day), 'Today’s route'),
       renderTodayRouteOption(day),
       renderTodayMealChoice(day),
       renderFreshnessCard(day),
@@ -2890,6 +2921,25 @@
         persist();
         renderDayContent();
         renderLive();
+      });
+    });
+    section.querySelectorAll('.day-map [data-stop-action]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var stopId = button.dataset.stopId;
+        var action = button.dataset.stopAction;
+        if (action === 'toggle') {
+          tripState.stops[stopId] = stopStatus(stopId) === 'done' ? 'pending' : 'done';
+          persist();
+          renderDayContent();
+          renderLive();
+        } else if (action === 'skip') {
+          tripState.stops[stopId] = stopStatus(stopId) === 'skipped' ? 'pending' : 'skipped';
+          persist();
+          renderDayContent();
+          renderLive();
+        } else if (action === 'copy') {
+          copyText(button.dataset.address || '').then(function () { setStatus('Address copied to the clipboard.'); });
+        }
       });
     });
     section.querySelectorAll('[data-route-choice]').forEach(function (button) {
