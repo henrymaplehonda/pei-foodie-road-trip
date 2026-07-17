@@ -136,7 +136,7 @@ function check(name, ok, detail) {
     { Date: '2026-08-19', hotel: 'Best Western Plus Moncton', in: 'Wed, Aug 19 · from 4:00 PM', out: 'Thu, Aug 20 · by 11:00 AM', room: 'Room details kept in the private confirmation', guests: 'Family stay · booked and safe' },
     { Date: '2026-08-20', hotel: 'DoubleTree by Hilton Quebec Resort', in: 'Thu, Aug 20 · from 4:00 PM', out: 'Fri, Aug 21 · by 12:00 PM', room: 'Suite · 1 bedroom', guests: '2 adults + 1 child' }
   ];
-  check('hotel confirmation details match all 7 booking screenshots', expectedHotelConfirmations.every((expected) => {
+  check('hotel ledger matches all 7 booked stays and safe public labels', expectedHotelConfirmations.every((expected) => {
     const actual = confirmationHotels.find((hotel) => hotel.Date === expected.Date);
     return actual
       && actual['Recommended hotel'] === expected.hotel

@@ -2904,6 +2904,8 @@
         if (input.checked) tripState.offlineReadiness[input.dataset.offlineReady] = true;
         else delete tripState.offlineReadiness[input.dataset.offlineReady];
         persist();
+        renderChecklist();
+        renderOffline();
         renderLive();
       });
     });
@@ -3069,6 +3071,8 @@
       else delete tripState.offlineReadiness[target.dataset.offlineReady];
       persist();
       renderChecklist();
+      renderLive();
+      renderOffline();
       return;
     }
     if (target.dataset.packingId) {
@@ -3354,6 +3358,8 @@
         if (input.checked) tripState.offlineReadiness[input.dataset.offlineReady] = true;
         else delete tripState.offlineReadiness[input.dataset.offlineReady];
         persist();
+        renderLive();
+        renderChecklist();
         renderOffline();
       });
     });
