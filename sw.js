@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pei-foodie-road-trip-v28';
+const CACHE_NAME = 'pei-foodie-road-trip-v29';
 const PHOTO_CACHE = 'pei-foodie-road-trip-photos-v1';
 const CORE_ASSETS = [
   './',
@@ -35,10 +35,11 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// index.html and navigations are network-first so itinerary updates appear on
-// the next reload without a cache-version bump; everything else same-origin is
-// cache-first. Cross-origin images (Wikimedia photos) are served from the
-// opt-in photo cache when present.
+// Same-origin requests — navigations (index.html) and assets like app.js — are
+// network-first so code and itinerary updates land on the next reload when
+// online, with the cache as the offline fallback. (app.js used to be cache-first,
+// which left returning visitors on stale code until the cache version changed.)
+// Cross-origin images (Wikimedia photos) are served from the opt-in photo cache.
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
@@ -74,17 +75,14 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request)
-        .then((response) => {
-          if (response && response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => caches.match('./index.html'));
-    })
+    fetch(request)
+      .then((response) => {
+        if (response && response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request).then((cached) => cached || caches.match('./index.html')))
   );
 });
