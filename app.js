@@ -50,6 +50,16 @@
     return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address || '');
   }
 
+  function streetViewUrl(lat, lng, heading) {
+    return 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + lat + ',' + lng +
+      (heading != null ? '&heading=' + heading : '');
+  }
+
+  function satelliteUrl(lat, lng, zoom) {
+    return 'https://www.google.com/maps/@?api=1&map_action=map&center=' + lat + ',' + lng +
+      '&zoom=' + (zoom || 19) + '&basemap=satellite';
+  }
+
   function safeExternalUrl(url) {
     try {
       var parsed = new URL(String(url || ''));
@@ -89,6 +99,7 @@
       mapUrl: details.mapUrl || mapSearchUrl(details.address || ''),
       sourceUrl: details.sourceUrl || '',
       reservation: details.reservation || '',
+      parkingEntrance: details.parkingEntrance || null,
       ticket: details.ticket || null,
       attractionQuality: details.attractionQuality || attractionQualityForStop(details.kind || 'Stop', details.title || ''),
       conditional: Boolean(details.conditional),
@@ -139,6 +150,7 @@
       mapUrl: patch.mapUrl || original['Map URL'],
       sourceUrl: patch.sourceUrl || original['Source URL'],
       reservation: patch.reservation || '',
+      parkingEntrance: patch.parkingEntrance || null,
       ticket: patch.ticket || null,
       attractionQuality: patch.attractionQuality || attractionQualityForStop(patch.kind || original.Type || 'Stop', patch.title || original['Stop / Segment']),
       conditional: Boolean(patch.conditional),
@@ -335,7 +347,8 @@
     shediacLobster: attractionQuality({ backupTitle: 'Parlee Beach Provincial Park', backupAddress: 'Parlee Beach Provincial Park, Pointe-du-Chene, NB', backupNote: 'Beach/play fallback near Shediac if the lobster photo stop is too short.' }),
     confederationBridge: attractionQuality({ backupTitle: 'Marine Rail Park', backupAddress: 'Marine Rail Park, Borden-Carleton, PE', backupNote: 'Bridge-view and lighthouse-style fallback on the PEI side.' }),
     southShorePark: attractionQuality({ backupTitle: 'Parc Michel-Chartrand', backupAddress: 'Parc Michel-Chartrand, Longueuil, QC', backupNote: 'Larger green-space fallback on the South Shore if lunch timing allows.' }),
-    brockvilleWaterfront: attractionQuality({ backupTitle: 'Brockville Railway Tunnel', backupAddress: 'Brockville Railway Tunnel, Brockville, ON', backupNote: 'Switch to the tunnel if waterfront weather is poor or everyone wants a more memorable stop.' })
+    brockvilleWaterfront: attractionQuality({ backupTitle: 'Brockville Railway Tunnel', backupAddress: 'Brockville Railway Tunnel, Brockville, ON', backupNote: 'Switch to the tunnel if waterfront weather is poor or everyone wants a more memorable stop.' }),
+    prehistoricWorld: attractionQuality({ backupTitle: 'Crysler Park Marina waterfront', backupAddress: 'Crysler Park Marina, 13480 County Rd 2, Morrisburg, ON', backupNote: 'Nearby St. Lawrence waterfront and open lawn if Prehistoric World is closed, the cash-only gate is a problem, or the child just needs a run-around break.' })
   };
 
   function qualityForAttractionName(name) {
@@ -359,6 +372,7 @@
     if (value.indexOf('confederation bridge') !== -1) return attractionQualityByKey.confederationBridge;
     if (value.indexOf('south shore') !== -1 || value.indexOf('marie-victorin') !== -1) return attractionQualityByKey.southShorePark;
     if (value.indexOf('brockville waterfront') !== -1 || value.indexOf('st. lawrence park') !== -1) return attractionQualityByKey.brockvilleWaterfront;
+    if (value.indexOf('prehistoric world') !== -1) return attractionQualityByKey.prehistoricWorld;
     return null;
   }
 
@@ -370,6 +384,20 @@
       '<p class="small"><strong>', escapeHtml(quality.backupTitle), '</strong>', quality.backupAddress ? ' · ' + escapeHtml(quality.backupAddress) : '', '</p>',
       quality.backupNote ? '<p class="small">' + escapeHtml(quality.backupNote) + '</p>' : '',
       '<div class="action-bar">', externalLink(quality.backupMapUrl, 'Kid backup map', 'button subtle'), '</div>',
+      '</div>'
+    ].join('');
+  }
+
+  function renderParkingEntrance(entrance) {
+    if (!entrance) return '';
+    return [
+      '<div class="parking-entrance">',
+      '<h4>Underground parking entrance</h4>',
+      entrance.note ? '<p class="small">' + escapeHtml(entrance.note) + '</p>' : '',
+      '<div class="action-bar">',
+      externalLink(entrance.streetViewUrl, 'Street View of entrance', 'button subtle'),
+      externalLink(entrance.satelliteUrl, 'Satellite view of entrance', 'button subtle'),
+      '</div>',
       '</div>'
     ].join('');
   }
@@ -412,11 +440,11 @@
         id: '2026-08-14',
         label: 'Fri, Aug 14, 2026',
         mainActivity: 'A calm eastbound travel day and early Marriott room reset',
-        optionalActivity: 'The Big Apple · 20–25 minutes only if the morning is smooth',
+        optionalActivity: 'Pick one: The Big Apple (20–25 min, smooth morning) or Prehistoric World near Morrisburg (45–60 min dinosaur trail after lunch)',
         downtime: '60–90 minutes at the Marriott before the dinner walk',
-        rainPlan: 'Skip The Big Apple outdoor areas; keep Tata’s lunch and the indoor Time Out Market dinner.',
-        parentWarning: 'Medium-long first day. Protect the proper lunch and hotel reset; do not add another attraction.',
-        routeFocus: 'Vaughan → Colborne → Odessa → Brockville → Montréal',
+        rainPlan: 'Skip The Big Apple and Prehistoric World outdoor areas; keep Tata’s lunch and the indoor Time Out Market dinner.',
+        parentWarning: 'Medium-long first day. Protect the proper lunch and hotel reset; add at most one optional attraction — The Big Apple or Prehistoric World, never both.',
+        routeFocus: 'Vaughan → Colborne → Odessa → Brockville → Morrisburg → Montréal',
         driveKm: 577,
         pureDriveTime: 'About 6.5–7 h before stops; Friday Montréal traffic can add more',
         risk: 'Medium',
@@ -425,7 +453,7 @@
         departTarget: '06:45 wheels moving',
         driverPlan: 'Two-driver day: start with the fresher adult for GTA/401 traffic, then swap at Odessa or after lunch in Brockville. The off-duty adult owns navigation, snacks and the Montréal traffic check.',
         timeZoneNote: 'All times are Eastern Time (America/Toronto).',
-        contingency: 'If The Big Apple arrival slips past 08:50, skip it. Keep the Brockville restaurant lunch; if Tata’s cannot seat you promptly, use the named Boston Pizza Brockville fallback and continue to Montréal.',
+        contingency: 'If The Big Apple arrival slips past 08:50, skip it. Keep the Brockville restaurant lunch; if Tata’s cannot seat you promptly, use the named Boston Pizza Brockville fallback and continue to Montréal. Skip Prehistoric World if you cannot reach it by about 14:00 or the live Montréal ETA passes 16:45.',
         emergency: 'Keep the required Odessa safety break and a proper Brockville lunch. If Montréal ETA moves past 17:15, shorten lunch to 45 minutes and sit down at Lloyd after hotel check-in.',
         stops: [
           sourceStop('2026-08-14', 'Depart Vaughan', { id: 'd1-depart', time: '06:45', zone: 'ET', title: 'Depart Vaughan from Maple Honda', locationName: 'Maple Honda', leg: '0 km', priority: 'required', notes: 'Wake 06:00. Load the car the night before; only final medications, breakfast items and bathroom remain this morning.' }),
@@ -433,7 +461,8 @@
           sourceStop('2026-08-14', 'The Big Apple', { id: 'd1-big-apple', time: '08:30–08:55', zone: 'ET', locationName: 'The Big Apple', parkingName: 'The Big Apple visitor parking', parkingAddress: '262 Orchard Rd, Colborne, ON K0K 1S0', leg: 'About 145 km / 1 h 30–1 h 45', priority: 'optional', skipAt: 30, saves: '25 min', timeBudget: '20-25 min', notes: 'Short reward/washroom stop only. Skip if arrival is after 08:50; the required Odessa break and proper Brockville lunch remain protected.', mapUrl: mapSearchUrl('The Big Apple visitor parking, 262 Orchard Rd, Colborne, ON K0K 1S0') }),
           sourceStop('2026-08-14', 'ONroute Napanee', { id: 'd1-odessa', time: '10:10–10:25', zone: 'ET', title: 'ONroute Odessa — eastbound', locationName: 'ONroute Odessa — eastbound service centre', address: '3745 Highway 401 Eastbound, Odessa, ON K0H 2H0', city: 'Odessa, ON', kind: 'Morning snack / washroom / driver swap', leg: 'About 115 km / 1 h 10–1 h 20 from Colborne', priority: 'required', timeBudget: '15 min', notes: 'This is the correct eastbound plaza. Quick snack, washroom, walk and driver swap—not lunch. The proper restaurant lunch is in Brockville.', mapUrl: mapSearchUrl('ONroute Odessa, 3745 Highway 401 Eastbound, Odessa, ON K0H 2H0'), sourceUrl: 'https://www.onroute.ca/locations/odessa' }),
           customStop({ id: 'd1-lunch', dayId: '2026-08-14', time: '11:40–12:35 · depart by 12:45', zone: 'ET', title: 'Proper lunch: Tata’s House of Pizza & Pasta', locationName: 'Tata’s House of Pizza & Pasta — Brockville', kind: 'Lunch / seated restaurant', priority: 'required', address: '11 Windsor Drive, Brockville, ON K6V 3H5', city: 'Brockville, ON', leg: 'About 105 km / 1 h 05–1 h 15 from Odessa; about 210 km / 2 h 15 to Montréal before city traffic', timeBudget: '50-60 min', notes: 'A proper seated lunch replaces the old Morrisburg attraction and self-catered lunch plan. Friday service starts at 11:00. If the wait would push departure past 12:45, use Boston Pizza Brockville at 2000 Parkedale Avenue as the named sit-down fallback.', food: 'Pizza, pasta, burgers, fish and chips, souvlaki, and vegetarian options.', kidPlan: 'Bathroom and a calm seated meal before the Montréal leg.', mapUrl: mapSearchUrl('Tata’s House of Pizza & Pasta, 11 Windsor Drive, Brockville, ON K6V 3H5'), sourceUrl: 'https://www.tatasbrockville.ca/' }),
-          sourceStop('2026-08-14', 'Check in: Montreal Marriott Chateau Champlain', { id: 'd1-hotel', time: '15:30–16:30 realistic · check-in from 16:00', zone: 'ET', title: 'Check in: Montreal Marriott Chateau Champlain', locationName: 'Montreal Marriott Chateau Champlain', address: '1050 de la Gauchetiere West, Montreal, QC H3B 4C9', city: 'Montréal, QC', leg: 'About 210 km / 2 h 15 plus Friday city traffic from Brockville', priority: 'required', notes: 'Confirmed 2-double-bed room for 2 adults + 1 child. Official self-parking is currently C$36/day with no in/out privileges; recheck rate, entrance and clearance, park once, and leave the car. This hotel does not advertise a pool.', food: 'Lloyd is on site; Time Out Market is about a 15-minute walk.', kidPlan: 'Room reset, then a short dinner walk only if everyone has energy.', mapUrl: mapSearchUrl('Montreal Marriott Chateau Champlain, 1050 de la Gauchetiere West, Montreal, QC H3B 4C9'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yulcc-montreal-marriott-chateau-champlain/overview/' }),
+          customStop({ id: 'd1-prehistoric-world', dayId: '2026-08-14', time: '13:25–14:20 · depart by 14:25', zone: 'ET', title: 'Prehistoric World', locationName: 'Prehistoric World — Morrisburg', kind: 'Attraction / outdoor dinosaur trail walk', priority: 'optional', skipAt: 30, saves: '55 min', address: '5446 Upper Canada Rd, Morrisburg, ON K0C 1X0', parkingName: 'Prehistoric World visitor parking', parkingAddress: '5446 Upper Canada Rd, Morrisburg, ON K0C 1X0', city: 'Morrisburg, ON', leg: 'About 65 km / 45 min from Brockville; about 150 km / 1 h 40 to Montréal before city traffic', timeBudget: '45-60 min', notes: 'Optional afternoon dinosaur-trail walk on the way to Montréal, added after the proper Brockville lunch—it does not replace it. Open daily 10:00–16:00, May 17–Sept 7, and cash only, so bring small bills ($10 adult, $8 senior, $6 child 4+, under 3 free). Pick this or The Big Apple, never both, to keep the first day calm. Skip if you cannot reach the gate by about 14:00 or if the live Montréal ETA would slip past 16:45; the Marriott check-in and Time Out Market dinner stay protected.', food: 'Washrooms on site; no full food service—rely on the Brockville lunch and packed snacks.', kidPlan: 'Flat, hand-laid stone loop through the woods past life-size concrete dinosaurs with English and French plaques; an easy 45–60 minute walk, doable in 20–30 if energy is low.', mapUrl: mapSearchUrl('Prehistoric World visitor parking, 5446 Upper Canada Rd, Morrisburg, ON K0C 1X0'), sourceUrl: 'https://prehistoricworld.ca/' }),
+          sourceStop('2026-08-14', 'Check in: Montreal Marriott Chateau Champlain', { id: 'd1-hotel', time: '15:30–16:30 realistic · check-in from 16:00', zone: 'ET', title: 'Check in: Montreal Marriott Chateau Champlain', locationName: 'Montreal Marriott Chateau Champlain', address: '1050 de la Gauchetiere West, Montreal, QC H3B 4C9', city: 'Montréal, QC', leg: 'About 210 km / 2 h 15 plus Friday city traffic from Brockville', priority: 'required', notes: 'Confirmed 2-double-bed room for 2 adults + 1 child. Official self-parking is currently C$36/day with no in/out privileges; recheck rate, entrance and clearance, park once, and leave the car. This hotel does not advertise a pool.', food: 'Lloyd is on site; Time Out Market is about a 15-minute walk.', kidPlan: 'Room reset, then a short dinner walk only if everyone has energy.', parkingEntrance: { note: 'Downtown high-rise with underground self-parking only—there is no surface lot. The garage is beneath the hotel; approach on De la Gauchetiere West, follow the signed "Stationnement / Self-Parking" ramp down, and reconfirm the height clearance and C$36/day rate at the desk. Park once—there are no in/out privileges.', streetViewUrl: streetViewUrl(45.4975, -73.5672, 200), satelliteUrl: satelliteUrl(45.4975, -73.5672, 19) }, mapUrl: mapSearchUrl('Montreal Marriott Chateau Champlain, 1050 de la Gauchetiere West, Montreal, QC H3B 4C9'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yulcc-montreal-marriott-chateau-champlain/overview/' }),
           sourceStop('2026-08-14', 'Easy dinner: Time Out Market', { id: 'd1-dinner', time: '17:45–18:15 flexible', zone: 'ET', kind: 'Dinner / walking outing', priority: 'required', routeEligible: false, leg: 'About 1 km / 15 min on foot each way from the Marriott', notes: 'Walk—do not move the parked car. Time Out Market is open until 22:00 Friday. Lloyd at the hotel is the zero-walk fallback if hotel arrival is after 17:15 or the child is done.', mapUrl: 'https://www.google.com/maps/dir/?api=1&origin=1050+de+la+Gauchetiere+West%2C+Montreal%2C+QC+H3B+4C9&destination=705+Saint-Catherine+St+W%2C+Montreal%2C+QC+H3B+4G5&travelmode=walking', sourceUrl: 'https://www.timeoutmarket.com/montreal/' })
         ],
         meals: [
@@ -463,8 +492,8 @@
         contingency: 'Cofortel room access is guaranteed only from 16:00. If late, secure the room first, shorten Old Québec, and protect the 18:15 dinner reservation.',
         emergency: 'Skip Old Québec, check in at 16:00, and use airport-area food if parking or energy becomes the constraint.',
         stops: [
-          sourceStop('2026-08-15', 'Depart Montréal', { id: 'd2-depart', time: '07:30', zone: 'ET', title: 'Depart Montreal Marriott Chateau Champlain', priority: 'required', address: '1050 de la Gauchetiere West, Montreal, QC H3B 4C9', city: 'Montréal, QC', notes: 'Wake 06:00, be seated at Lloyd when breakfast opens at 06:30, finish by 07:10, then check out and make 07:30 the actual wheels-moving time.', food: 'Lloyd hotel breakfast 06:30–07:10 (fee); grab-and-go only if service slips.', mapUrl: mapSearchUrl('1050 de la Gauchetiere West, Montreal, QC H3B 4C9'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yulcc-montreal-marriott-chateau-champlain/dining/' }),
-          sourceStop('2026-08-15', 'Trois-Rivières stretch', { id: 'd2-snack', time: '09:15', zone: 'ET', title: 'Carrefour Trois-Rivières Ouest — morning break', locationName: 'Carrefour Trois-Rivières Ouest', address: '4520 Boulevard des Récollets, Trois-Rivières, QC G9A 4N2', city: 'Trois-Rivières, QC', kind: 'Morning snack / washroom', priority: 'required', notes: 'Use the shopping centre for coffee, a snack, washroom and a short walk only. Save the real lunch for the Manoir restaurant at Montmorency.', mapUrl: mapSearchUrl('Carrefour Trois-Rivières Ouest, 4520 Boulevard des Récollets, Trois-Rivières, QC G9A 4N2'), sourceUrl: 'https://www.carrefourtr.com/' }),
+          customStop({ id: 'd2-breakfast-stop', dayId: '2026-08-15', time: '06:30–07:10', zone: 'ET', title: 'Breakfast at the hotel: Lloyd (Marriott)', locationName: 'Lloyd — Montreal Marriott Chateau Champlain', kind: 'Breakfast / hotel restaurant', priority: 'required', routeEligible: false, address: '1050 de la Gauchetiere West, Montreal, QC H3B 4C9', city: 'Montréal, QC', leg: 'On-site at the Marriott', timeBudget: '30-40 min', notes: 'Eat breakfast at the hotel before checking out. Be seated at Lloyd when it opens at 06:30 and finish by 07:10 so 07:30 stays the wheels-moving time. There is no mid-morning break before Montmorency, so start fed and keep a packed snack in the car.', food: 'Lloyd hotel breakfast 06:30–07:10 (fee); grab-and-go only if table service would delay departure.', kidPlan: 'Calm seated breakfast and a bathroom stop before the long morning drive.', mapUrl: mapSearchUrl('Montreal Marriott Chateau Champlain, 1050 de la Gauchetiere West, Montreal, QC H3B 4C9'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yulcc-montreal-marriott-chateau-champlain/dining/' }),
+          sourceStop('2026-08-15', 'Depart Montréal', { id: 'd2-depart', time: '07:30', zone: 'ET', title: 'Depart Montreal Marriott Chateau Champlain', priority: 'required', address: '1050 de la Gauchetiere West, Montreal, QC H3B 4C9', city: 'Montréal, QC', notes: 'Wake 06:00 and eat the Lloyd hotel breakfast first (see the breakfast stop). Check out and make 07:30 the actual wheels-moving time; there is no mid-morning break before Montmorency this year.', food: 'Breakfast handled at the hotel; keep a packed snack in the car for the drive to Montmorency.', mapUrl: mapSearchUrl('1050 de la Gauchetiere West, Montreal, QC H3B 4C9'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yulcc-montreal-marriott-chateau-champlain/dining/' }),
           customStop({ id: 'd2-low-fuel', dayId: '2026-08-15', time: '10:15 only if at trigger', zone: 'ET', title: 'Verified 91-AKI option: Shell Trois-Rivières', kind: 'Fuel decision', priority: 'conditional', conditional: true, routeEligible: false, address: '6455 Boulevard des Chenaux, Trois-Rivières, QC G8Y 5A9', city: 'Trois-Rivières, QC', timeBudget: '0-15 min', notes: 'Official Shell listing shows V-Power 91 and Saturday forecourt hours of 07:00–22:00. Use only at/below a quarter tank or when displayed range approaches 120–150 km; otherwise continue.', food: 'Convenience shop; use the earlier Trois-Rivières stop for the proper snack/washroom break.', kidPlan: 'Quick conditional fill only.', mapUrl: mapSearchUrl('6455 Boulevard des Chenaux, Trois-Rivières, QC G8Y 5A9'), sourceUrl: 'https://find.shell.com/ca/fuel/12303255-blvd-des-chenaux-troisriviere/en_CA' }),
           sourceStop('2026-08-15', 'Montmorency Falls', { id: 'd2-falls', time: '11:30', zone: 'ET', locationName: 'Parc de la Chute-Montmorency', parkingName: 'Montmorency Falls lower-site P1/P2 visitor parking', parkingAddress: '5300 Boulevard Sainte-Anne, Québec, QC G1C 1S1', priority: 'required', notes: '2026 Saturday access hours are 09:00–18:30. Use the lower-site P1/P2 entrance while the upper sector is being redeveloped; allow 20–30 minutes for construction/parking. Take the cable car or approved route to the Manoir for the seated lunch.', food: 'Washrooms and water; the proper lunch is reserved separately at the Manoir restaurant.', mapUrl: mapSearchUrl('Montmorency Falls lower parking P1 P2, 5300 Boulevard Sainte-Anne, Québec, QC G1C 1S1'), ticket: ticketGuidance.montmorency }),
           customStop({ id: 'd2-lunch', dayId: '2026-08-15', time: '12:45–13:45', zone: 'ET', title: 'Proper lunch: Restaurant-terrasse du Manoir', locationName: 'Restaurant-terrasse du Manoir Montmorency', kind: 'Lunch / seated restaurant', priority: 'required', routeEligible: false, address: '2490 Avenue Royale, Québec, QC G1C 1S1', city: 'Québec City, QC', leg: 'Inside Parc de la Chute-Montmorency at the upper Manoir', timeBudget: '60 min', notes: 'Reserve a table. The official 2026 summer schedule is 11:30–15:00 daily, with a varied lunch menu and children’s menu. This is the proper lunch—no picnic or packed meal.', food: 'Full seated lunch with a children’s menu on a covered, heated terrace.', kidPlan: 'Bathroom and seated reset before finishing the falls visit.', mapUrl: mapSearchUrl('Restaurant-terrasse du Manoir Montmorency, 2490 Avenue Royale, Québec, QC G1C 1S1'), sourceUrl: 'https://www.sepaq.com/destinations/parc-chute-montmorency/quoi-faire/restaurants-repas.dot?language_id=1', reservation: 'Reserve for about 12:45; summer service ends at 15:00.' }),
@@ -474,8 +503,7 @@
           customStop({ id: 'd2-return', dayId: '2026-08-15', time: '19:45–20:00', zone: 'ET', title: 'Collect car and return to Hôtel Cofortel', kind: 'Hotel return / sleep', priority: 'required', address: "6500 Boul. Wilfrid-Hamel, L'Ancienne-Lorette, QC G2E 2J1", city: "L'Ancienne-Lorette, QC", leg: 'Walk back to De Beaucours, then about 15 km / 20-25 min to Cofortel', notes: 'Walk back to the parked car, return directly to Cofortel, and stage the bags for the 07:00 departure.', food: 'No additional stop.', kidPlan: 'Bathroom and early bedtime after the city outing.', mapUrl: mapSearchUrl("6500 Boul. Wilfrid-Hamel, L'Ancienne-Lorette, QC G2E 2J1"), sourceUrl: 'https://cofortel.com/en/' })
         ],
         meals: [
-          mealSlot({ id: 'd2-breakfast', meal: 'Breakfast', title: 'Lloyd hotel breakfast', selectedStopId: 'd2-depart', backup: 'Hotel grab-and-go only if table service would delay departure.' }),
-          mealSlot({ id: 'd2-snack', meal: 'Morning snack', title: 'Trois-Rivières quick stop', selectedStopId: 'd2-snack', backup: 'Packed snack.' }),
+          mealSlot({ id: 'd2-breakfast', meal: 'Breakfast', title: 'Breakfast at the hotel (Lloyd)', selectedStopId: 'd2-breakfast-stop', backup: 'Hotel grab-and-go only if table service would delay departure.' }),
           mealSlot({ id: 'd2-lunch', meal: 'Lunch', title: 'Restaurant-terrasse du Manoir Montmorency', selectedStopId: 'd2-lunch', backup: 'Cochon Dingue Beauport — named sit-down fallback if the Manoir cannot honour the reservation.' }),
           mealSlot({ id: 'd2-dinner', meal: 'Dinner', title: 'La Bûche', selectedStopId: 'd2-dinner', backup: 'Cochon Dingue Champlain.', reserve: 'High priority', reservationTaskId: 'reserve-d2-la-buche' })
         ]
@@ -923,7 +951,7 @@
       }]
     },
     '2026-08-15': {
-      rule: 'Use this instead of the generic Trois-Rivieres stretch, not in addition to it. Keep Montmorency Falls and the 16:00 hotel access protected.',
+      rule: 'A mid-drive stretch here is optional now that breakfast is at the hotel. Add this only as a short leg-stretch and keep Montmorency Falls and the 16:00 hotel access protected.',
       options: [{
         name: 'Trois-Rivieres Harbourfront Park',
         routePoint: 'At the Trois-Rivieres break, before Montmorency Falls',
@@ -2082,6 +2110,7 @@
       '<details class="stop-more"><summary>Location & details</summary>',
       stop.locationName ? '<p><strong>Location:</strong> ' + escapeHtml(stop.locationName) + '</p>' : '',
       arrivalAddress ? '<p><strong>' + (stop.parkingName ? 'Parking / arrival address:' : 'Address:') + '</strong> ' + escapeHtml(arrivalAddress) + '</p>' : '',
+      renderParkingEntrance(stop.parkingEntrance),
       '<p>', escapeHtml(stop.notes), '</p>',
       stop.reservation ? '<p class="small"><strong>Reservation:</strong> ' + escapeHtml(stop.reservation) + '</p>' : '',
       renderAttractionQuality(stop.attractionQuality),
