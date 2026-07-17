@@ -75,9 +75,101 @@
     return '<a class="' + escapeHtml(className || 'button') + '" href="' + escapeHtml(safe) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="' + escapeHtml(label + ' (opens in a new tab)') + '">' + escapeHtml(label) + ' <span aria-hidden="true">↗</span></a>';
   }
 
+  // Documented stop coordinates for the consolidated route map. Each key is a
+  // stop id; the value is [latitude, longitude]. These were geocoded from the
+  // stops' own addresses (OpenStreetMap Nominatim) so the map reuses the single
+  // itinerary data source rather than a parallel list. A handful were set by
+  // hand where the raw civic address did not resolve cleanly:
+  //   - d1-hotel / d2-* Marriott: the coordinates already used by the hotel's
+  //     street-view link (45.4975, -73.5672).
+  //   - d1-odessa / d1-big-apple / d5-lunch: matched by place name; d5-lunch
+  //     (Blue Mussel Café's new 5033 Rustico Road location) uses the café's
+  //     known North Rustico-area coordinates, accurate to within ~2 km.
+  //   - d2-old-quebec: co-located with the La Bûche dinner in Old Québec.
+  //   - d3-kamouraska: Avenue LeBlanc / Quai Miller in Kamouraska village.
+  // A stop without an entry here still renders in the itinerary; it is simply
+  // listed under the map's "not shown" note instead of being silently dropped.
+  var STOP_COORDS = {
+    // 2026-08-14 — Vaughan → Colborne → Odessa → Brockville → Morrisburg → Montréal
+    'd1-depart': [43.83512, -79.53467],
+    'd1-fuel': [43.84984, -79.53776],
+    'd1-big-apple': [44.02203, -77.90585],
+    'd1-odessa': [44.28326, -76.65589],
+    'd1-lunch': [44.6039, -75.70238],
+    'd1-prehistoric-world': [44.94604, -75.10459],
+    'd1-hotel': [45.4975, -73.5672],
+    'd1-dinner': [45.48827, -73.58573],
+    // 2026-08-15 — Montréal → Trois-Rivières → Montmorency → Old Québec
+    'd2-breakfast-stop': [45.4975, -73.5672],
+    'd2-depart': [45.4975, -73.5672],
+    'd2-low-fuel': [46.35692, -72.6089],
+    'd2-falls': [46.89075, -71.14774],
+    'd2-lunch': [46.88692, -71.15221],
+    'd2-hotel': [46.79038, -71.3538],
+    'd2-old-quebec': [46.8114, -71.2065],
+    'd2-dinner': [46.81127, -71.20801],
+    'd2-return': [46.79038, -71.3538],
+    // 2026-08-16 — Québec City → Rivière-du-Loup → Edmundston → Fredericton
+    'd3-depart': [46.79038, -71.3538],
+    'd3-kamouraska': [47.55697, -69.8784],
+    'd3-lunch': [47.83259, -69.53644],
+    'd3-edmundston': [47.3733, -68.30401],
+    'd3-hartland': [46.29694, -67.52768],
+    'd3-hotel': [45.96491, -66.66279],
+    'd3-dinner': [45.97004, -66.63241],
+    // 2026-08-17 — Fredericton → Moncton → Cape Jourimain → Charlottetown
+    'd4-depart': [45.96491, -66.66279],
+    'd4-magnetic': [46.13466, -64.88851],
+    'd4-lunch': [46.10988, -64.77801],
+    'd4-cape': [46.16164, -63.81519],
+    'd4-hotel': [46.26187, -63.16567],
+    'd4-dinner': [46.4103, -63.34585],
+    'd4-victoria': [46.23385, -63.12644],
+    'd4-return': [46.26187, -63.16567],
+    // 2026-08-18 — Charlottetown hotel switch → Cavendish / North Rustico → Canadas Best Value Inn
+    'd5-checkout': [46.26187, -63.16567],
+    'd5-bag-drop': [46.26569, -63.15165],
+    'd5-green-gables': [46.48874, -63.38211],
+    'd5-lunch': [46.45653, -63.29398],
+    'd5-beach': [46.49687, -63.35288],
+    'd5-rain': [46.48764, -63.39695],
+    'd5-hotel': [46.26569, -63.15165],
+    'd5-dinner': [46.2361, -63.12984],
+    'd5-return': [46.26569, -63.15165],
+    // 2026-08-19 — PEI → Confederation Bridge → Hopewell Rocks → Moncton
+    'd6-morning-ready': [46.26569, -63.15165],
+    'd6-fuel': [46.25616, -63.19006],
+    'd6-marine-rail': [46.25026, -63.70458],
+    'd6-bridge': [46.23573, -63.72259],
+    'd6-sackville-rest': [45.90783, -64.37094],
+    'd6-hopewell': [45.81701, -64.5765],
+    'd6-lunch': [45.81781, -64.57829],
+    'd6-hotel': [46.10092, -64.7646],
+    'd6-magnetic': [46.13466, -64.88851],
+    'd6-dinner': [46.08872, -64.77583],
+    'd6-return': [46.10092, -64.7646],
+    // 2026-08-20 — Moncton → Fredericton → Edmundston → Québec City
+    'd7-depart': [46.10092, -64.7646],
+    'd7-fredericton': [45.93483, -66.66543],
+    'd7-hartland': [46.29694, -67.52768],
+    'd7-edmundston': [47.36387, -68.33122],
+    'd7-rdl': [47.85107, -69.54159],
+    'd7-hotel': [46.88505, -71.30772],
+    'd7-dinner': [46.88505, -71.30772],
+    // 2026-08-21 — Québec City → Centre-du-Québec → Boucherville → Mallorytown North → Vaughan
+    'd8-depart': [46.88505, -71.30772],
+    'd8-lemaire': [45.91066, -72.45168],
+    'd8-restaurant-lunch': [45.56878, -73.44477],
+    'd8-mallory': [44.48987, -75.85694],
+    'd8-safety-hotel': [44.27063, -76.44854],
+    'd8-big-apple': [44.02203, -77.90585],
+    'd8-home': [43.83512, -79.53467]
+  };
+
   function customStop(details) {
+    var stopId = details.id || slug(details.dayId + '-' + details.title);
     return {
-      id: details.id || slug(details.dayId + '-' + details.title),
+      id: stopId,
       dayId: details.dayId,
       time: details.time || 'Flexible',
       zone: details.zone || '',
@@ -104,7 +196,8 @@
       attractionQuality: details.attractionQuality || attractionQualityForStop(details.kind || 'Stop', details.title || ''),
       conditional: Boolean(details.conditional),
       choiceGated: Boolean(details.choiceGated),
-      routeEligible: details.routeEligible !== false
+      routeEligible: details.routeEligible !== false,
+      coords: details.coords || STOP_COORDS[stopId] || null
     };
   }
 
@@ -1907,6 +2000,9 @@
     });
     var activeTab = document.querySelector('#nav [data-section="' + tabSection + '"]');
     if (activeTab && activeTab.scrollIntoView) activeTab.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'auto' });
+    // Build (or resize) the consolidated route map only when the Plan section is
+    // actually shown, so its tiles stay off the initial page load.
+    if (sectionId === 'daybyday') ensureTripMap();
     if (moveFocus) {
       var target = document.getElementById(sectionId);
       var heading = target && target.querySelector('.section-heading, h2');
@@ -2004,6 +2100,322 @@
     ].join('');
   }
 
+  // ---------------------------------------------------------------------------
+  // Consolidated route map. One interactive Leaflet + OpenStreetMap view of the
+  // whole Vaughan → PEI → Vaughan trip, built from the same operationalPlan stop
+  // data used everywhere else (no parallel stop list). Leaflet is vendored under
+  // vendor/leaflet, so only the map tiles need a connection — inherent to any
+  // web map. Everything degrades to a clear message if the library or tiles are
+  // unavailable, and the day plans below always list every stop.
+  // ---------------------------------------------------------------------------
+  var MAP_CATEGORIES = {
+    start: { label: 'Start / Finish', color: '#111827' },
+    hotel: { label: 'Hotel', color: '#0b6b72' },
+    food: { label: 'Food stop', color: '#c1442c' },
+    attraction: { label: 'Attraction', color: '#1f8f6e' },
+    fuel: { label: 'Fuel', color: '#b5721f' },
+    safety: { label: 'Rest / service', color: '#5c6470' },
+    other: { label: 'Other stop', color: '#8a94a3' }
+  };
+
+  // Map each stop to one legend category from its kind/title. Order matters:
+  // more specific matches (start/finish, fuel, food) are tested before the
+  // broader hotel/attraction buckets.
+  function mapCategoryKey(stop) {
+    var text = normalize([stop.kind, stop.title, stop.locationName].join(' '));
+    if (/finish|arrive vaughan|maple honda|depart vaughan/.test(text)) return 'start';
+    if (/fuel|\besso\b|shell|gas station/.test(text)) return 'fuel';
+    if (/breakfast|brunch|lunch|dinner|restaurant|bistro|\bcafe\b|\bpub\b|market|suppers|fromagerie|pizza|grill|resto|gastropub|dining/.test(text)) return 'food';
+    if (/hotel|check in|check-in|check out|checkout|bag drop|return to|overnight|marriott|delta|hampton|best western|doubletree|cofortel|value inn|quarter-tank/.test(text)) return 'hotel';
+    if (/\brest\b|washroom|stretch|driver swap|\bservice\b|onroute|checkpoint|\bmall\b|movement/.test(text)) return 'safety';
+    if (/falls|\bpark\b|beach|bridge|museum|gables|rocks|hill|quai|terrace|gorge|nature|covered|prehistoric|big apple|victoria|illusion|garden|ripley|stroll|\bwalk\b/.test(text)) return 'attraction';
+    return 'other';
+  }
+
+  function stopIsOptional(stop) {
+    return stop.priority === 'optional' || stop.priority === 'conditional' || Boolean(stop.choiceGated);
+  }
+
+  var tripMap = {
+    map: null, tiles: null, routeLayer: null, markerLayer: null,
+    built: false, unavailable: false, model: null, markers: [],
+    filters: { day: 'all', type: 'all', optional: true, route: true }
+  };
+
+  function buildTripMapModel() {
+    if (tripMap.model) return tripMap.model;
+    var dayMeta = {};
+    operationalPlan.days.forEach(function (day, index) {
+      dayMeta[day.id] = { index: index + 1, label: day.label, routeFocus: day.routeFocus };
+    });
+    var ordered = [];
+    var missing = [];
+    operationalPlan.days.forEach(function (day) {
+      day.stops.forEach(function (stop) {
+        var info = {
+          id: stop.id, dayId: stop.dayId, day: dayMeta[stop.dayId],
+          title: stop.title, locationName: stop.locationName,
+          kind: stop.kind, time: stop.time, zone: stop.zone,
+          address: stop.parkingAddress || stop.address || '',
+          city: stop.city || '', mapUrl: stop.mapUrl || '',
+          category: mapCategoryKey(stop), optional: stopIsOptional(stop),
+          routeEligible: stop.routeEligible !== false && !stop.conditional,
+          coords: stop.coords
+        };
+        if (!stop.coords) { missing.push(info); return; }
+        ordered.push(info);
+      });
+    });
+    // Collapse stops that share a location (rounded to ~11 m) into one pin, so a
+    // hotel used across several days is a single clickable marker rather than a
+    // stack. The route line still visits every stop position in order below.
+    var locations = [];
+    var byKey = {};
+    ordered.forEach(function (info) {
+      var key = info.coords[0].toFixed(4) + ',' + info.coords[1].toFixed(4);
+      var loc = byKey[key];
+      if (!loc) {
+        loc = { key: key, coords: info.coords, seq: locations.length + 1, stops: [], days: {} };
+        byKey[key] = loc;
+        locations.push(loc);
+      }
+      loc.stops.push(info);
+      loc.days[info.dayId] = true;
+    });
+    locations.forEach(function (loc) {
+      var lead = loc.stops.filter(function (s) { return !s.optional; })[0] || loc.stops[0];
+      loc.category = lead.category;
+      loc.allOptional = loc.stops.every(function (s) { return s.optional; });
+      loc.title = lead.locationName || lead.title;
+    });
+    tripMap.model = { ordered: ordered, locations: locations, missing: missing };
+    return tripMap.model;
+  }
+
+  function tripMarkerIcon(loc) {
+    var cat = MAP_CATEGORIES[loc.category] || MAP_CATEGORIES.other;
+    var cls = 'trip-pin' + (loc.allOptional ? ' is-optional' : '');
+    return L.divIcon({
+      className: 'trip-pin-wrap',
+      html: '<span class="' + cls + '" style="--pin:' + cat.color + '">' + loc.seq + '</span>',
+      iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -14]
+    });
+  }
+
+  function tripPopupHtml(loc) {
+    var rows = loc.stops.map(function (s) {
+      var cat = MAP_CATEGORIES[s.category] || MAP_CATEGORIES.other;
+      var dirUrl = safeExternalUrl(s.mapUrl);
+      var link = dirUrl
+        ? '<a class="trip-pop-dir" href="' + escapeHtml(dirUrl) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Get directions ↗</a>'
+        : '<span class="muted small">No map link available</span>';
+      return [
+        '<li class="trip-pop-stop">',
+        '<span class="trip-pop-dot" style="background:', cat.color, '"></span>',
+        '<div class="trip-pop-body">',
+        '<p class="trip-pop-title">', escapeHtml(s.title), s.optional ? ' <span class="trip-pop-flag">Optional</span>' : '', '</p>',
+        '<p class="trip-pop-meta">Day ', String(s.day ? s.day.index : '?'), ' · ', escapeHtml(cat.label), ' · ', escapeHtml(s.time || 'Flexible'), s.zone ? ' ' + escapeHtml(s.zone) : '', '</p>',
+        s.address ? '<p class="trip-pop-addr">' + escapeHtml(s.address) + '</p>' : '',
+        '<p class="trip-pop-links">', link, '</p>',
+        '</div></li>'
+      ].join('');
+    }).join('');
+    return '<div class="trip-pop"><p class="trip-pop-head">Stop ' + loc.seq +
+      (loc.stops.length > 1 ? ' · ' + loc.stops.length + ' visits' : '') +
+      '</p><ul class="trip-pop-list">' + rows + '</ul></div>';
+  }
+
+  // Route line: route-eligible stops in chronological order, dropping repeated
+  // points so a hotel visited on consecutive legs does not create a zero-length
+  // segment. Optionally clipped to a single day.
+  function tripRouteLatLngs(filterDay) {
+    var pts = [];
+    tripMap.model.ordered.forEach(function (info) {
+      if (!info.routeEligible) return;
+      if (filterDay !== 'all' && info.dayId !== filterDay) return;
+      var last = pts[pts.length - 1];
+      if (last && last[0] === info.coords[0] && last[1] === info.coords[1]) return;
+      pts.push(info.coords);
+    });
+    return pts;
+  }
+
+  function showTripMapFallback(message) {
+    var host = document.getElementById('tripMap');
+    var fallback = document.getElementById('tripMapFallback');
+    if (host) host.setAttribute('hidden', 'hidden');
+    if (fallback) { fallback.textContent = message; fallback.removeAttribute('hidden'); }
+  }
+
+  function updateTripMapStatus(shownLocations, shownStops) {
+    var status = document.getElementById('tripMapStatus');
+    if (!status) return;
+    var total = tripMap.model ? tripMap.model.locations.length : 0;
+    var missing = tripMap.model ? tripMap.model.missing.length : 0;
+    var text = 'Showing ' + shownStops + ' stops at ' + shownLocations + ' of ' + total + ' map locations.';
+    if (missing) text += ' ' + missing + ' stop' + (missing === 1 ? '' : 's') + ' without coordinates are listed in the day plans below.';
+    status.textContent = text;
+  }
+
+  function fitTripMap(coords) {
+    if (!tripMap.map || !coords || !coords.length) return;
+    try {
+      tripMap.map.fitBounds(L.latLngBounds(coords), { padding: [26, 26], maxZoom: 12 });
+    } catch (error) { /* bounds can be empty while a filter matches nothing */ }
+  }
+
+  function refreshTripMap(fit) {
+    if (!tripMap.built) return;
+    var filters = tripMap.filters;
+    var fitCoords = [];
+    var shownLocations = 0;
+    var shownStops = 0;
+    tripMap.markerLayer.clearLayers();
+    tripMap.markers.forEach(function (entry) {
+      var loc = entry.loc;
+      var dayOk = filters.day === 'all' || loc.days[filters.day];
+      var typeOk = filters.type === 'all' || loc.stops.some(function (s) { return s.category === filters.type; });
+      var optionalOk = filters.optional || !loc.allOptional;
+      if (dayOk && typeOk && optionalOk) {
+        tripMap.markerLayer.addLayer(entry.marker);
+        fitCoords.push(loc.coords);
+        shownLocations += 1;
+        shownStops += loc.stops.filter(function (s) {
+          if (filters.day !== 'all' && s.dayId !== filters.day) return false;
+          if (filters.type !== 'all' && s.category !== filters.type) return false;
+          if (!filters.optional && s.optional) return false;
+          return true;
+        }).length;
+      }
+    });
+    tripMap.routeLayer.clearLayers();
+    if (filters.route) {
+      var pts = tripRouteLatLngs(filters.day);
+      if (pts.length > 1) {
+        L.polyline(pts, { color: '#c1442c', weight: 3, opacity: 0.78, lineJoin: 'round' }).addTo(tripMap.routeLayer);
+        pts.forEach(function (p) { fitCoords.push(p); });
+      }
+    }
+    updateTripMapStatus(shownLocations, shownStops);
+    if (fit) fitTripMap(fitCoords);
+  }
+
+  function buildTripMarkers() {
+    tripMap.markers = tripMap.model.locations.map(function (loc) {
+      var marker = L.marker(loc.coords, {
+        icon: tripMarkerIcon(loc), riseOnHover: true,
+        zIndexOffset: loc.allOptional ? 0 : 250, keyboard: true,
+        title: loc.seq + '. ' + loc.title
+      });
+      // Keep popups small enough that autoPan can hold them fully inside a
+      // ~320x340 px mobile map: a capped width, and a maxHeight so a multi-visit
+      // hotel popup scrolls internally instead of overflowing the map/viewport.
+      marker.bindPopup(tripPopupHtml(loc), { maxWidth: 236, minWidth: 180, maxHeight: 232, autoPanPadding: [16, 18] });
+      return { loc: loc, marker: marker };
+    });
+  }
+
+  // Built lazily the first time the Plan tab is opened: a Leaflet map needs a
+  // sized, visible container, and this keeps map tiles off the initial page load.
+  function ensureTripMap() {
+    if (tripMap.unavailable) return;
+    if (tripMap.built) {
+      if (tripMap.map) { try { tripMap.map.invalidateSize(); } catch (error) {} }
+      return;
+    }
+    var host = document.getElementById('tripMap');
+    if (!host) return;
+    var model = buildTripMapModel();
+    if (typeof L === 'undefined' || !model.locations.length) {
+      tripMap.unavailable = true;
+      showTripMapFallback(typeof L === 'undefined'
+        ? 'The interactive map could not load (it needs a connection the first time). Every stop is still listed in the day plans below.'
+        : 'No mapped stops are available yet. The day plans below list every stop.');
+      return;
+    }
+    try {
+      var map = L.map(host, { scrollWheelZoom: false, zoomControl: true, attributionControl: true });
+      tripMap.map = map;
+      tripMap.tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
+      });
+      // Keep offline/blocked tile gaps from surfacing as errors.
+      tripMap.tiles.on('tileerror', function () {});
+      tripMap.tiles.addTo(map);
+      tripMap.routeLayer = L.layerGroup().addTo(map);
+      tripMap.markerLayer = L.layerGroup().addTo(map);
+      // Only grab wheel-zoom once the map has focus, so the page still scrolls
+      // past it on desktop and mobile.
+      map.on('focus', function () { map.scrollWheelZoom.enable(); });
+      map.on('blur', function () { map.scrollWheelZoom.disable(); });
+      buildTripMarkers();
+      tripMap.built = true;
+      refreshTripMap(true);
+    } catch (error) {
+      tripMap.unavailable = true;
+      showTripMapFallback('The route map could not be drawn in this browser. The day plans below list every stop.');
+    }
+  }
+
+  function tripMapLegendHtml() {
+    var items = Object.keys(MAP_CATEGORIES).map(function (key) {
+      var cat = MAP_CATEGORIES[key];
+      return '<span class="trip-legend-item"><span class="trip-legend-dot" style="background:' + cat.color + '"></span>' + escapeHtml(cat.label) + '</span>';
+    });
+    items.push('<span class="trip-legend-item"><span class="trip-legend-dot trip-legend-optional"></span>Optional (hollow pin)</span>');
+    return items.join('');
+  }
+
+  function tripMapMarkup() {
+    var dayOptions = operationalPlan.days.map(function (day, index) {
+      return '<option value="' + escapeHtml(day.id) + '">Day ' + (index + 1) + ' · ' + escapeHtml(day.label) + '</option>';
+    }).join('');
+    var typeOptions = Object.keys(MAP_CATEGORIES).map(function (key) {
+      return '<option value="' + key + '">' + escapeHtml(MAP_CATEGORIES[key].label) + '</option>';
+    }).join('');
+    return [
+      '<div class="card full trip-map-card" role="group" aria-label="Complete trip route map">',
+      '<div class="trip-map-head"><h3>Complete route · Vaughan → PEI → Vaughan</h3>',
+      '<p class="small muted">One interactive map of every stop across all 8 days, in driving order. Numbered pins are required stops, hollow pins are optional. Tap a pin for the day, timing, address and directions.</p></div>',
+      '<div class="trip-map-controls">',
+      '<label class="trip-map-field">Day<select id="tripMapDay"><option value="all">Show entire trip</option>', dayOptions, '</select></label>',
+      '<label class="trip-map-field">Stop type<select id="tripMapType"><option value="all">All stop types</option>', typeOptions, '</select></label>',
+      '<label class="trip-map-check"><input type="checkbox" id="tripMapOptional" checked> Optional attractions</label>',
+      '<label class="trip-map-check"><input type="checkbox" id="tripMapRoute" checked> Route line</label>',
+      '<button type="button" class="button subtle" id="tripMapFit">Fit route to screen</button>',
+      '<button type="button" class="button subtle" id="tripMapReset">Show entire trip</button>',
+      '</div>',
+      '<div id="tripMap" class="trip-map" role="application" aria-label="Interactive route map of the trip"></div>',
+      '<p id="tripMapFallback" class="trip-map-fallback" hidden></p>',
+      '<div class="trip-map-foot"><div class="trip-legend" aria-label="Map legend">', tripMapLegendHtml(), '</div>',
+      '<p id="tripMapStatus" class="small muted" role="status" aria-live="polite"></p></div>',
+      '</div>'
+    ].join('');
+  }
+
+  function wireTripMapControls() {
+    var dayField = document.getElementById('tripMapDay');
+    var typeField = document.getElementById('tripMapType');
+    var optionalField = document.getElementById('tripMapOptional');
+    var routeField = document.getElementById('tripMapRoute');
+    var fitButton = document.getElementById('tripMapFit');
+    var resetButton = document.getElementById('tripMapReset');
+    if (dayField) dayField.addEventListener('change', function () { tripMap.filters.day = dayField.value; refreshTripMap(true); });
+    if (typeField) typeField.addEventListener('change', function () { tripMap.filters.type = typeField.value; refreshTripMap(true); });
+    if (optionalField) optionalField.addEventListener('change', function () { tripMap.filters.optional = optionalField.checked; refreshTripMap(false); });
+    if (routeField) routeField.addEventListener('change', function () { tripMap.filters.route = routeField.checked; refreshTripMap(false); });
+    if (fitButton) fitButton.addEventListener('click', function () { refreshTripMap(true); });
+    if (resetButton) resetButton.addEventListener('click', function () {
+      tripMap.filters = { day: 'all', type: 'all', optional: true, route: true };
+      if (dayField) dayField.value = 'all';
+      if (typeField) typeField.value = 'all';
+      if (optionalField) optionalField.checked = true;
+      if (routeField) routeField.checked = true;
+      refreshTripMap(true);
+    });
+  }
+
   function mountDaySection() {
     var section = document.getElementById('daybyday');
     var typeOptions = unique(operationalPlan.days.flatMap(function (day) {
@@ -2012,6 +2424,7 @@
     section.innerHTML = [
       '<h2 id="daybyday-heading" class="section-heading">Trip plan</h2>',
       '<p class="section-intro">One clear timeline for each day.</p>',
+      tripMapMarkup(),
       '<div class="control-grid primary-controls" aria-label="Day itinerary settings">',
       '<label for="daySelectV2">Day<select id="daySelectV2"></select></label>',
       '<label for="dayMode">Schedule<select id="dayMode"><option value="preview">Planning</option><option value="on-time">On schedule</option><option value="ahead30">30 min ahead</option><option value="ahead60">60+ min ahead</option><option value="late30">30+ min late</option><option value="late60">60+ min late</option></select></label>',
@@ -2023,6 +2436,7 @@
       '<div id="dayResultStatus" class="status-line" role="status" aria-live="polite"></div>',
       '<div id="dayResult"></div>'
     ].join('');
+    wireTripMapControls();
     var select = document.getElementById('daySelectV2');
     select.innerHTML = operationalPlan.days.map(function (day) {
       return '<option value="' + escapeHtml(day.id) + '">' + escapeHtml(dayOptionLabel(day)) + '</option>';
