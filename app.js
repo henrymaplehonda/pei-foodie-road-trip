@@ -2169,10 +2169,13 @@
     return [
       '<div class="card full route-map"><h3>Route at a glance</h3>',
       '<p class="small muted">Stylized, not to scale — works offline. Out Aug 14–17, back Aug 19–21 along the same corridor via Hopewell Rocks.</p>',
-      '<svg viewBox="0 0 720 300" role="img" aria-label="Stylized route map: Vaughan to Montréal, Québec City, Fredericton, Charlottetown, then back through Hopewell Rocks, Moncton, and Québec City">',
+      '<svg viewBox="0 0 720 300" role="img" aria-label="Stylized route map: Vaughan to Montréal, Québec City, Fredericton, Charlottetown, then back through Hopewell Rocks, Moncton, and Québec City, with an optional 1.5-hour Kingston Penitentiary tour on the Ontario corridor">',
       '<path class="route-line" d="M55,165 C130,190 190,175 255,125 C295,95 320,88 355,82 C400,74 430,80 448,102 C470,130 480,165 500,195 C540,210 560,200 588,186 C620,170 650,150 668,132"/>',
       '<path class="route-spur" d="M588,186 C583,200 578,210 576,224"/>',
       dot(55, 165, 'Vaughan', 14, 195, 'start', 'Start Aug 14 · home Aug 21'),
+      '<circle cx="168" cy="171" r="6" class="optional-dot"/>',
+      '<text x="168" y="146" text-anchor="middle">Kingston Penitentiary</text>',
+      '<text class="sub" x="168" y="160" text-anchor="middle">Optional visit · 1.5 h tour</text>',
       dot(255, 125, 'Montréal', 248, 94, 'middle', 'Aug 14'),
       dot(355, 82, 'Québec City', 355, 62, 'middle', 'Aug 15 &amp; Aug 20'),
       dot(500, 195, 'Fredericton', 500, 225, 'middle', 'Night of Aug 16'),
@@ -2249,6 +2252,19 @@
     filters: { day: 'all', type: 'all', optional: true, ideas: true, route: true }
   };
 
+  // Day-agnostic optional visits: shown on the consolidated map as standalone
+  // "Optional idea" pins that are not tied to any single travel day. They pass
+  // every day filter so they stay visible no matter which day is selected.
+  var standaloneOptionalVisits = [{
+    name: 'Kingston Penitentiary Tour',
+    visit: '1.5 h tour',
+    why: 'Guided tour of the former maximum-security prison (1835–2013): cell ranges, the main dome, the segregation wing and the yard. A major Kingston stop right on the Highway 401 corridor; book timed tickets ahead.',
+    parking: '560 King Street West, Kingston, ON K7L 4V7 · free onsite parking',
+    map: mapSearchUrl('Kingston Penitentiary, 560 King Street West, Kingston, ON K7L 4V7'),
+    source: 'https://www.kingstonpentours.com/',
+    coords: [44.2194, -76.5136]
+  }];
+
   function buildTripMapModel() {
     if (tripMap.model) return tripMap.model;
     var dayMeta = {};
@@ -2322,6 +2338,28 @@
         });
       });
     });
+    // Standalone, day-agnostic optional visits: idea pins whose day set covers
+    // every trip day, so they pass the day filter no matter which day is chosen
+    // and never bind to a single day's plan.
+    standaloneOptionalVisits.forEach(function (option) {
+      if (!option.coords) return;
+      ideaCount += 1;
+      var info = {
+        id: 'idea-standalone-' + slug(option.name),
+        dayId: null, day: null, title: option.name, locationName: option.name,
+        kind: 'Optional idea', time: option.visit || 'Flexible', zone: '',
+        address: option.parking || '', city: '', mapUrl: option.map || '',
+        category: 'attraction', optional: true, routeEligible: false, isIdea: true, anyDay: true,
+        note: option.why || '', gate: '', routePoint: 'Optional — not tied to a specific day',
+        source: option.source || '', coords: option.coords
+      };
+      var allDays = {};
+      operationalPlan.days.forEach(function (d) { allDays[d.id] = true; });
+      locations.push({
+        key: 'idea-standalone-' + slug(option.name), coords: option.coords, seq: null, isIdea: true,
+        allOptional: true, category: 'attraction', title: option.name, stops: [info], days: allDays, anyDay: true
+      });
+    });
     tripMap.model = { ordered: ordered, locations: locations, missing: missing, ideaCount: ideaCount };
     return tripMap.model;
   }
@@ -2359,7 +2397,7 @@
         '<span class="trip-pop-dot" style="background:', cat.color, '"></span>',
         '<div class="trip-pop-body">',
         '<p class="trip-pop-title">', escapeHtml(s.title), s.optional ? ' <span class="trip-pop-flag">' + (s.isIdea ? 'Idea' : 'Optional') + '</span>' : '', '</p>',
-        '<p class="trip-pop-meta">Day ', String(s.day ? s.day.index : '?'), ' · ', escapeHtml(cat.label), ' · ', escapeHtml(s.time || 'Flexible'), s.zone ? ' ' + escapeHtml(s.zone) : '', '</p>',
+        '<p class="trip-pop-meta">', (s.day ? 'Day ' + s.day.index : 'Any day'), ' · ', escapeHtml(cat.label), ' · ', escapeHtml(s.time || 'Flexible'), s.zone ? ' ' + escapeHtml(s.zone) : '', '</p>',
         s.isIdea && s.routePoint ? '<p class="trip-pop-meta">' + escapeHtml(s.routePoint) + '</p>' : '',
         s.isIdea && s.note ? '<p class="trip-pop-note">' + escapeHtml(s.note) + '</p>' : '',
         s.address ? '<p class="trip-pop-addr">' + escapeHtml(s.address) + '</p>' : '',
