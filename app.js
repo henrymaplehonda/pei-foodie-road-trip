@@ -1686,6 +1686,60 @@
     ].join('');
   }
 
+  // A concrete, per-mode plan that updates the moment the Schedule selector
+  // changes: when ahead, the specific route-side stop(s) to add and the earlier
+  // arrival; when late, exactly which optional stops drop out (the same ones the
+  // map/timeline hide), what stays protected, and the day's contingency.
+  function renderScenarioPlan(day) {
+    var ahead = aheadMinutes(day);
+    var late = modeMinutes(day);
+    var planStops = day.stops.filter(function (stop) { return !stop.choiceGated; });
+
+    if (ahead) {
+      var options = (routeOptionsByDay[day.id] && routeOptionsByDay[day.id].options) || [];
+      var adds = options.slice(0, ahead >= 60 ? 2 : 1);
+      var addHtml = adds.length
+        ? '<p><strong>Best ' + (adds.length > 1 ? 'adds' : 'add') + ' for this margin:</strong></p><ul class="scenario-list">' +
+          adds.map(function (option) {
+            return '<li><strong>' + escapeHtml(option.name) + '</strong> · ' + escapeHtml(option.visit) +
+              '<br><span class="scenario-note">' + escapeHtml(option.why) + '</span>' +
+              '<br><span class="scenario-gate">Go / no-go: ' + escapeHtml(option.gate) + '</span></li>';
+          }).join('') + '</ul>'
+        : '<p>No safe route-side add fits today — bank the time instead.</p>';
+      return '<section class="scenario-plan scenario-ahead" aria-label="Ahead scenario plan">' +
+        '<div class="scenario-head"><span class="scenario-tag">~' + ahead + ' min ahead</span>' +
+        '<h3>Spend the buffer or arrive earlier</h3></div>' + addHtml +
+        '<p><strong>Or bank it:</strong> ' + escapeHtml(day.downtime) + '. Choose <strong>at most one</strong> add and keep the hotel ETA protected.</p>' +
+        '</section>';
+    }
+
+    if (late) {
+      var cuts = planStops.filter(function (stop) { return stop.skipAt && late >= stop.skipAt; });
+      var cutHtml = cuts.length
+        ? '<p><strong>Drop now (' + cuts.length + '):</strong></p><ul class="scenario-list">' +
+          cuts.map(function (stop) {
+            return '<li><strong>' + escapeHtml(stop.title || stop.locationName || 'Optional stop') + '</strong>' +
+              (stop.saves ? ' — saves ~' + escapeHtml(stop.saves) : '') + '</li>';
+          }).join('') + '</ul>'
+        : '<p>No optional stops remain to cut at this margin — the day is already lean, so protect the essentials and drive.</p>';
+      return '<section class="scenario-plan scenario-late" aria-label="Late scenario plan">' +
+        '<div class="scenario-head"><span class="scenario-tag">~' + late + ' min behind</span>' +
+        '<h3>Tighten up — cut optional stops, protect the essentials</h3></div>' + cutHtml +
+        '<p><strong>Protect:</strong> the proper lunch and dinner and the hotel arrival. Do <strong>not</strong> add any optional idea.</p>' +
+        '<p><strong>Contingency:</strong> ' + escapeHtml(day.contingency) + '</p>' +
+        '</section>';
+    }
+
+    var optionalCount = planStops.filter(function (stop) { return stop.skipAt; }).length;
+    return '<section class="scenario-plan scenario-neutral" aria-label="On-plan scenario">' +
+      '<div class="scenario-head"><span class="scenario-tag">On plan</span>' +
+      '<h3>Follow the planned timeline</h3></div>' +
+      '<p>Priority: <strong>' + escapeHtml(day.mainActivity) + '</strong>. Leave ' + escapeHtml(day.departTarget) + '. ' +
+      'This day carries <strong>' + optionalCount + '</strong> optional stop' + (optionalCount === 1 ? '' : 's') +
+      ' that drop automatically if you fall behind. Pick <strong>30/60 min ahead</strong> or <strong>late</strong> above to see exactly what to add or cut.</p>' +
+      '</section>';
+  }
+
   var fuelMath = {
     tankLitres: 71,
     triggerPercent: 25,
@@ -2908,7 +2962,7 @@
       '<div class="day-summary"><p class="route-label">', escapeHtml(modeText), '</p><h2>', escapeHtml(day.label), '</h2><p class="day-route"><strong>', escapeHtml(day.routeFocus), '</strong></p>',
       '<div class="day-facts"><div class="day-fact"><span>Leave</span><strong>', escapeHtml(day.departTarget), '</strong></div><div class="day-fact"><span>Drive</span><strong>', escapeHtml(day.pureDriveTime), '</strong></div><div class="day-fact"><span>Distance</span><strong>', escapeHtml(day.driveKm), ' km</strong></div><div class="day-fact"><span>Risk</span><strong><span class="risk-chip ', riskClass(day.risk), '">', escapeHtml(day.risk), '</span></strong></div></div>',
       '<div class="day-summary-actions">', dayRouteLinks(day, 'button primary'), dayWeatherLink(day.id), '</div>',
-      renderHotelAnchor(day), renderMealContract(day), renderMealFlex(day), renderRouteOptions(day), renderDayPacing(day), '</div>',
+      renderScenarioPlan(day), renderHotelAnchor(day), renderMealContract(day), renderMealFlex(day), renderRouteOptions(day), renderDayPacing(day), '</div>',
       '<div class="key-rule"><strong>If delayed:</strong> ', escapeHtml(day.contingency), '</div>',
       renderMealPlan(day),
       '<details class="day-detail-panel"', normalize(day.risk) === 'high' ? ' open' : '', '><summary>Driving & safety notes</summary><div><p><strong>Wake:</strong> ', escapeHtml(day.wakeTime), ' · <strong>Driver plan:</strong> ', escapeHtml(day.driverPlan), '</p><p><strong>Safety fallback:</strong> ', escapeHtml(day.emergency), '</p>', timeZoneChanges ? '<p><strong>Time change:</strong> ' + escapeHtml(day.timeZoneNote) + '</p>' : '', '</div></details>',
