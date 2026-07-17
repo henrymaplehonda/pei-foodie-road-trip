@@ -1178,17 +1178,6 @@
         map: mapSearchUrl('New Brunswick Military History Museum, 119 Walnut Street, Oromocto, NB E2V 4J5'),
         source: 'https://www.nbmilitaryhistorymuseum.ca/',
         coords: [45.83843, -66.44290]
-      }, {
-        name: 'Officer’s Square & Science East (Fredericton)',
-        routePoint: 'In downtown Fredericton, an evening add-on near the Delta',
-        why: 'A riverfront historic square plus a hands-on science centre in the old gaol — an easy evening or arrival-day outing close to the hotel.',
-        visit: '45-60 min',
-        routeImpact: 'Minimal from the Delta; downtown parking. Verify Science East 2026 hours.',
-        gate: 'Use only as a short after-check-in outing if arrival is early and everyone has energy; the on-site Delta dinner stays the plan.',
-        parking: 'Downtown Fredericton parking near Science East, 668 Brunswick Street, Fredericton, NB E3B 1H1',
-        map: mapSearchUrl('Science East, 668 Brunswick Street, Fredericton, NB E3B 1H1'),
-        source: 'https://scienceeast.nb.ca/',
-        coords: [45.96290, -66.63890]
       }]
     },
     '2026-08-17': {
