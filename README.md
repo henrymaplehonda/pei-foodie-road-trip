@@ -11,7 +11,8 @@ Live public site: https://henrymaplehonda.github.io/pei-foodie-road-trip/
 ## Contents
 
 - `index.html` — page shell, styles, and compact trip reference data
-- `app.js` — interactive itinerary renderer, live trip controls, checklist, and offline pack
+- `app.js` — interactive itinerary renderer, live trip controls, consolidated route map, checklist, and offline pack
+- `vendor/leaflet/` — locally hosted Leaflet 1.9.4 (map library) so the map needs no CDN; only the OpenStreetMap tiles require a connection
 - `manifest.webmanifest`, `sw.js`, `icon.svg` — optional hosted PWA/offline-cache support
 - `roadtrip-html-master-prompt.txt` — original planning and generation brief
 
@@ -20,7 +21,7 @@ Live public site: https://henrymaplehonda.github.io/pei-foodie-road-trip/
 The primary app has four focused views:
 
 - **Today** — next stop, navigation, Done/Skip controls, trip progress, schedule status, meal pace, freshness checks, and one safe extra-attraction suggestion when ahead.
-- **Plan** — a hotel-anchored daily timeline with recognizable destination names, parking-target navigation, one clear breakfast/lunch/dinner plan, collapsed along-the-way options, recovery blocks, ahead suggestions, and late-mode cutoffs.
+- **Plan** — a consolidated interactive route map of the whole Vaughan → PEI → Vaughan trip (every stop in driving order, numbered for required and hollow for optional, plus ★ route-side "idea" pins you can swap in on any day, with day/type/optional/ideas/route filters and a legend), above a hotel-anchored daily timeline with recognizable destination names, parking-target navigation, one clear breakfast/lunch/dinner plan, collapsed along-the-way options, recovery blocks, ahead suggestions, and late-mode cutoffs.
 - **Prep** — all seven booked-safe hotels, unfinished reservations and verification tasks, offline readiness, calls, and packing.
 - **Safety** — emergency numbers, the 91-AKI fuel rule, road and weather links, and offline exports.
 

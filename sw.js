@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pei-foodie-road-trip-v26';
+const CACHE_NAME = 'pei-foodie-road-trip-v27';
 const PHOTO_CACHE = 'pei-foodie-road-trip-photos-v1';
 const CORE_ASSETS = [
   './',
@@ -7,7 +7,14 @@ const CORE_ASSETS = [
   './manifest.webmanifest',
   './sw.js',
   './icon.svg',
-  './apple-touch-icon.png'
+  './apple-touch-icon.png',
+  './vendor/leaflet/leaflet.js',
+  './vendor/leaflet/leaflet.css',
+  './vendor/leaflet/images/marker-icon.png',
+  './vendor/leaflet/images/marker-icon-2x.png',
+  './vendor/leaflet/images/marker-shadow.png',
+  './vendor/leaflet/images/layers.png',
+  './vendor/leaflet/images/layers-2x.png'
 ];
 
 self.addEventListener('install', (event) => {
