@@ -91,6 +91,7 @@ function check(name, ok, detail) {
   await page.goto(base + '/index.html#overview', { waitUntil: 'networkidle' });
   check('legacy Overview direct link still renders on demand', await page.locator('#overview').isVisible() && (await page.locator('.countdown-card').count()) === 1 && (await page.locator('#tab-checklist').getAttribute('aria-selected')) === 'true');
   check('route map renders 7 stops', (await page.locator('.route-map .city-dot').count()) === 7);
+  check('route map marks the optional Kingston Penitentiary visit with its tour time', (await page.locator('.route-map .optional-dot').count()) === 1 && (await page.locator('.route-map').textContent()).includes('Kingston Penitentiary') && (await page.locator('.route-map').textContent()).includes('1.5 h tour'));
   check('route map labels Hopewell as estimated and staff-controlled', (await page.locator('.route-map').textContent()).includes('Estimated 9 AM–2:45 PM · confirm with staff'));
   check('milestones render', (await page.locator('.milestone').count()) === 7);
   check('reservation call list has 4 relevant numbers', (await page.locator('.reservation-card .tel-link').count()) === 4);
