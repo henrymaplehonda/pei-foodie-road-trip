@@ -291,6 +291,19 @@ function check(name, ok, detail) {
   await page.goto(base + '/index.html#hotels', { waitUntil: 'networkidle' });
   check('deep link #hotels shows cards', await page.locator('#hotels .day-group[data-day="2026-08-14"]').isVisible() && (await page.locator('#hotels .data-card').count()) === 7);
 
+  // Plan B carries its own independent interactive map (a second instance of the
+  // consolidated route map) so alternates can be compared and switched in place.
+  await page.goto(base + '/index.html#planb', { waitUntil: 'networkidle' });
+  check('Plan B has its own interactive map card at the top', (await page.locator('#planb .trip-map-card').count()) === 1 && (await page.locator('#planb #planbMap.leaflet-container').count()) === 1);
+  check('Plan B map renders both scheduled pins and route-side idea pins', (await page.locator('#planb #planbMap .trip-pin:not(.is-idea)').count()) > 0 && (await page.locator('#planb #planbMap .trip-pin.is-idea').count()) > 0);
+  check('Plan B map exposes its own filter controls, separate from the Plan tab map', (await page.locator('#planbMapDay').count()) === 1 && (await page.locator('#planbMapReset').count()) === 1 && (await page.locator('#planbMapStatus').innerText()).includes('scheduled stop') && (await page.locator('#planb #tripMap').count()) === 0);
+  const planbAllPins = await page.locator('#planb #planbMap .trip-pin:not(.is-idea)').count();
+  await page.selectOption('#planbMapDay', '2026-08-18');
+  check('Plan B map day filter narrows the pins', (await page.locator('#planb #planbMap .trip-pin:not(.is-idea)').count()) < planbAllPins);
+  await page.click('#planbMapReset');
+  check('Plan B map reset restores all pins', (await page.locator('#planb #planbMap .trip-pin:not(.is-idea)').count()) === planbAllPins && (await page.locator('#planbMapDay').inputValue()) === 'all');
+  check('Plan B map adds no horizontal overflow at phone width', (await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0);
+
   // Theme toggle produces dark background and syncs the native color-scheme
   await page.click('#themeToggle');
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
