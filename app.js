@@ -5,6 +5,12 @@
   var rawData = JSON.parse(document.getElementById('trip-data').textContent);
   var buildErrors = [];
   var appStatus = null;
+  var appToast = null;
+  var appToastTimer = null;
+  // The one status message that fires on nearly every interaction (Done/Skip,
+  // packing, picks). It stays in the screen-reader live region but is kept out
+  // of the visible toast so the toast is reserved for meaningful confirmations.
+  var ROUTINE_SAVE_STATUS = 'Saved privately in this browser.';
 
   function normalize(value) {
     return String(value || '')
@@ -2139,6 +2145,38 @@
 
   function setStatus(message) {
     if (appStatus) appStatus.textContent = message || '';
+    if (message && message !== ROUTINE_SAVE_STATUS) showToast(message);
+  }
+
+  // Mirror meaningful status updates as a brief, visible toast. The sr-only
+  // live region above still announces every message for assistive tech; this
+  // just makes confirmations and errors (copied address, export done, "could
+  // not save progress") visible to sighted users on the road.
+  function showToast(message) {
+    if (!appToast || !message) return;
+    appToast.textContent = message;
+    appToast.classList.add('is-visible');
+    if (appToastTimer) clearTimeout(appToastTimer);
+    appToastTimer = setTimeout(function () {
+      appToast.classList.remove('is-visible');
+    }, 3400);
+  }
+
+  function mountToast() {
+    if (appToast) return;
+    if (!document.getElementById('app-toast-styles')) {
+      var style = document.createElement('style');
+      style.id = 'app-toast-styles';
+      style.textContent = '.app-toast{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));margin:0 auto;max-width:420px;z-index:200;padding:12px 16px;border-radius:14px;background:#20242a;color:#fff;font-size:14px;font-weight:700;line-height:1.35;text-align:center;box-shadow:0 12px 34px -10px rgba(0,0,0,.55);opacity:0;transform:translateY(14px);transition:opacity .22s ease,transform .22s ease;pointer-events:none}'
+        + '.app-toast.is-visible{opacity:1;transform:translateY(0)}'
+        + ':root[data-theme="dark"] .app-toast{background:#e8edf2;color:#12171d;box-shadow:0 12px 34px -10px rgba(0,0,0,.7)}'
+        + '@media(prefers-reduced-motion:reduce){.app-toast{transition-duration:.01s}}';
+      document.head.appendChild(style);
+    }
+    appToast = document.createElement('div');
+    appToast.className = 'app-toast';
+    appToast.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(appToast);
   }
 
   function dayById(dayId) {
@@ -4677,6 +4715,9 @@
   function applyTheme(pref) {
     var dark = pref === 'dark' || (pref !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    // Keep native UI chrome (scrollbars, <select> option popups, date pickers,
+    // form-control defaults) matched to the chosen theme, not just the OS.
+    document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = dark ? '#12171d' : '#0f5b63';
     var toggle = document.getElementById('themeToggle');
@@ -4710,6 +4751,7 @@
     appStatus.setAttribute('role', 'status');
     appStatus.setAttribute('aria-live', 'polite');
     main.prepend(appStatus);
+    mountToast();
     buildNavigation();
     initTheme();
     mountDaySection();

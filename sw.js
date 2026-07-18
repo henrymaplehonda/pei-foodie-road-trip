@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pei-foodie-road-trip-v29';
+const CACHE_NAME = 'pei-foodie-road-trip-v30';
 const PHOTO_CACHE = 'pei-foodie-road-trip-photos-v1';
 const CORE_ASSETS = [
   './',
@@ -83,6 +83,10 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(request).then((cached) => cached || caches.match('./index.html')))
+      // For a non-navigation asset (app.js, CSS, an icon), fall back to the
+      // cached copy only. Never serve index.html HTML in place of a missing
+      // script or image — that would corrupt the asset instead of failing it.
+      .catch(() => caches.match(request).then((cached) => cached
+        || new Response('Offline and not cached', { status: 504, statusText: 'Offline' })))
   );
 });

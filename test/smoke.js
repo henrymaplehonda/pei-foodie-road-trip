@@ -291,10 +291,19 @@ function check(name, ok, detail) {
   await page.goto(base + '/index.html#hotels', { waitUntil: 'networkidle' });
   check('deep link #hotels shows cards', await page.locator('#hotels .day-group[data-day="2026-08-14"]').isVisible() && (await page.locator('#hotels .data-card').count()) === 7);
 
-  // Theme toggle produces dark background
+  // Theme toggle produces dark background and syncs the native color-scheme
   await page.click('#themeToggle');
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   check('dark theme applies', bg === 'rgb(16, 22, 28)', bg);
+  check('dark theme syncs native color-scheme', (await page.evaluate(() => document.documentElement.style.colorScheme)) === 'dark');
+
+  // Meaningful status updates are mirrored to a visible toast (not just the
+  // screen-reader live region), so confirmations and errors show on the road.
+  const toast = page.locator('.app-toast');
+  check('a user action surfaces a visible toast with its message', (await toast.count()) === 1
+    && (await toast.evaluate((el) => el.classList.contains('is-visible')))
+    && (await toast.textContent()).toLowerCase().includes('theme set to'));
+  check('toast does not add horizontal overflow', (await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0);
 
   check('no console/page errors', errors.length === 0, errors.join('; '));
 
