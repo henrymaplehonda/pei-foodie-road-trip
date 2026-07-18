@@ -24,8 +24,12 @@ function check(name, ok, detail) {
 
 (async () => {
   const indexSource = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const appSource = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
+  const swSource = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
   check('obsolete itinerary renderer is removed', !indexSource.includes('initDayByDay()') && !indexSource.includes('renderLegacyFailureNotice'));
   check('page source contains no rejected stops or room-service plan', !/Upper Canada Village|Prehistoric World|room service/i.test(indexSource));
+  check('route map uses licensed OpenStreetMap tiles, not the private Google endpoint', appSource.includes('tile.openstreetmap.org/{z}/{x}/{y}.png') && !appSource.includes('google.com/vt'));
+  check('service worker caches map tiles and caps the opt-in caches', swSource.includes("TILE_CACHE = 'pei-foodie-road-trip-tiles") && /trimCache\(/.test(swSource));
 
   const server = http.createServer((req, res) => {
     const file = path.join(ROOT, decodeURIComponent(req.url.split('#')[0].split('?')[0]).replace(/^\/+/, '') || 'index.html');
@@ -74,6 +78,7 @@ function check(name, ok, detail) {
   await page.check('#live [data-offline-ready="maps"]');
   check('offline readiness is actionable on Today', (await page.locator('#live .readiness-card').innerText()).includes('1/4'));
   check('Today displays plan freshness and live recheck timing', (await page.locator('#live .freshness-card').count()) === 1 && (await page.locator('#live .freshness-card').innerText()).includes('plan reviewed'));
+  check('Today offers a location-based nearest-stop control', (await page.locator('#live #nearestStopBtn').count()) === 1);
 
   const tabs = ['live', 'daybyday', 'checklist', 'offline'];
   for (const tab of tabs) {
@@ -97,6 +102,7 @@ function check(name, ok, detail) {
   check('reservation call list has 4 relevant numbers', (await page.locator('.reservation-card .tel-link').count()) === 4);
   check('emergency card has route-critical numbers and all 7 hotels', (await page.locator('#offline .emergency-list .tel-link').count()) === 15);
   check('Safety prioritizes three immediate calls and removes photo-cache clutter', (await page.locator('#offline .safety-contacts .tel-link').count()) === 3 && (await page.locator('#offline').textContent()).includes('91 AKI') && (await page.locator('#offline #cachePhotos').count()) === 0);
+  check('Safety offers a one-tap offline map + photo pack', (await page.locator('#offline #saveOfflineAssets').count()) === 1 && (await page.locator('#offline #clearOfflineAssets').count()) === 1);
   check('packing list has items', (await page.locator('[data-packing-id]').count()) >= 25);
 
   await page.goto(base + '/index.html#food', { waitUntil: 'networkidle' });
@@ -303,6 +309,7 @@ function check(name, ok, detail) {
   await page.click('#planbMapReset');
   check('Plan B map reset restores all pins', (await page.locator('#planb #planbMap .trip-pin:not(.is-idea)').count()) === planbAllPins && (await page.locator('#planbMapDay').inputValue()) === 'all');
   check('Plan B map adds no horizontal overflow at phone width', (await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0);
+  check('map shows OpenStreetMap attribution', (await page.locator('#planbMap .leaflet-control-attribution').innerText()).includes('OpenStreetMap'));
 
   // Theme toggle produces dark background and syncs the native color-scheme
   await page.click('#themeToggle');

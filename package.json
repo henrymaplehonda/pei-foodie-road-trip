@@ -3,7 +3,10 @@
   "private": true,
   "description": "Interactive PEI foodie road trip itinerary for August 2026",
   "scripts": {
-    "test": "node test/smoke.js"
+    "validate": "node test/validate-trip.js",
+    "test:unit": "node --test test/unit.js",
+    "test:smoke": "node test/smoke.js",
+    "test": "node test/validate-trip.js && node --test test/unit.js && node test/smoke.js"
   },
   "devDependencies": {
     "playwright": "^1.61.1"

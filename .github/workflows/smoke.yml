@@ -13,6 +13,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Validate trip data
+        run: node test/validate-trip.js
+      - name: Unit tests
+        run: node --test test/unit.js
       - name: Install Playwright and Chromium
         run: |
           npm install --no-save playwright@1.61.1

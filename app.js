@@ -66,6 +66,36 @@
       '&zoom=' + (zoom || 19) + '&basemap=satellite';
   }
 
+  // Great-circle distance (km) between two [lat, lng] points; used by the
+  // "nearest stop" locator. (The trip-data validator/tests share the same
+  // formula via test/trip-utils.js.)
+  function tripDistanceKm(a, b) {
+    if (!a || !b) return Infinity;
+    var R = 6371;
+    var toRad = function (deg) { return (deg * Math.PI) / 180; };
+    var dLat = toRad(b[0] - a[0]);
+    var dLng = toRad(b[1] - a[1]);
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+      + Math.sin(dLng / 2) * Math.sin(dLng / 2) * Math.cos(toRad(a[0])) * Math.cos(toRad(b[0]));
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+
+  // Web-Mercator (XYZ / "slippy map") tile coordinates, for the offline-tile
+  // pre-fetch. Mirrors test/trip-utils.js.
+  function lonToTileX(lon, z) { return Math.floor(((lon + 180) / 360) * Math.pow(2, z)); }
+  function latToTileY(lat, z) {
+    var r = (lat * Math.PI) / 180;
+    return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * Math.pow(2, z));
+  }
+
+  // Leading clock value (minutes past midnight) of a stop "Time" string, or null
+  // for a status marker like "Bonus only—never Plan A".
+  function clockMinutes(value) {
+    var m = /^\s*([0-2]?\d):([0-5]\d)/.exec(String(value || ''));
+    if (!m || Number(m[1]) > 23) return null;
+    return Number(m[1]) * 60 + Number(m[2]);
+  }
+
   function safeExternalUrl(url) {
     try {
       var parsed = new URL(String(url || ''));
@@ -2831,17 +2861,17 @@
     try {
       var map = L.map(host, { scrollWheelZoom: false, zoomControl: true, attributionControl: true });
       state.map = map;
-      // Google Maps road tiles (per user request). This uses Google's public
-      // map-tile endpoint directly rather than the official, key-gated Maps API,
-      // so no API key is required; it is suitable for a low-traffic personal
-      // site but is outside Google's official Maps terms. To move to the
-      // sanctioned path later, load the Google Maps JS/Tiles API with a
-      // domain-restricted key instead. The tileerror handler below keeps any
-      // blocked/offline tiles from surfacing as errors, exactly as before.
-      state.tiles = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-        maxZoom: 20,
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-        attribution: '&copy; <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">Google Maps</a>'
+      // OpenStreetMap standard raster tiles. Unlike Google's private vt endpoint
+      // (which required no key but sat outside Google's Maps terms and could not
+      // legally be cached), these are served under the ODbL and may be displayed
+      // and cached for offline use by a low-traffic personal site as long as the
+      // attribution below is shown. The service worker caches viewed tiles, and
+      // the Safety tab's "Save map + photos" button pre-fetches the route
+      // corridor. The tileerror handler keeps offline gaps from surfacing as
+      // errors.
+      state.tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
       });
       // Keep offline/blocked tile gaps from surfacing as errors.
       state.tiles.on('tileerror', function () {});
@@ -4048,6 +4078,64 @@
     });
   }
 
+  // When the active day is the real calendar day, show the current clock time and
+  // the stop the schedule puts you at right now. This is a non-destructive nudge:
+  // it never toggles Done/Skip, which stay manual. Times are read in the device's
+  // local zone, so it stays sensible as the trip crosses into Atlantic time.
+  function renderTodayNowLine(day) {
+    if (day.id !== localIsoDate()) return '';
+    var now = new Date();
+    var hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    var mins = now.getHours() * 60 + now.getMinutes();
+    var list = visibleStops(day).filter(function (stop) { return !stop.choiceGated; });
+    var current = null;
+    list.forEach(function (stop) {
+      var t = clockMinutes(stop.time);
+      if (t != null && t <= mins) current = stop;
+    });
+    return '<p class="small today-now"><strong>Now ' + hhmm + '</strong>'
+      + (current ? ' · by the clock, around <strong>' + escapeHtml(current.title) + '</strong>' : ' · before today’s first stop')
+      + '</p>';
+  }
+
+  // Opt-in: on tap, use the device GPS to find the closest of today's mapped
+  // stops and offer navigation to it. The location is used only in-page for the
+  // distance math and is never stored or transmitted.
+  function findNearestStop(day) {
+    var status = document.getElementById('nearestStopStatus');
+    if (!navigator.geolocation) {
+      if (status) status.textContent = 'Location is not available on this device.';
+      return;
+    }
+    if (status) status.textContent = 'Getting your location…';
+    navigator.geolocation.getCurrentPosition(function (position) {
+      var here = [position.coords.latitude, position.coords.longitude];
+      var candidates = visibleStops(day).filter(function (stop) { return stop.coords && !stop.choiceGated; });
+      if (!candidates.length) {
+        if (status) status.textContent = 'No mapped stops today to compare against.';
+        return;
+      }
+      var best = null, bestKm = Infinity;
+      candidates.forEach(function (stop) {
+        var km = tripDistanceKm(here, stop.coords);
+        if (km < bestKm) { bestKm = km; best = stop; }
+      });
+      var distance = bestKm < 1 ? Math.round(bestKm * 1000) + ' m' : bestKm.toFixed(bestKm < 10 ? 1 : 0) + ' km';
+      if (status) {
+        status.innerHTML = 'Nearest stop: <strong>' + escapeHtml(best.title) + '</strong> · about '
+          + escapeHtml(distance) + ' away · ' + escapeHtml(best.time) + ' '
+          + externalLink(routeUrl([best]), 'Navigate', 'button subtle');
+      }
+      setStatus('Nearest stop: ' + best.title + ', about ' + distance + ' away.');
+    }, function (error) {
+      if (status) {
+        status.textContent = error && error.code === 1
+          ? 'Location permission was declined. Pick a stop from the plan below instead.'
+          : 'Could not get your location. Check that GPS/location is on and try again.';
+      }
+    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+  }
+
   function renderLive() {
     var section = document.getElementById('live');
     var day = dayById(tripState.activeDate);
@@ -4070,7 +4158,10 @@
       '<article class="next-stop"><p class="route-label">', escapeHtml(modeName), ' · <span class="risk-chip ', riskClass(day.risk), '">', escapeHtml(day.risk), ' risk</span></p>',
       next ? '<h3>' + escapeHtml(next.title) + '</h3><p class="muted next-time">' + escapeHtml(next.time) + (next.zone ? ' ' + escapeHtml(next.zone) : '') + ' · ' + escapeHtml(next.city) + '</p>' : '<h3>Day complete</h3><p class="muted">All active stops are complete.</p>',
       '<p class="small"><strong>Hotel arrival target:</strong> ', escapeHtml(tonightTarget), '</p>',
+      renderTodayNowLine(day),
       '<div class="action-bar">', next ? externalLink(nextRoute, 'Navigate', 'button') : '', dayRouteLinks(day, 'button secondary'), '</div>',
+      '<div class="today-action-row"><button type="button" class="button subtle" id="nearestStopBtn">Find nearest stop</button></div>',
+      '<p id="nearestStopStatus" class="small muted" role="status" aria-live="polite"></p>',
       next ? '<div class="today-action-row"><button type="button" class="button primary" data-live-stop-action="done">Done</button>' + (next.priority !== 'required' ? '<button type="button" class="button subtle" data-live-stop-action="skip">Skip this optional stop</button>' : '') + '</div>' : '',
       '<div class="trip-progress"><strong>', completed, '/', stops.length, ' active stops complete</strong><div class="progress-meter" aria-label="' + completed + ' of ' + stops.length + ' active stops complete"><span style="width:' + progress + '%"></span></div></div>',
       next ? '<details class="next-details"><summary>What to know</summary><p>' + escapeHtml(next.notes) + '</p></details>' : '',
@@ -4108,6 +4199,8 @@
       var nextModeSelect = document.getElementById('liveMode');
       if (nextModeSelect) nextModeSelect.focus();
     });
+    var nearestButton = document.getElementById('nearestStopBtn');
+    if (nearestButton) nearestButton.addEventListener('click', function () { findNearestStop(day); });
     section.querySelectorAll('[data-live-stop-action]').forEach(function (button) {
       button.addEventListener('click', function () {
         if (!next) return;
@@ -4618,7 +4711,11 @@
     window.print();
   }
 
+  // Must match the cache names in sw.js so the pre-fetched tiles/photos are the
+  // same ones the service worker serves offline.
   var PHOTO_CACHE = 'pei-foodie-road-trip-photos-v1';
+  var TILE_CACHE = 'pei-foodie-road-trip-tiles-v1';
+  var TILE_TEMPLATE = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
   function allPhotoUrls() {
     return unique(foodSuggestionList().concat(attractionSuggestionList()).map(function (item) {
@@ -4630,33 +4727,101 @@
     return 'caches' in window && location.protocol !== 'file:';
   }
 
-  function cachePhotosForOffline() {
-    var urls = allPhotoUrls();
-    var status = document.getElementById('photoCacheStatus');
-    if (!urls.length) { if (status) status.textContent = 'No photo URLs found.'; return; }
-    if (status) status.textContent = 'Caching 0 / ' + urls.length + ' photos…';
-    var done = 0, failed = 0;
-    caches.open(PHOTO_CACHE).then(function (cache) {
-      return Promise.all(urls.map(function (url) {
-        var request = new Request(url, { mode: 'no-cors' });
-        return fetch(request).then(function (response) {
-          return cache.put(request, response);
-        }).then(function () { done += 1; }).catch(function () { failed += 1; }).then(function () {
-          if (status) status.textContent = 'Caching ' + (done + failed) + ' / ' + urls.length + ' photos…';
-        });
-      }));
-    }).then(function () {
-      if (status) status.textContent = 'Photo cache ready: ' + done + ' of ' + urls.length + ' photos stored for offline' + (failed ? ' (' + failed + ' failed — retry on better Wi-Fi)' : '') + '.';
-      setStatus('Offline photo caching finished.');
-    }).catch(function () {
-      if (status) status.textContent = 'Photo caching failed. Retry on a stable connection.';
+  function tileUrl(z, x, y) {
+    return TILE_TEMPLATE.replace('{z}', z).replace('{x}', x).replace('{y}', y);
+  }
+
+  // The tiles to pre-fetch for the whole trip: a light regional overview across
+  // the route corridor (zooms 6-8) plus a detail tile centred on each stop
+  // (zooms 11-13). Deduplicated and capped so this stays a polite, one-time
+  // download rather than a bulk area export.
+  function offlineTileUrls() {
+    var model = buildTripMapModel();
+    var coords = model.locations.map(function (loc) { return loc.coords; }).filter(Boolean);
+    if (!coords.length) return [];
+    var minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+    coords.forEach(function (c) {
+      minLat = Math.min(minLat, c[0]); maxLat = Math.max(maxLat, c[0]);
+      minLng = Math.min(minLng, c[1]); maxLng = Math.max(maxLng, c[1]);
+    });
+    var pad = 0.15;
+    minLat -= pad; maxLat += pad; minLng -= pad; maxLng += pad;
+    var seen = {};
+    var urls = [];
+    var CAP = 900;
+    function add(z, x, y) {
+      var key = z + '/' + x + '/' + y;
+      if (seen[key] || urls.length >= CAP) return;
+      seen[key] = true;
+      urls.push(tileUrl(z, x, y));
+    }
+    [6, 7, 8].forEach(function (z) {
+      var x0 = lonToTileX(minLng, z), x1 = lonToTileX(maxLng, z);
+      var y0 = latToTileY(maxLat, z), y1 = latToTileY(minLat, z);
+      for (var x = Math.min(x0, x1); x <= Math.max(x0, x1); x += 1) {
+        for (var y = Math.min(y0, y1); y <= Math.max(y0, y1); y += 1) add(z, x, y);
+      }
+    });
+    coords.forEach(function (c) {
+      [11, 12, 13].forEach(function (z) { add(z, lonToTileX(c[1], z), latToTileY(c[0], z)); });
+    });
+    return urls;
+  }
+
+  // Fetch URLs into a named cache in small parallel batches (polite concurrency),
+  // reporting progress. Opaque cross-origin responses are stored as-is.
+  function fillCache(cacheName, urls, onProgress) {
+    if (!urls.length) return Promise.resolve({ done: 0, failed: 0, total: 0 });
+    return caches.open(cacheName).then(function (cache) {
+      var done = 0, failed = 0, batch = 6;
+      function run(start) {
+        if (start >= urls.length) return Promise.resolve();
+        return Promise.all(urls.slice(start, start + batch).map(function (url) {
+          var request = new Request(url, { mode: 'no-cors' });
+          return fetch(request).then(function (response) { return cache.put(request, response); })
+            .then(function () { done += 1; }).catch(function () { failed += 1; })
+            .then(function () { if (onProgress) onProgress(done + failed, urls.length); });
+        })).then(function () { return run(start + batch); });
+      }
+      return run(0).then(function () { return { done: done, failed: failed, total: urls.length }; });
     });
   }
 
-  function clearPhotoCache() {
-    caches.delete(PHOTO_CACHE).then(function (removed) {
-      var status = document.getElementById('photoCacheStatus');
-      if (status) status.textContent = removed ? 'Offline photo cache cleared.' : 'No offline photo cache to clear.';
+  function saveOfflineAssets() {
+    var status = document.getElementById('offlineAssetsStatus');
+    var button = document.getElementById('saveOfflineAssets');
+    if (!photoCachingSupported()) {
+      if (status) status.textContent = 'Offline saving needs the hosted site (it is unavailable when opened as a local file).';
+      return;
+    }
+    var tiles = offlineTileUrls();
+    var photos = allPhotoUrls();
+    if (button) button.disabled = true;
+    if (status) status.textContent = 'Saving route map… 0 / ' + tiles.length + ' tiles.';
+    fillCache(TILE_CACHE, tiles, function (n, total) {
+      if (status) status.textContent = 'Saving route map… ' + n + ' / ' + total + ' tiles.';
+    }).then(function (tileResult) {
+      if (status) status.textContent = 'Saving photos… 0 / ' + photos.length + '.';
+      return fillCache(PHOTO_CACHE, photos, function (n, total) {
+        if (status) status.textContent = 'Saving photos… ' + n + ' / ' + total + '.';
+      }).then(function (photoResult) {
+        var failed = tileResult.failed + photoResult.failed;
+        if (status) status.textContent = 'Offline pack ready: ' + tileResult.done + ' map tiles and '
+          + photoResult.done + ' photos saved' + (failed ? ' (' + failed + ' failed — retry on better Wi-Fi)' : '') + '.';
+        setStatus('Offline map and photos saved for this trip.');
+      });
+    }).catch(function () {
+      if (status) status.textContent = 'Offline save failed. Retry on a stable connection.';
+    }).then(function () {
+      if (button) button.disabled = false;
+    });
+  }
+
+  function clearOfflineAssets() {
+    var status = document.getElementById('offlineAssetsStatus');
+    Promise.all([caches.delete(TILE_CACHE), caches.delete(PHOTO_CACHE)]).then(function (results) {
+      var removed = results.some(Boolean);
+      if (status) status.textContent = removed ? 'Offline map and photos cleared.' : 'No offline pack to clear.';
     });
   }
 
@@ -4681,7 +4846,8 @@
         return '<article class="hotel-compact"><p class="route-label">' + escapeHtml(fuel.dateLabel || '') + '</p><h3>' + escapeHtml(fuel.stop || 'Fuel decision') + '</h3><p>' + escapeHtml(fuel.action || '') + '</p><div class="action-bar">' + externalLink(fuel.mapUrl, 'Directions', 'button primary') + externalLink(fuel.sourceUrl, 'Station', 'button subtle') + '</div></article>';
       }).join(''), '</div></details>',
       '<details class="safety-details"><summary>Roads, weather, bridge & tides</summary><div class="reference-links">', roadLinks.concat(weatherLinks).map(function (link) { return '<a class="road-link" href="' + escapeHtml(safeExternalUrl(link.url)) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">' + escapeHtml(link.title) + '<span>' + escapeHtml(link.detail) + '</span></a>'; }).join(''), '</div><p class="small" style="padding:0 13px 13px"><strong>Stop rule:</strong> Severe-weather warnings cancel coastal walks; bridge advisories pause crossings; Hopewell staff control ocean-floor access.</p></details>',
-      '<article class="card"><h3>Save for offline use</h3><p class="small">Download the page before leaving Wi-Fi. Maps and live checks still need a connection.</p><div class="action-bar"><button type="button" class="button primary" id="downloadHtmlPack">Save offline copy</button><button type="button" class="button subtle" id="downloadTextPack">Emergency text</button><button type="button" class="button subtle" id="printTrip">Print all stops</button></div></article>',
+      '<article class="card"><h3>Save for offline use</h3><p class="small">Download the page before leaving Wi-Fi. Live checks still need a connection.</p><div class="action-bar"><button type="button" class="button primary" id="downloadHtmlPack">Save offline copy</button><button type="button" class="button subtle" id="downloadTextPack">Emergency text</button><button type="button" class="button subtle" id="printTrip">Print all stops</button></div></article>',
+      '<article class="card"><h3>Offline route map &amp; photos</h3><p class="small">Save the map tiles along the whole route plus the food and attraction photos so they show with no signal. Do this on Wi-Fi before you leave; it downloads once and updates as you browse the map online.</p><div class="action-bar"><button type="button" class="button primary" id="saveOfflineAssets">Save map + photos</button><button type="button" class="button subtle" id="clearOfflineAssets">Clear saved</button></div><p id="offlineAssetsStatus" class="small muted" role="status" aria-live="polite"></p></article>',
       '<details class="safety-details"><summary>Advanced · sync between phones</summary><div style="padding:0 13px 13px"><p class="small">Sync codes include private notes. Share only between your own phones.</p><div class="action-bar"><button type="button" class="button primary" id="copySyncCode">Copy sync code</button></div><label class="field-label" for="syncCodeInput">Paste code<textarea id="syncCodeInput" rows="3" placeholder="PEITRIP2:…"></textarea></label><div class="action-bar"><button type="button" class="button subtle" id="applySyncCode">Apply code</button></div><div id="syncStatus" class="status-line" role="status" aria-live="polite"></div></div></details>',
       '<p class="compact-privacy">Private plan · progress is saved on this device.</p>'
     ].join('');
@@ -4695,6 +4861,10 @@
         renderOffline();
       });
     });
+    var saveAssetsButton = document.getElementById('saveOfflineAssets');
+    if (saveAssetsButton) saveAssetsButton.addEventListener('click', saveOfflineAssets);
+    var clearAssetsButton = document.getElementById('clearOfflineAssets');
+    if (clearAssetsButton) clearAssetsButton.addEventListener('click', clearOfflineAssets);
     document.getElementById('printTrip').addEventListener('click', printAllStops);
     document.getElementById('downloadTextPack').addEventListener('click', function () {
       downloadText('pei-foodie-road-trip-offline-essentials.txt', buildOfflineTextPack());
