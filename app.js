@@ -2395,7 +2395,8 @@
     if (activeTab && activeTab.scrollIntoView) activeTab.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'auto' });
     // Build (or resize) the consolidated route map only when the Plan section is
     // actually shown, so its tiles stay off the initial page load.
-    if (sectionId === 'daybyday') ensureTripMap();
+    if (sectionId === 'daybyday') ensureMap(tripMap);
+    if (sectionId === 'planb') ensureMap(planBMap);
     if (moveFocus) {
       var target = document.getElementById(sectionId);
       var heading = target && target.querySelector('.section-heading, h2');
@@ -2532,14 +2533,26 @@
     return stop.priority === 'optional' || stop.priority === 'conditional' || Boolean(stop.choiceGated);
   }
 
-  var tripMap = {
-    map: null, tiles: null, routeLayer: null, markerLayer: null,
-    built: false, unavailable: false, model: null, markers: [],
-    filters: { day: 'all', type: 'all', optional: true, ideas: true, route: true }
-  };
+  // The consolidated route map is an instance rather than a singleton so it can
+  // appear in more than one place: the Plan tab and the Plan B tab each get their
+  // own independent Leaflet map, both driven from the one shared model built
+  // below. Each state carries the element ids of its own DOM host and controls.
+  var TRIP_MAP_IDS = { host: 'tripMap', fallback: 'tripMapFallback', status: 'tripMapStatus', day: 'tripMapDay', type: 'tripMapType', optional: 'tripMapOptional', ideas: 'tripMapIdeas', route: 'tripMapRoute', fit: 'tripMapFit', reset: 'tripMapReset' };
+  var PLANB_MAP_IDS = { host: 'planbMap', fallback: 'planbMapFallback', status: 'planbMapStatus', day: 'planbMapDay', type: 'planbMapType', optional: 'planbMapOptional', ideas: 'planbMapIdeas', route: 'planbMapRoute', fit: 'planbMapFit', reset: 'planbMapReset' };
+
+  function createMapState(ids) {
+    return {
+      map: null, tiles: null, routeLayer: null, markerLayer: null,
+      built: false, unavailable: false, markers: [], ids: ids,
+      filters: { day: 'all', type: 'all', optional: true, ideas: true, route: true }
+    };
+  }
+  var tripMap = createMapState(TRIP_MAP_IDS);
+  var planBMap = createMapState(PLANB_MAP_IDS);
+  var sharedMapModel = null;
 
   function buildTripMapModel() {
-    if (tripMap.model) return tripMap.model;
+    if (sharedMapModel) return sharedMapModel;
     var dayMeta = {};
     operationalPlan.days.forEach(function (day, index) {
       dayMeta[day.id] = { index: index + 1, label: day.label, routeFocus: day.routeFocus };
@@ -2649,8 +2662,8 @@
       loc.stops.push(info);
       loc.days[dayId] = true;
     });
-    tripMap.model = { ordered: ordered, locations: locations, missing: missing, ideaCount: ideaCount };
-    return tripMap.model;
+    sharedMapModel = { ordered: ordered, locations: locations, missing: missing, ideaCount: ideaCount };
+    return sharedMapModel;
   }
 
   function tripMarkerIcon(loc) {
@@ -2707,7 +2720,8 @@
   // segment. Optionally clipped to a single day.
   function tripRouteLatLngs(filterDay) {
     var pts = [];
-    tripMap.model.ordered.forEach(function (info) {
+    if (!sharedMapModel) return pts;
+    sharedMapModel.ordered.forEach(function (info) {
       if (!info.routeEligible) return;
       if (filterDay !== 'all' && info.dayId !== filterDay) return;
       var last = pts[pts.length - 1];
@@ -2717,44 +2731,44 @@
     return pts;
   }
 
-  function showTripMapFallback(message) {
-    var host = document.getElementById('tripMap');
-    var fallback = document.getElementById('tripMapFallback');
+  function showMapFallback(state, message) {
+    var host = document.getElementById(state.ids.host);
+    var fallback = document.getElementById(state.ids.fallback);
     if (host) host.setAttribute('hidden', 'hidden');
     if (fallback) { fallback.textContent = message; fallback.removeAttribute('hidden'); }
   }
 
-  function updateTripMapStatus(shownStops, shownIdeas) {
-    var status = document.getElementById('tripMapStatus');
+  function updateMapStatus(state, shownStops, shownIdeas) {
+    var status = document.getElementById(state.ids.status);
     if (!status) return;
-    var missing = tripMap.model ? tripMap.model.missing.length : 0;
+    var missing = sharedMapModel ? sharedMapModel.missing.length : 0;
     var text = 'Showing ' + shownStops + ' scheduled stop' + (shownStops === 1 ? '' : 's') +
       ' and ' + shownIdeas + ' optional idea' + (shownIdeas === 1 ? '' : 's') + '.';
     if (missing) text += ' ' + missing + ' stop' + (missing === 1 ? '' : 's') + ' without coordinates are listed in the day plans below.';
     status.textContent = text;
   }
 
-  function fitTripMap(coords) {
-    if (!tripMap.map || !coords || !coords.length) return;
+  function fitMap(state, coords) {
+    if (!state.map || !coords || !coords.length) return;
     try {
-      tripMap.map.fitBounds(L.latLngBounds(coords), { padding: [26, 26], maxZoom: 12 });
+      state.map.fitBounds(L.latLngBounds(coords), { padding: [26, 26], maxZoom: 12 });
     } catch (error) { /* bounds can be empty while a filter matches nothing */ }
   }
 
-  function refreshTripMap(fit) {
-    if (!tripMap.built) return;
-    var filters = tripMap.filters;
+  function refreshMap(state, fit) {
+    if (!state.built) return;
+    var filters = state.filters;
     var fitCoords = [];
     var shownStops = 0;
     var shownIdeas = 0;
-    tripMap.markerLayer.clearLayers();
-    tripMap.markers.forEach(function (entry) {
+    state.markerLayer.clearLayers();
+    state.markers.forEach(function (entry) {
       var loc = entry.loc;
       var dayOk = filters.day === 'all' || loc.days[filters.day];
       var typeOk = filters.type === 'all' || loc.stops.some(function (s) { return s.category === filters.type; });
       var optionalOk = loc.isIdea ? filters.ideas : (filters.optional || !loc.allOptional);
       if (dayOk && typeOk && optionalOk) {
-        tripMap.markerLayer.addLayer(entry.marker);
+        state.markerLayer.addLayer(entry.marker);
         fitCoords.push(loc.coords);
         if (loc.isIdea) {
           shownIdeas += 1;
@@ -2768,20 +2782,20 @@
         }
       }
     });
-    tripMap.routeLayer.clearLayers();
+    state.routeLayer.clearLayers();
     if (filters.route) {
       var pts = tripRouteLatLngs(filters.day);
       if (pts.length > 1) {
-        L.polyline(pts, { color: '#c1442c', weight: 3, opacity: 0.78, lineJoin: 'round' }).addTo(tripMap.routeLayer);
+        L.polyline(pts, { color: '#c1442c', weight: 3, opacity: 0.78, lineJoin: 'round' }).addTo(state.routeLayer);
         pts.forEach(function (p) { fitCoords.push(p); });
       }
     }
-    updateTripMapStatus(shownStops, shownIdeas);
-    if (fit) fitTripMap(fitCoords);
+    updateMapStatus(state, shownStops, shownIdeas);
+    if (fit) fitMap(state, fitCoords);
   }
 
-  function buildTripMarkers() {
-    tripMap.markers = tripMap.model.locations.map(function (loc) {
+  function buildMapMarkers(state) {
+    state.markers = sharedMapModel.locations.map(function (loc) {
       var marker = L.marker(loc.coords, {
         icon: tripMarkerIcon(loc), riseOnHover: true,
         zIndexOffset: loc.allOptional ? 0 : 250, keyboard: true,
@@ -2795,27 +2809,28 @@
     });
   }
 
-  // Built lazily the first time the Plan tab is opened: a Leaflet map needs a
-  // sized, visible container, and this keeps map tiles off the initial page load.
-  function ensureTripMap() {
-    if (tripMap.unavailable) return;
-    if (tripMap.built) {
-      if (tripMap.map) { try { tripMap.map.invalidateSize(); } catch (error) {} }
+  // Built lazily the first time its tab is opened: a Leaflet map needs a sized,
+  // visible container, and this keeps map tiles off the initial page load. Both
+  // the Plan and Plan B maps share this one builder via their state object.
+  function ensureMap(state) {
+    if (state.unavailable) return;
+    if (state.built) {
+      if (state.map) { try { state.map.invalidateSize(); } catch (error) {} }
       return;
     }
-    var host = document.getElementById('tripMap');
+    var host = document.getElementById(state.ids.host);
     if (!host) return;
     var model = buildTripMapModel();
     if (typeof L === 'undefined' || !model.locations.length) {
-      tripMap.unavailable = true;
-      showTripMapFallback(typeof L === 'undefined'
+      state.unavailable = true;
+      showMapFallback(state, typeof L === 'undefined'
         ? 'The interactive map could not load (it needs a connection the first time). Every stop is still listed in the day plans below.'
         : 'No mapped stops are available yet. The day plans below list every stop.');
       return;
     }
     try {
       var map = L.map(host, { scrollWheelZoom: false, zoomControl: true, attributionControl: true });
-      tripMap.map = map;
+      state.map = map;
       // Google Maps road tiles (per user request). This uses Google's public
       // map-tile endpoint directly rather than the official, key-gated Maps API,
       // so no API key is required; it is suitable for a low-traffic personal
@@ -2823,26 +2838,26 @@
       // sanctioned path later, load the Google Maps JS/Tiles API with a
       // domain-restricted key instead. The tileerror handler below keeps any
       // blocked/offline tiles from surfacing as errors, exactly as before.
-      tripMap.tiles = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      state.tiles = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
         maxZoom: 20,
         subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
         attribution: '&copy; <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">Google Maps</a>'
       });
       // Keep offline/blocked tile gaps from surfacing as errors.
-      tripMap.tiles.on('tileerror', function () {});
-      tripMap.tiles.addTo(map);
-      tripMap.routeLayer = L.layerGroup().addTo(map);
-      tripMap.markerLayer = L.layerGroup().addTo(map);
+      state.tiles.on('tileerror', function () {});
+      state.tiles.addTo(map);
+      state.routeLayer = L.layerGroup().addTo(map);
+      state.markerLayer = L.layerGroup().addTo(map);
       // Only grab wheel-zoom once the map has focus, so the page still scrolls
       // past it on desktop and mobile.
       map.on('focus', function () { map.scrollWheelZoom.enable(); });
       map.on('blur', function () { map.scrollWheelZoom.disable(); });
-      buildTripMarkers();
-      tripMap.built = true;
-      refreshTripMap(true);
+      buildMapMarkers(state);
+      state.built = true;
+      refreshMap(state, true);
     } catch (error) {
-      tripMap.unavailable = true;
-      showTripMapFallback('The route map could not be drawn in this browser. The day plans below list every stop.');
+      state.unavailable = true;
+      showMapFallback(state, 'The route map could not be drawn in this browser. The day plans below list every stop.');
     }
   }
 
@@ -2856,7 +2871,8 @@
     return items.join('');
   }
 
-  function tripMapMarkup() {
+  function mapMarkup(state, opts) {
+    var ids = state.ids;
     var dayOptions = operationalPlan.days.map(function (day, index) {
       return '<option value="' + escapeHtml(day.id) + '">Day ' + (index + 1) + ' · ' + escapeHtml(day.label) + '</option>';
     }).join('');
@@ -2864,49 +2880,86 @@
       return '<option value="' + key + '">' + escapeHtml(MAP_CATEGORIES[key].label) + '</option>';
     }).join('');
     return [
-      '<div class="card full trip-map-card" role="group" aria-label="Complete trip route map">',
-      '<div class="trip-map-head"><h3>Complete route · Vaughan → PEI → Vaughan</h3>',
-      '<p class="small muted">One interactive map of every stop across all 8 days, in driving order. Numbered pins are scheduled stops (hollow = optional); ★ stars are extra route-side ideas you can swap in any day. Tap any pin for the day, timing, address, go/no-go rule and directions.</p></div>',
+      '<div class="card full trip-map-card" role="group" aria-label="', escapeHtml(opts.cardAria), '">',
+      '<div class="trip-map-head"><h3>', escapeHtml(opts.title), '</h3>',
+      '<p class="small muted">', opts.intro, '</p></div>',
       '<div class="trip-map-controls">',
-      '<label class="trip-map-field">Day<select id="tripMapDay"><option value="all">Show entire trip</option>', dayOptions, '</select></label>',
-      '<label class="trip-map-field">Stop type<select id="tripMapType"><option value="all">All stop types</option>', typeOptions, '</select></label>',
-      '<label class="trip-map-check"><input type="checkbox" id="tripMapOptional" checked> Optional stops</label>',
-      '<label class="trip-map-check"><input type="checkbox" id="tripMapIdeas" checked> Route-side ideas</label>',
-      '<label class="trip-map-check"><input type="checkbox" id="tripMapRoute" checked> Route line</label>',
-      '<button type="button" class="button subtle" id="tripMapFit">Fit route to screen</button>',
-      '<button type="button" class="button subtle" id="tripMapReset">Show entire trip</button>',
+      '<label class="trip-map-field">Day<select id="' + ids.day + '"><option value="all">Show entire trip</option>', dayOptions, '</select></label>',
+      '<label class="trip-map-field">Stop type<select id="' + ids.type + '"><option value="all">All stop types</option>', typeOptions, '</select></label>',
+      '<label class="trip-map-check"><input type="checkbox" id="' + ids.optional + '" checked> Optional stops</label>',
+      '<label class="trip-map-check"><input type="checkbox" id="' + ids.ideas + '" checked> Route-side ideas</label>',
+      '<label class="trip-map-check"><input type="checkbox" id="' + ids.route + '" checked> Route line</label>',
+      '<button type="button" class="button subtle" id="' + ids.fit + '">Fit route to screen</button>',
+      '<button type="button" class="button subtle" id="' + ids.reset + '">Show entire trip</button>',
       '</div>',
-      '<div id="tripMap" class="trip-map" role="application" aria-label="Interactive route map of the trip"></div>',
-      '<p id="tripMapFallback" class="trip-map-fallback" hidden></p>',
+      '<div id="' + ids.host + '" class="trip-map" role="application" aria-label="', escapeHtml(opts.mapAria), '"></div>',
+      '<p id="' + ids.fallback + '" class="trip-map-fallback" hidden></p>',
       '<div class="trip-map-foot"><div class="trip-legend" aria-label="Map legend">', tripMapLegendHtml(), '</div>',
-      '<p id="tripMapStatus" class="small muted" role="status" aria-live="polite"></p></div>',
+      '<p id="' + ids.status + '" class="small muted" role="status" aria-live="polite"></p></div>',
       '</div>'
     ].join('');
   }
 
-  function wireTripMapControls() {
-    var dayField = document.getElementById('tripMapDay');
-    var typeField = document.getElementById('tripMapType');
-    var optionalField = document.getElementById('tripMapOptional');
-    var ideasField = document.getElementById('tripMapIdeas');
-    var routeField = document.getElementById('tripMapRoute');
-    var fitButton = document.getElementById('tripMapFit');
-    var resetButton = document.getElementById('tripMapReset');
-    if (dayField) dayField.addEventListener('change', function () { tripMap.filters.day = dayField.value; refreshTripMap(true); });
-    if (typeField) typeField.addEventListener('change', function () { tripMap.filters.type = typeField.value; refreshTripMap(true); });
-    if (optionalField) optionalField.addEventListener('change', function () { tripMap.filters.optional = optionalField.checked; refreshTripMap(false); });
-    if (ideasField) ideasField.addEventListener('change', function () { tripMap.filters.ideas = ideasField.checked; refreshTripMap(false); });
-    if (routeField) routeField.addEventListener('change', function () { tripMap.filters.route = routeField.checked; refreshTripMap(false); });
-    if (fitButton) fitButton.addEventListener('click', function () { refreshTripMap(true); });
+  function wireMapControls(state) {
+    var ids = state.ids;
+    var dayField = document.getElementById(ids.day);
+    var typeField = document.getElementById(ids.type);
+    var optionalField = document.getElementById(ids.optional);
+    var ideasField = document.getElementById(ids.ideas);
+    var routeField = document.getElementById(ids.route);
+    var fitButton = document.getElementById(ids.fit);
+    var resetButton = document.getElementById(ids.reset);
+    if (dayField) dayField.addEventListener('change', function () {
+      state.filters.day = dayField.value;
+      refreshMap(state, true);
+      // The Plan-tab route map shares its Day filter with the itinerary dropdown
+      // just below it, so changing one changes both (skip the "entire trip" value,
+      // which the itinerary has no equivalent for).
+      if (state === tripMap && dayField.value !== 'all') syncItineraryDayFromMap(dayField.value);
+    });
+    if (typeField) typeField.addEventListener('change', function () { state.filters.type = typeField.value; refreshMap(state, true); });
+    if (optionalField) optionalField.addEventListener('change', function () { state.filters.optional = optionalField.checked; refreshMap(state, false); });
+    if (ideasField) ideasField.addEventListener('change', function () { state.filters.ideas = ideasField.checked; refreshMap(state, false); });
+    if (routeField) routeField.addEventListener('change', function () { state.filters.route = routeField.checked; refreshMap(state, false); });
+    if (fitButton) fitButton.addEventListener('click', function () { refreshMap(state, true); });
     if (resetButton) resetButton.addEventListener('click', function () {
-      tripMap.filters = { day: 'all', type: 'all', optional: true, ideas: true, route: true };
+      state.filters = { day: 'all', type: 'all', optional: true, ideas: true, route: true };
       if (dayField) dayField.value = 'all';
       if (typeField) typeField.value = 'all';
       if (optionalField) optionalField.checked = true;
       if (ideasField) ideasField.checked = true;
       if (routeField) routeField.checked = true;
-      refreshTripMap(true);
+      refreshMap(state, true);
     });
+  }
+
+  // Select a day in the itinerary: update state, persist and re-render. Shared by
+  // the itinerary Day dropdown and by the route map's Day filter, which sync.
+  function applyItineraryDay(dayId) {
+    uiFilters.dayId = dayId;
+    tripState.activeDate = dayId;
+    persist();
+    renderDayContent();
+    renderLive();
+  }
+
+  // Map Day filter changed -> move the itinerary dropdown to match. Setting
+  // .value programmatically does not fire a 'change' event, so no feedback loop.
+  function syncItineraryDayFromMap(dayId) {
+    var select = document.getElementById('daySelectV2');
+    if (!select || select.value === dayId) return;
+    select.value = dayId;
+    applyItineraryDay(dayId);
+  }
+
+  // Itinerary dropdown changed -> move the Plan-tab route map's Day filter to
+  // match and refocus the map on that day.
+  function syncMapDayFromItinerary(dayId) {
+    var dayField = document.getElementById(tripMap.ids.day);
+    if (!dayField || tripMap.filters.day === dayId) return;
+    dayField.value = dayId;
+    tripMap.filters.day = dayId;
+    refreshMap(tripMap, true);
   }
 
   function mountDaySection() {
@@ -2918,7 +2971,12 @@
       '<h2 id="daybyday-heading" class="section-heading">Trip plan</h2>',
       '<p class="section-intro">One clear timeline for each day.</p>',
       '<p class="section-cta"><button type="button" class="button" id="planBEntry">TripAdvisor Plan B — rated alternates &amp; upgrades ↗</button></p>',
-      tripMapMarkup(),
+      mapMarkup(tripMap, {
+        title: 'Complete route · Vaughan → PEI → Vaughan',
+        intro: 'One interactive map of every stop across all 8 days, in driving order. Numbered pins are scheduled stops (hollow = optional); ★ stars are extra route-side ideas you can swap in any day. Tap any pin for the day, timing, address, go/no-go rule and directions.',
+        cardAria: 'Complete trip route map',
+        mapAria: 'Interactive route map of the trip'
+      }),
       '<div class="control-grid primary-controls" aria-label="Day itinerary settings">',
       '<label for="daySelectV2">Day<select id="daySelectV2"></select></label>',
       '<label for="dayMode">Schedule<select id="dayMode"><option value="preview">Planning</option><option value="on-time">On schedule</option><option value="ahead30">30 min ahead</option><option value="ahead60">60+ min ahead</option><option value="late30">30+ min late</option><option value="late60">60+ min late</option></select></label>',
@@ -2930,7 +2988,7 @@
       '<div id="dayResultStatus" class="status-line" role="status" aria-live="polite"></div>',
       '<div id="dayResult"></div>'
     ].join('');
-    wireTripMapControls();
+    wireMapControls(tripMap);
     document.getElementById('planBEntry').addEventListener('click', function () { activateSection('planb', true); });
     var select = document.getElementById('daySelectV2');
     select.innerHTML = operationalPlan.days.map(function (day) {
@@ -2938,11 +2996,8 @@
     }).join('');
     select.value = uiFilters.dayId;
     select.addEventListener('change', function () {
-      uiFilters.dayId = select.value;
-      tripState.activeDate = select.value;
-      persist();
-      renderDayContent();
-      renderLive();
+      applyItineraryDay(select.value);
+      syncMapDayFromItinerary(select.value);
     });
     document.getElementById('dayMode').addEventListener('change', function (event) {
       tripState.modes[uiFilters.dayId] = event.target.value;
@@ -3400,6 +3455,12 @@
     section.innerHTML = [
       '<h2 id="planb-heading" class="section-heading">TripAdvisor Plan B — rated alternates &amp; upgrades</h2>',
       '<p class="section-intro">Top-rated and strategically useful alternatives along the same booked-hotel route, built from a TripAdvisor snapshot taken 2026-07-17. Hotels stay fixed and safe; use at most one or two Plan B upgrades per day.</p>',
+      mapMarkup(planBMap, {
+        title: 'Plan B on the map · switch stops as you go',
+        intro: 'The same interactive route map, right here on the Plan B page so you can switch as you want. Numbered pins are the scheduled Plan A stops (hollow = optional); ★ stars are the TripAdvisor Plan B and route-side alternates you can swap in. Tap any pin for ratings, timing, parking and directions.',
+        cardAria: 'Plan B route map',
+        mapAria: 'Interactive Plan B route map'
+      }),
       '<div class="card full ok"><h2>How to use Plan B</h2><ul class="offline-list">',
       planBData.rules.map(function (rule) { return '<li><strong>' + escapeHtml(rule.rule) + ':</strong> ' + escapeHtml(rule.note) + '</li>'; }).join(''),
       '</ul></div>',
@@ -3426,6 +3487,7 @@
       planBData.sourceNotes.map(function (note) { return '<li><strong>' + escapeHtml(note.topic) + ':</strong> ' + escapeHtml(note.note) + '</li>'; }).join(''),
       '</ul></div>'
     ].join('');
+    wireMapControls(planBMap);
     document.getElementById('planbDay').addEventListener('change', function (event) { uiFilters.planbDay = event.target.value; renderPlanBContent(); });
     document.getElementById('planbType').addEventListener('change', function (event) { uiFilters.planbType = event.target.value; renderPlanBContent(); });
     document.getElementById('planbSearch').addEventListener('input', function (event) { uiFilters.planbSearch = event.target.value; renderPlanBContent(); });
