@@ -3031,14 +3031,21 @@
     });
   }
 
+  // The Plan tab and the Today tab show the same plan from two angles, so
+  // anything that changes plan state has to refresh both. Calling them as a pair
+  // by hand was the source of "the other tab still shows the old value" bugs.
+  function renderPlanViews() {
+    renderDayContent();
+    renderLive();
+  }
+
   // Select a day in the itinerary: update state, persist and re-render. Shared by
   // the itinerary Day dropdown and by the route map's Day filter, which sync.
   function applyItineraryDay(dayId) {
     uiFilters.dayId = dayId;
     tripState.activeDate = dayId;
     persist();
-    renderDayContent();
-    renderLive();
+    renderPlanViews();
   }
 
   // A route map's Day filter changed -> move the day dropdown on that same page
@@ -3124,8 +3131,7 @@
     document.getElementById('dayMode').addEventListener('change', function (event) {
       tripState.modes[uiFilters.dayId] = event.target.value;
       persist();
-      renderDayContent();
-      renderLive();
+      renderPlanViews();
     });
     document.getElementById('typeFilterV2').addEventListener('change', function (event) {
       uiFilters.dayType = event.target.value;
@@ -3142,14 +3148,12 @@
       if (button.dataset.stopAction === 'toggle') {
         tripState.stops[stopId] = stopStatus(stopId) === 'done' ? 'pending' : 'done';
         persist();
-        renderDayContent();
-        renderLive();
+        renderPlanViews();
       }
       if (button.dataset.stopAction === 'skip') {
         tripState.stops[stopId] = stopStatus(stopId) === 'skipped' ? 'pending' : 'skipped';
         persist();
-        renderDayContent();
-        renderLive();
+        renderPlanViews();
       }
       if (button.dataset.stopAction === 'copy') {
         copyText(button.dataset.address || '').then(function () { setStatus('Address copied to the clipboard.'); });
@@ -4302,16 +4306,14 @@
       tripState.activeDate = event.target.value;
       uiFilters.dayId = event.target.value;
       persist();
-      renderDayContent();
-      renderLive();
+      renderPlanViews();
       var nextDaySelect = document.getElementById('liveDay');
       if (nextDaySelect) nextDaySelect.focus();
     });
     document.getElementById('liveMode').addEventListener('change', function (event) {
       tripState.modes[day.id] = event.target.value;
       persist();
-      renderDayContent();
-      renderLive();
+      renderPlanViews();
       var nextModeSelect = document.getElementById('liveMode');
       if (nextModeSelect) nextModeSelect.focus();
     });
@@ -4324,8 +4326,7 @@
         if (action === 'skip' && next.priority === 'required') return;
         tripState.stops[next.id] = action === 'skip' ? 'skipped' : 'done';
         persist();
-        renderDayContent();
-        renderLive();
+        renderPlanViews();
       });
     });
     section.querySelectorAll('.day-map [data-stop-action]').forEach(function (button) {
@@ -4335,13 +4336,11 @@
         if (action === 'toggle') {
           tripState.stops[stopId] = stopStatus(stopId) === 'done' ? 'pending' : 'done';
           persist();
-          renderDayContent();
-          renderLive();
+          renderPlanViews();
         } else if (action === 'skip') {
           tripState.stops[stopId] = stopStatus(stopId) === 'skipped' ? 'pending' : 'skipped';
           persist();
-          renderDayContent();
-          renderLive();
+          renderPlanViews();
         } else if (action === 'copy') {
           copyText(button.dataset.address || '').then(function () { setStatus('Address copied to the clipboard.'); });
         }
@@ -4394,8 +4393,7 @@
         tripState.activeDate = today;
         uiFilters.dayId = today;
         persist();
-        renderDayContent();
-        renderLive();
+        renderPlanViews();
       });
     }
   }
@@ -4656,8 +4654,7 @@
     persistPicks();
     persistPacking();
     persistExpenses();
-    renderDayContent();
-    renderLive();
+    renderPlanViews();
     renderChecklist();
     if (secondaryMounted.food) renderFoodContent();
     if (secondaryMounted.attractions) renderAttractionsContent();
@@ -4718,8 +4715,7 @@
     persistPicks();
     persistPacking();
     persistExpenses();
-    renderDayContent();
-    renderLive();
+    renderPlanViews();
     renderChecklist();
     if (secondaryMounted.food) renderFoodContent();
     if (secondaryMounted.attractions) renderAttractionsContent();
