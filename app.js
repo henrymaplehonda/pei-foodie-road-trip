@@ -22,9 +22,19 @@
       .trim();
   }
 
+  // A switch rather than a lookup object: escapeHtml runs over every field of
+  // every card on every render and the callback fires once per escaped
+  // character, so this avoids allocating a map each time. It also keeps the
+  // helper self-contained, which is how test/unit.js evaluates it.
   function escapeHtml(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (match) {
-      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[match];
+      switch (match) {
+        case '&': return '&amp;';
+        case '<': return '&lt;';
+        case '>': return '&gt;';
+        case '"': return '&quot;';
+        default: return '&#39;';
+      }
     });
   }
 
@@ -258,141 +268,134 @@
   STOP_RATINGS['d7-hartland'] = STOP_RATINGS['d3-hartland'];
   STOP_RATINGS['d6-magnetic'] = STOP_RATINGS['d4-magnetic'];
 
+  // Every stop has the same shape whether it was hand-written, lifted from a row
+  // of the source itinerary, or built from a foodie record. The shape lives here
+  // once, as field -> value used when neither the caller nor the source record
+  // supplies one, so the three builders below differ only in where they read
+  // from — not in which fields they remember to set.
+  var STOP_DEFAULTS = {
+    time: 'Flexible', zone: '', title: 'Trip stop', locationName: '', kind: 'Stop',
+    priority: 'required', skipAt: 0, saves: '', address: '', parkingName: '',
+    parkingAddress: '', city: '', leg: '', timeBudget: '', notes: '', food: '',
+    kidPlan: '', mapUrl: '', sourceUrl: '', reservation: ''
+  };
+
+  // Fields the stop search boxes match on. Joined and normalized once per stop
+  // in buildStop rather than on every keystroke in each filter.
+  var STOP_SEARCH_FIELDS = ['title', 'locationName', 'parkingName', 'parkingAddress',
+    'kind', 'address', 'city', 'notes', 'food', 'kidPlan'];
+
+  // Merge a caller's patch over an optional source record (already mapped onto
+  // stop field names by its builder) into the one stop shape.
+  function buildStop(details, source) {
+    source = source || {};
+    var stop = {};
+    Object.keys(STOP_DEFAULTS).forEach(function (field) {
+      stop[field] = details[field] || source[field] || STOP_DEFAULTS[field];
+    });
+    stop.dayId = details.dayId;
+    stop.id = details.id || slug(details.dayId + '-' + stop.title);
+    stop.locationName = details.locationName || details.title || source.locationName || stop.title;
+    stop.skipAt = Number(details.skipAt || 0);
+    stop.mapUrl = stop.mapUrl || mapSearchUrl(stop.address);
+    stop.parkingEntrance = details.parkingEntrance || null;
+    stop.ticket = details.ticket || null;
+    stop.attractionQuality = details.attractionQuality || attractionQualityForStop(stop.kind, stop.title);
+    stop.conditional = Boolean(details.conditional);
+    stop.choiceGated = Boolean(details.choiceGated);
+    stop.routeEligible = details.routeEligible !== false;
+    stop.coords = details.coords || STOP_COORDS[stop.id] || null;
+    stop.rating = details.rating || STOP_RATINGS[stop.id] || null;
+    stop.searchText = normalize(STOP_SEARCH_FIELDS.map(function (field) { return stop[field]; }).join(' '));
+    return stop;
+  }
+
   function customStop(details) {
-    var stopId = details.id || slug(details.dayId + '-' + details.title);
+    return buildStop(details, null);
+  }
+
+  // The source itinerary rows carry human column headings; translate them onto
+  // stop field names once, here, rather than at every use site.
+  function sourceRowFields(row) {
     return {
-      id: stopId,
-      dayId: details.dayId,
-      time: details.time || 'Flexible',
-      zone: details.zone || '',
-      title: details.title || 'Trip stop',
-      locationName: details.locationName || details.title || 'Trip stop',
-      kind: details.kind || 'Stop',
-      priority: details.priority || 'required',
-      skipAt: Number(details.skipAt || 0),
-      saves: details.saves || '',
-      address: details.address || '',
-      parkingName: details.parkingName || '',
-      parkingAddress: details.parkingAddress || '',
-      city: details.city || '',
-      leg: details.leg || '',
-      timeBudget: details.timeBudget || '',
-      notes: details.notes || '',
-      food: details.food || '',
-      kidPlan: details.kidPlan || '',
-      mapUrl: details.mapUrl || mapSearchUrl(details.address || ''),
-      sourceUrl: details.sourceUrl || '',
-      reservation: details.reservation || '',
-      parkingEntrance: details.parkingEntrance || null,
-      ticket: details.ticket || null,
-      attractionQuality: details.attractionQuality || attractionQualityForStop(details.kind || 'Stop', details.title || ''),
-      conditional: Boolean(details.conditional),
-      choiceGated: Boolean(details.choiceGated),
-      routeEligible: details.routeEligible !== false,
-      coords: details.coords || STOP_COORDS[stopId] || null,
-      rating: details.rating || STOP_RATINGS[stopId] || null
+      time: row.Time,
+      title: row['Stop / Segment'],
+      locationName: row['Stop / Segment'],
+      kind: row.Type,
+      priority: normalize(row.Type).indexOf('optional') !== -1 ? 'optional' : 'required',
+      address: row.Address,
+      city: row['City / Province'],
+      leg: row['Drive from previous'],
+      timeBudget: row['Time budget'],
+      notes: row.Notes,
+      food: row['Food / Washroom'],
+      kidPlan: row['Kid plan'],
+      mapUrl: row['Map URL'],
+      sourceUrl: row['Source URL']
     };
   }
 
-  function sourceStop(dayId, phrase, patch) {
-    patch = patch || {};
+  function foodRowFields(food) {
+    return {
+      title: food.name,
+      locationName: food.name,
+      kind: food.meal || 'Meal',
+      address: food.address,
+      city: food.city,
+      notes: food.why,
+      food: food.order,
+      mapUrl: food.mapUrl,
+      sourceUrl: food.source,
+      reservation: food.reserve
+    };
+  }
+
+  function findSourceRow(dayId, stopId) {
     var day = sourceDay(dayId);
-    var original = day && day.stops.find(function (stop) {
-      return normalize(stop['Stop / Segment']).indexOf(normalize(phrase)) !== -1;
-    });
-    if (!original) {
-      buildErrors.push('Missing source stop "' + phrase + '" on ' + dayId);
-      return customStop({
-        id: patch.id || slug(dayId + '-' + phrase),
-        dayId: dayId,
-        title: patch.title || phrase,
-        time: patch.time || 'Verify',
-        zone: patch.zone || '',
-        kind: patch.kind || 'Stop',
-        priority: patch.priority || 'required',
-        notes: patch.notes || 'Source stop needs review.'
-      });
-    }
-    return customStop({
-      id: patch.id || slug(dayId + '-' + (patch.title || original['Stop / Segment'])),
-      dayId: dayId,
-      time: patch.time != null ? patch.time : original.Time,
-      zone: patch.zone || '',
-      title: patch.title || original['Stop / Segment'],
-      locationName: patch.locationName || patch.title || original['Stop / Segment'],
-      kind: patch.kind || original.Type || 'Stop',
-      priority: patch.priority || (normalize(original.Type).indexOf('optional') !== -1 ? 'optional' : 'required'),
-      skipAt: patch.skipAt || 0,
-      saves: patch.saves || '',
-      address: patch.address || original.Address,
-      parkingName: patch.parkingName || '',
-      parkingAddress: patch.parkingAddress || '',
-      city: patch.city || original['City / Province'],
-      leg: patch.leg || original['Drive from previous'],
-      timeBudget: patch.timeBudget || original['Time budget'],
-      notes: patch.notes || original.Notes,
-      food: patch.food || original['Food / Washroom'],
-      kidPlan: patch.kidPlan || original['Kid plan'],
-      mapUrl: patch.mapUrl || original['Map URL'],
-      sourceUrl: patch.sourceUrl || original['Source URL'],
-      reservation: patch.reservation || '',
-      parkingEntrance: patch.parkingEntrance || null,
-      ticket: patch.ticket || null,
-      attractionQuality: patch.attractionQuality || attractionQualityForStop(patch.kind || original.Type || 'Stop', patch.title || original['Stop / Segment']),
-      conditional: Boolean(patch.conditional),
-      choiceGated: Boolean(patch.choiceGated),
-      routeEligible: patch.routeEligible !== false
-    });
+    return (day && day.stops.find(function (stop) { return stop.id === stopId; })) || null;
   }
 
-  function foodRecord(dayId, phrase) {
+  function findFoodRecord(dayId, foodId) {
     return rawData.foodies.find(function (food) {
-      return food.date === dayId && normalize(food.name).indexOf(normalize(phrase)) !== -1;
-    });
+      return food.date === dayId && food.id === foodId;
+    }) || null;
   }
 
-  function foodStop(dayId, phrase, patch) {
+  // A stop the plan takes from the source itinerary. `patch` overrides anything
+  // the source row already says.
+  function sourceStop(dayId, stopId, patch) {
     patch = patch || {};
-    var food = foodRecord(dayId, phrase);
-    if (!food) {
-      buildErrors.push('Missing foodie record "' + phrase + '" on ' + dayId);
-      return customStop({
-        id: patch.id || slug(dayId + '-' + phrase),
+    patch.dayId = dayId;
+    var row = findSourceRow(dayId, stopId);
+    if (!row) {
+      buildErrors.push('Missing source stop "' + stopId + '" on ' + dayId);
+      return buildStop({
+        id: patch.id || slug(dayId + '-' + stopId),
         dayId: dayId,
-        title: patch.title || phrase,
+        title: patch.title || stopId,
         time: patch.time || 'Verify',
-        kind: patch.kind || 'Meal',
-        priority: patch.priority || 'required'
-      });
+        kind: patch.kind || 'Stop',
+        notes: patch.notes || 'Source stop needs review.'
+      }, null);
     }
-    return customStop({
-      id: patch.id || slug(dayId + '-' + (patch.title || food.name)),
-      dayId: dayId,
-      time: patch.time || 'Flexible',
-      zone: patch.zone || '',
-      title: patch.title || food.name,
-      locationName: patch.locationName || patch.title || food.name,
-      kind: patch.kind || food.meal || 'Meal',
-      priority: patch.priority || 'required',
-      skipAt: patch.skipAt || 0,
-      saves: patch.saves || '',
-      address: patch.address || food.address,
-      parkingName: patch.parkingName || '',
-      parkingAddress: patch.parkingAddress || '',
-      city: patch.city || food.city,
-      leg: patch.leg || '',
-      timeBudget: patch.timeBudget || '',
-      notes: patch.notes || food.why,
-      food: patch.food || food.order,
-      kidPlan: patch.kidPlan || '',
-      mapUrl: patch.mapUrl || food.mapUrl,
-      sourceUrl: patch.sourceUrl || food.source,
-      reservation: patch.reservation || food.reserve,
-      attractionQuality: patch.attractionQuality || attractionQualityForStop(patch.kind || food.meal || 'Meal', patch.title || food.name),
-      conditional: Boolean(patch.conditional),
-      choiceGated: Boolean(patch.choiceGated),
-      routeEligible: patch.routeEligible !== false
-    });
+    return buildStop(patch, sourceRowFields(row));
+  }
+
+  function foodStop(dayId, foodId, patch) {
+    patch = patch || {};
+    patch.dayId = dayId;
+    var food = findFoodRecord(dayId, foodId);
+    if (!food) {
+      buildErrors.push('Missing foodie record "' + foodId + '" on ' + dayId);
+      return buildStop({
+        id: patch.id || slug(dayId + '-' + foodId),
+        dayId: dayId,
+        title: patch.title || foodId,
+        time: patch.time || 'Verify',
+        kind: patch.kind || 'Meal'
+      }, null);
+    }
+    return buildStop(patch, foodRowFields(food));
   }
 
   function mealSlot(details) {
@@ -643,14 +646,14 @@
         contingency: 'If The Big Apple arrival slips past 08:50, skip it. Keep the Brockville restaurant lunch; if Tata’s cannot seat you promptly, use the named Boston Pizza Brockville fallback and continue to Montréal. Skip Prehistoric World if you cannot reach it by about 14:00 or the live Montréal ETA passes 16:45.',
         emergency: 'Keep the required Odessa safety break and a proper Brockville lunch. If Montréal ETA moves past 17:15, shorten lunch to 45 minutes and sit down at Lloyd after hotel check-in.',
         stops: [
-          sourceStop('2026-08-14', 'Depart Vaughan', { id: 'd1-depart', time: '06:45', zone: 'ET', title: 'Depart Vaughan from Maple Honda', locationName: 'Maple Honda', leg: '0 km', priority: 'required', notes: 'Wake 06:00. Load the car the night before; only final medications, breakfast items and bathroom remain this morning.' }),
-          sourceStop('2026-08-14', 'Esso Circle K Maple', { id: 'd1-fuel', time: '06:55', zone: 'ET', priority: 'required', notes: 'Start full with 91 AKI minimum and reset the trip odometer. Refuel by a quarter tank remaining, sooner if the live range approaches 120–150 km or the next reliable station is uncertain.' }),
-          sourceStop('2026-08-14', 'The Big Apple', { id: 'd1-big-apple', time: '08:30–08:55', zone: 'ET', locationName: 'The Big Apple', parkingName: 'The Big Apple visitor parking', parkingAddress: '262 Orchard Rd, Colborne, ON K0K 1S0', leg: 'About 145 km / 1 h 30–1 h 45', priority: 'optional', skipAt: 30, saves: '25 min', timeBudget: '20-25 min', notes: 'Short reward/washroom stop only. Skip if arrival is after 08:50; the required Odessa break and proper Brockville lunch remain protected.', mapUrl: mapSearchUrl('The Big Apple visitor parking, 262 Orchard Rd, Colborne, ON K0K 1S0') }),
-          sourceStop('2026-08-14', 'ONroute Napanee', { id: 'd1-odessa', time: '10:10–10:25', zone: 'ET', title: 'ONroute Odessa — eastbound', locationName: 'ONroute Odessa — eastbound service centre', address: '3745 Highway 401 Eastbound, Odessa, ON K0H 2H0', city: 'Odessa, ON', kind: 'Morning snack / washroom / driver swap', leg: 'About 115 km / 1 h 10–1 h 20 from Colborne', priority: 'required', timeBudget: '15 min', notes: 'This is the correct eastbound plaza. Quick snack, washroom, walk and driver swap—not lunch. The proper restaurant lunch is in Brockville.', mapUrl: mapSearchUrl('ONroute Odessa, 3745 Highway 401 Eastbound, Odessa, ON K0H 2H0'), sourceUrl: 'https://www.onroute.ca/locations/odessa' }),
+          sourceStop('2026-08-14', 'depart-vaughan-maple-honda-area', { id: 'd1-depart', time: '06:45', zone: 'ET', title: 'Depart Vaughan from Maple Honda', locationName: 'Maple Honda', leg: '0 km', priority: 'required', notes: 'Wake 06:00. Load the car the night before; only final medications, breakfast items and bathroom remain this morning.' }),
+          sourceStop('2026-08-14', 'esso-circle-k-maple', { id: 'd1-fuel', time: '06:55', zone: 'ET', priority: 'required', notes: 'Start full with 91 AKI minimum and reset the trip odometer. Refuel by a quarter tank remaining, sooner if the live range approaches 120–150 km or the next reliable station is uncertain.' }),
+          sourceStop('2026-08-14', 'the-big-apple', { id: 'd1-big-apple', time: '08:30–08:55', zone: 'ET', locationName: 'The Big Apple', parkingName: 'The Big Apple visitor parking', parkingAddress: '262 Orchard Rd, Colborne, ON K0K 1S0', leg: 'About 145 km / 1 h 30–1 h 45', priority: 'optional', skipAt: 30, saves: '25 min', timeBudget: '20-25 min', notes: 'Short reward/washroom stop only. Skip if arrival is after 08:50; the required Odessa break and proper Brockville lunch remain protected.', mapUrl: mapSearchUrl('The Big Apple visitor parking, 262 Orchard Rd, Colborne, ON K0K 1S0') }),
+          sourceStop('2026-08-14', 'onroute-napanee', { id: 'd1-odessa', time: '10:10–10:25', zone: 'ET', title: 'ONroute Odessa — eastbound', locationName: 'ONroute Odessa — eastbound service centre', address: '3745 Highway 401 Eastbound, Odessa, ON K0H 2H0', city: 'Odessa, ON', kind: 'Morning snack / washroom / driver swap', leg: 'About 115 km / 1 h 10–1 h 20 from Colborne', priority: 'required', timeBudget: '15 min', notes: 'This is the correct eastbound plaza. Quick snack, washroom, walk and driver swap—not lunch. The proper restaurant lunch is in Brockville.', mapUrl: mapSearchUrl('ONroute Odessa, 3745 Highway 401 Eastbound, Odessa, ON K0H 2H0'), sourceUrl: 'https://www.onroute.ca/locations/odessa' }),
           customStop({ id: 'd1-lunch', dayId: '2026-08-14', time: '11:40–12:35 · depart by 12:45', zone: 'ET', title: 'Proper lunch: Tata’s House of Pizza & Pasta', locationName: 'Tata’s House of Pizza & Pasta — Brockville', kind: 'Lunch / seated restaurant', priority: 'required', address: '11 Windsor Drive, Brockville, ON K6V 3H5', city: 'Brockville, ON', leg: 'About 105 km / 1 h 05–1 h 15 from Odessa; about 210 km / 2 h 15 to Montréal before city traffic', timeBudget: '50-60 min', notes: 'A proper seated lunch replaces the old Morrisburg attraction and self-catered lunch plan. Friday service starts at 11:00. If the wait would push departure past 12:45, use Boston Pizza Brockville at 2000 Parkedale Avenue as the named sit-down fallback.', food: 'Pizza, pasta, burgers, fish and chips, souvlaki, and vegetarian options.', kidPlan: 'Bathroom and a calm seated meal before the Montréal leg.', mapUrl: mapSearchUrl('Tata’s House of Pizza & Pasta, 11 Windsor Drive, Brockville, ON K6V 3H5'), sourceUrl: 'https://www.tatasbrockville.ca/' }),
           customStop({ id: 'd1-prehistoric-world', dayId: '2026-08-14', time: '13:25–14:20 · depart by 14:25', zone: 'ET', title: 'Prehistoric World', locationName: 'Prehistoric World — Morrisburg', kind: 'Attraction / outdoor dinosaur trail walk', priority: 'optional', skipAt: 30, saves: '55 min', address: '5446 Upper Canada Rd, Morrisburg, ON K0C 1X0', parkingName: 'Prehistoric World visitor parking', parkingAddress: '5446 Upper Canada Rd, Morrisburg, ON K0C 1X0', city: 'Morrisburg, ON', leg: 'About 65 km / 45 min from Brockville; about 150 km / 1 h 40 to Montréal before city traffic', timeBudget: '45-60 min', notes: 'Optional afternoon dinosaur-trail walk on the way to Montréal, added after the proper Brockville lunch—it does not replace it. Open daily 10:00–16:00, May 17–Sept 7, and cash only, so bring small bills ($10 adult, $8 senior, $6 child 4+, under 3 free). Pick this or The Big Apple, never both, to keep the first day calm. Skip if you cannot reach the gate by about 14:00 or if the live Montréal ETA would slip past 16:45; the Marriott check-in and Time Out Market dinner stay protected.', food: 'Washrooms on site; no full food service—rely on the Brockville lunch and packed snacks.', kidPlan: 'Flat, hand-laid stone loop through the woods past life-size concrete dinosaurs with English and French plaques; an easy 45–60 minute walk, doable in 20–30 if energy is low.', mapUrl: mapSearchUrl('Prehistoric World visitor parking, 5446 Upper Canada Rd, Morrisburg, ON K0C 1X0'), sourceUrl: 'https://prehistoricworld.ca/' }),
-          sourceStop('2026-08-14', 'Check in: Montreal Marriott Chateau Champlain', { id: 'd1-hotel', time: '15:30–16:30 realistic · check-in from 16:00', zone: 'ET', title: 'Check in: Montreal Marriott Chateau Champlain', locationName: 'Montreal Marriott Chateau Champlain', address: '1050 de la Gauchetiere West, Montreal, QC H3B 4C9', city: 'Montréal, QC', leg: 'About 210 km / 2 h 15 plus Friday city traffic from Brockville', priority: 'required', notes: 'Confirmed 2-double-bed room for 2 adults + 1 child. Official self-parking is currently C$36/day with no in/out privileges; recheck rate, entrance and clearance, park once, and leave the car. This hotel does not advertise a pool.', food: 'Lloyd is on site; Time Out Market is about a 15-minute walk.', kidPlan: 'Room reset, then a short dinner walk only if everyone has energy.', parkingEntrance: { note: 'Downtown high-rise with underground self-parking only—there is no surface lot. The garage is beneath the hotel; approach on De la Gauchetiere West, follow the signed "Stationnement / Self-Parking" ramp down, and reconfirm the height clearance and C$36/day rate at the desk. Park once—there are no in/out privileges.', streetViewUrl: streetViewUrl(45.4975, -73.5672, 200), satelliteUrl: satelliteUrl(45.4975, -73.5672, 19) }, mapUrl: mapSearchUrl('Montreal Marriott Chateau Champlain, 1050 de la Gauchetiere West, Montreal, QC H3B 4C9'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yulcc-montreal-marriott-chateau-champlain/overview/' }),
-          sourceStop('2026-08-14', 'Easy dinner: Time Out Market', { id: 'd1-dinner', time: '17:45–18:15 flexible', zone: 'ET', kind: 'Dinner / walking outing', priority: 'required', routeEligible: false, leg: 'About 1 km / 15 min on foot each way from the Marriott', notes: 'Walk—do not move the parked car. Time Out Market is open until 22:00 Friday. Lloyd at the hotel is the zero-walk fallback if hotel arrival is after 17:15 or the child is done.', mapUrl: 'https://www.google.com/maps/dir/?api=1&origin=1050+de+la+Gauchetiere+West%2C+Montreal%2C+QC+H3B+4C9&destination=705+Saint-Catherine+St+W%2C+Montreal%2C+QC+H3B+4G5&travelmode=walking', sourceUrl: 'https://www.timeoutmarket.com/montreal/' })
+          sourceStop('2026-08-14', 'check-in-montreal-marriott-chateau-champlain', { id: 'd1-hotel', time: '15:30–16:30 realistic · check-in from 16:00', zone: 'ET', title: 'Check in: Montreal Marriott Chateau Champlain', locationName: 'Montreal Marriott Chateau Champlain', address: '1050 de la Gauchetiere West, Montreal, QC H3B 4C9', city: 'Montréal, QC', leg: 'About 210 km / 2 h 15 plus Friday city traffic from Brockville', priority: 'required', notes: 'Confirmed 2-double-bed room for 2 adults + 1 child. Official self-parking is currently C$36/day with no in/out privileges; recheck rate, entrance and clearance, park once, and leave the car. This hotel does not advertise a pool.', food: 'Lloyd is on site; Time Out Market is about a 15-minute walk.', kidPlan: 'Room reset, then a short dinner walk only if everyone has energy.', parkingEntrance: { note: 'Downtown high-rise with underground self-parking only—there is no surface lot. The garage is beneath the hotel; approach on De la Gauchetiere West, follow the signed "Stationnement / Self-Parking" ramp down, and reconfirm the height clearance and C$36/day rate at the desk. Park once—there are no in/out privileges.', streetViewUrl: streetViewUrl(45.4975, -73.5672, 200), satelliteUrl: satelliteUrl(45.4975, -73.5672, 19) }, mapUrl: mapSearchUrl('Montreal Marriott Chateau Champlain, 1050 de la Gauchetiere West, Montreal, QC H3B 4C9'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yulcc-montreal-marriott-chateau-champlain/overview/' }),
+          sourceStop('2026-08-14', 'easy-dinner-time-out-market-montreal', { id: 'd1-dinner', time: '17:45–18:15 flexible', zone: 'ET', kind: 'Dinner / walking outing', priority: 'required', routeEligible: false, leg: 'About 1 km / 15 min on foot each way from the Marriott', notes: 'Walk—do not move the parked car. Time Out Market is open until 22:00 Friday. Lloyd at the hotel is the zero-walk fallback if hotel arrival is after 17:15 or the child is done.', mapUrl: 'https://www.google.com/maps/dir/?api=1&origin=1050+de+la+Gauchetiere+West%2C+Montreal%2C+QC+H3B+4C9&destination=705+Saint-Catherine+St+W%2C+Montreal%2C+QC+H3B+4G5&travelmode=walking', sourceUrl: 'https://www.timeoutmarket.com/montreal/' })
         ],
         meals: [
           mealSlot({ id: 'd1-breakfast', meal: 'Breakfast', title: 'Departure breakfast before leaving Vaughan', selectedStopId: 'd1-depart', backup: 'Leave 15 minutes later rather than skipping breakfast.' }),
@@ -680,13 +683,13 @@
         emergency: 'Skip Old Québec, check in at 16:00, and use airport-area food if parking or energy becomes the constraint.',
         stops: [
           customStop({ id: 'd2-breakfast-stop', dayId: '2026-08-15', time: '06:30–07:10', zone: 'ET', title: 'Breakfast at the hotel: Lloyd (Marriott)', locationName: 'Lloyd — Montreal Marriott Chateau Champlain', kind: 'Breakfast / hotel restaurant', priority: 'required', routeEligible: false, address: '1050 de la Gauchetiere West, Montreal, QC H3B 4C9', city: 'Montréal, QC', leg: 'On-site at the Marriott', timeBudget: '30-40 min', notes: 'Eat breakfast at the hotel before checking out. Be seated at Lloyd when it opens at 06:30 and finish by 07:10 so 07:30 stays the wheels-moving time. There is no mid-morning break before Montmorency, so start fed and keep a packed snack in the car.', food: 'Lloyd hotel breakfast 06:30–07:10 (fee); grab-and-go only if table service would delay departure.', kidPlan: 'Calm seated breakfast and a bathroom stop before the long morning drive.', mapUrl: mapSearchUrl('Montreal Marriott Chateau Champlain, 1050 de la Gauchetiere West, Montreal, QC H3B 4C9'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yulcc-montreal-marriott-chateau-champlain/dining/' }),
-          sourceStop('2026-08-15', 'Depart Montréal', { id: 'd2-depart', time: '07:30', zone: 'ET', title: 'Depart Montreal Marriott Chateau Champlain', priority: 'required', address: '1050 de la Gauchetiere West, Montreal, QC H3B 4C9', city: 'Montréal, QC', notes: 'Wake 06:00 and eat the Lloyd hotel breakfast first (see the breakfast stop). Check out and make 07:30 the actual wheels-moving time; there is no mid-morning break before Montmorency this year.', food: 'Breakfast handled at the hotel; keep a packed snack in the car for the drive to Montmorency.', mapUrl: mapSearchUrl('1050 de la Gauchetiere West, Montreal, QC H3B 4C9'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yulcc-montreal-marriott-chateau-champlain/dining/' }),
+          sourceStop('2026-08-15', 'depart-montreal', { id: 'd2-depart', time: '07:30', zone: 'ET', title: 'Depart Montreal Marriott Chateau Champlain', priority: 'required', address: '1050 de la Gauchetiere West, Montreal, QC H3B 4C9', city: 'Montréal, QC', notes: 'Wake 06:00 and eat the Lloyd hotel breakfast first (see the breakfast stop). Check out and make 07:30 the actual wheels-moving time; there is no mid-morning break before Montmorency this year.', food: 'Breakfast handled at the hotel; keep a packed snack in the car for the drive to Montmorency.', mapUrl: mapSearchUrl('1050 de la Gauchetiere West, Montreal, QC H3B 4C9'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yulcc-montreal-marriott-chateau-champlain/dining/' }),
           customStop({ id: 'd2-low-fuel', dayId: '2026-08-15', time: '10:15 only if at trigger', zone: 'ET', title: 'Verified 91-AKI option: Shell Trois-Rivières', kind: 'Fuel decision', priority: 'conditional', conditional: true, routeEligible: false, address: '6455 Boulevard des Chenaux, Trois-Rivières, QC G8Y 5A9', city: 'Trois-Rivières, QC', timeBudget: '0-15 min', notes: 'Official Shell listing shows V-Power 91 and Saturday forecourt hours of 07:00–22:00. Use only at/below a quarter tank or when displayed range approaches 120–150 km; otherwise continue.', food: 'Convenience shop; use the earlier Trois-Rivières stop for the proper snack/washroom break.', kidPlan: 'Quick conditional fill only.', mapUrl: mapSearchUrl('6455 Boulevard des Chenaux, Trois-Rivières, QC G8Y 5A9'), sourceUrl: 'https://find.shell.com/ca/fuel/12303255-blvd-des-chenaux-troisriviere/en_CA' }),
-          sourceStop('2026-08-15', 'Montmorency Falls', { id: 'd2-falls', time: '11:30', zone: 'ET', locationName: 'Parc de la Chute-Montmorency', parkingName: 'Montmorency Falls lower-site P1/P2 visitor parking', parkingAddress: '5300 Boulevard Sainte-Anne, Québec, QC G1C 1S1', priority: 'required', notes: '2026 Saturday access hours are 09:00–18:30. Use the lower-site P1/P2 entrance while the upper sector is being redeveloped; allow 20–30 minutes for construction/parking. Take the cable car or approved route to the Manoir for the seated lunch.', food: 'Washrooms and water; the proper lunch is reserved separately at the Manoir restaurant.', mapUrl: mapSearchUrl('Montmorency Falls lower parking P1 P2, 5300 Boulevard Sainte-Anne, Québec, QC G1C 1S1'), ticket: ticketGuidance.montmorency }),
+          sourceStop('2026-08-15', 'montmorency-falls-park', { id: 'd2-falls', time: '11:30', zone: 'ET', locationName: 'Parc de la Chute-Montmorency', parkingName: 'Montmorency Falls lower-site P1/P2 visitor parking', parkingAddress: '5300 Boulevard Sainte-Anne, Québec, QC G1C 1S1', priority: 'required', notes: '2026 Saturday access hours are 09:00–18:30. Use the lower-site P1/P2 entrance while the upper sector is being redeveloped; allow 20–30 minutes for construction/parking. Take the cable car or approved route to the Manoir for the seated lunch.', food: 'Washrooms and water; the proper lunch is reserved separately at the Manoir restaurant.', mapUrl: mapSearchUrl('Montmorency Falls lower parking P1 P2, 5300 Boulevard Sainte-Anne, Québec, QC G1C 1S1'), ticket: ticketGuidance.montmorency }),
           customStop({ id: 'd2-lunch', dayId: '2026-08-15', time: '12:45–13:45', zone: 'ET', title: 'Proper lunch: Restaurant-terrasse du Manoir', locationName: 'Restaurant-terrasse du Manoir Montmorency', kind: 'Lunch / seated restaurant', priority: 'required', routeEligible: false, address: '2490 Avenue Royale, Québec, QC G1C 1S1', city: 'Québec City, QC', leg: 'Inside Parc de la Chute-Montmorency at the upper Manoir', timeBudget: '60 min', notes: 'Reserve a table. The official 2026 summer schedule is 11:30–15:00 daily, with a varied lunch menu and children’s menu. This is the proper lunch—no picnic or packed meal.', food: 'Full seated lunch with a children’s menu on a covered, heated terrace.', kidPlan: 'Bathroom and seated reset before finishing the falls visit.', mapUrl: mapSearchUrl('Restaurant-terrasse du Manoir Montmorency, 2490 Avenue Royale, Québec, QC G1C 1S1'), sourceUrl: 'https://www.sepaq.com/destinations/parc-chute-montmorency/quoi-faire/restaurants-repas.dot?language_id=1', reservation: 'Reserve for about 12:45; summer service ends at 15:00.' }),
-          sourceStop('2026-08-15', 'Check in: Hôtel Cofortel', { id: 'd2-hotel', time: '15:30 arrival · 16:00 check-in', zone: 'ET', priority: 'required', notes: 'Do not rely on room access before 16:00. If early, use a quiet hotel/lobby buffer, then secure the luggage before returning to Old Québec. The booked Elite room is on the 2nd floor with one king bed; the stay is booked and safe.' }),
-          sourceStop('2026-08-15', 'Old Québec / Dufferin', { id: 'd2-old-quebec', time: '16:45 hotel departure · 17:10–17:50 walk', zone: 'ET', title: 'Dufferin Terrace walk in Old Québec', locationName: 'Dufferin Terrace, Old Québec', parkingName: 'Stationnement De Beaucours garage', parkingAddress: '39 Rue Saint-Louis, Québec, QC G1R 3Z2', address: '39 Rue Saint-Louis, Québec, QC G1R 3Z2', city: 'Old Québec, QC', priority: 'optional', skipAt: 30, saves: '60 min', timeBudget: '35-40 min', notes: 'Leave Cofortel at 16:45 after the room and luggage are secure. Park once at De Beaucours; Hôtel-de-Ville garage, 2 Rue des Jardins, is the backup. Walk to Dufferin and then La Bûche—do not move the car between them.', mapUrl: mapSearchUrl('Stationnement De Beaucours, 39 Rue Saint-Louis, Québec, QC G1R 3Z2'), sourceUrl: 'https://www.ville.quebec.qc.ca/en/citoyens/stationnement/liste_stationnements.aspx' }),
-          foodStop('2026-08-15', 'La Bûche', { id: 'd2-dinner', time: '18:15', zone: 'ET', kind: 'Dinner / walking outing', priority: 'required', routeEligible: false, notes: 'Canonical Old Québec dinner. Saturday hours are 08:00–22:00. Reserve in advance; Cochon Dingue is the fallback. Walk from the garage/Dufferin area.', mapUrl: 'https://www.google.com/maps/dir/?api=1&origin=39+Rue+Saint-Louis%2C+Quebec%2C+QC+G1R+3Z2&destination=49+Rue+Saint-Louis%2C+Quebec%2C+QC+G1R+3Z2&travelmode=walking', sourceUrl: 'https://www.quebec-cite.com/en/businesses/la-buche' }),
+          sourceStop('2026-08-15', 'check-in-hotel-cofortel', { id: 'd2-hotel', time: '15:30 arrival · 16:00 check-in', zone: 'ET', priority: 'required', notes: 'Do not rely on room access before 16:00. If early, use a quiet hotel/lobby buffer, then secure the luggage before returning to Old Québec. The booked Elite room is on the 2nd floor with one king bed; the stay is booked and safe.' }),
+          sourceStop('2026-08-15', 'old-quebec-dufferin-terrace', { id: 'd2-old-quebec', time: '16:45 hotel departure · 17:10–17:50 walk', zone: 'ET', title: 'Dufferin Terrace walk in Old Québec', locationName: 'Dufferin Terrace, Old Québec', parkingName: 'Stationnement De Beaucours garage', parkingAddress: '39 Rue Saint-Louis, Québec, QC G1R 3Z2', address: '39 Rue Saint-Louis, Québec, QC G1R 3Z2', city: 'Old Québec, QC', priority: 'optional', skipAt: 30, saves: '60 min', timeBudget: '35-40 min', notes: 'Leave Cofortel at 16:45 after the room and luggage are secure. Park once at De Beaucours; Hôtel-de-Ville garage, 2 Rue des Jardins, is the backup. Walk to Dufferin and then La Bûche—do not move the car between them.', mapUrl: mapSearchUrl('Stationnement De Beaucours, 39 Rue Saint-Louis, Québec, QC G1R 3Z2'), sourceUrl: 'https://www.ville.quebec.qc.ca/en/citoyens/stationnement/liste_stationnements.aspx' }),
+          foodStop('2026-08-15', 'la-buche', { id: 'd2-dinner', time: '18:15', zone: 'ET', kind: 'Dinner / walking outing', priority: 'required', routeEligible: false, notes: 'Canonical Old Québec dinner. Saturday hours are 08:00–22:00. Reserve in advance; Cochon Dingue is the fallback. Walk from the garage/Dufferin area.', mapUrl: 'https://www.google.com/maps/dir/?api=1&origin=39+Rue+Saint-Louis%2C+Quebec%2C+QC+G1R+3Z2&destination=49+Rue+Saint-Louis%2C+Quebec%2C+QC+G1R+3Z2&travelmode=walking', sourceUrl: 'https://www.quebec-cite.com/en/businesses/la-buche' }),
           customStop({ id: 'd2-return', dayId: '2026-08-15', time: '19:45–20:00', zone: 'ET', title: 'Collect car and return to Hôtel Cofortel', kind: 'Hotel return / sleep', priority: 'required', address: "6500 Boul. Wilfrid-Hamel, L'Ancienne-Lorette, QC G2E 2J1", city: "L'Ancienne-Lorette, QC", leg: 'Walk back to De Beaucours, then about 15 km / 20-25 min to Cofortel', notes: 'Walk back to the parked car, return directly to Cofortel, and stage the bags for the 07:00 departure.', food: 'No additional stop.', kidPlan: 'Bathroom and early bedtime after the city outing.', mapUrl: mapSearchUrl("6500 Boul. Wilfrid-Hamel, L'Ancienne-Lorette, QC G2E 2J1"), sourceUrl: 'https://cofortel.com/en/' })
         ],
         meals: [
@@ -715,13 +718,13 @@
         contingency: 'Grand Falls is not in Plan A. Keep the Edmundston service break and shorten Hartland to a drive-through if the hotel arrival slips.',
         emergency: 'Go straight to Delta and have a seated dinner at STMR.36. The Diplomat is the nearby restaurant fallback. Wolastoq Wharf is optional only after Sunday hours and arrival time are confirmed.',
         stops: [
-          sourceStop('2026-08-16', 'Depart Québec City', { id: 'd3-depart', time: '07:00', zone: 'ET', title: 'Depart Hôtel Cofortel', address: "6500 Boul. Wilfrid-Hamel, L'Ancienne-Lorette, QC G2E 2J1", city: "L'Ancienne-Lorette, QC", priority: 'required', notes: 'Wake 06:00, use the included hotel breakfast from 06:15–06:40, and make 07:00 the actual wheels-moving time.', food: 'Complimentary hotel continental breakfast; service starts at 05:00.', mapUrl: mapSearchUrl("6500 Boul. Wilfrid-Hamel, L'Ancienne-Lorette, QC G2E 2J1"), sourceUrl: 'https://cofortel.com/en/' }),
+          sourceStop('2026-08-16', 'depart-quebec-city', { id: 'd3-depart', time: '07:00', zone: 'ET', title: 'Depart Hôtel Cofortel', address: "6500 Boul. Wilfrid-Hamel, L'Ancienne-Lorette, QC G2E 2J1", city: "L'Ancienne-Lorette, QC", priority: 'required', notes: 'Wake 06:00, use the included hotel breakfast from 06:15–06:40, and make 07:00 the actual wheels-moving time.', food: 'Complimentary hotel continental breakfast; service starts at 05:00.', mapUrl: mapSearchUrl("6500 Boul. Wilfrid-Hamel, L'Ancienne-Lorette, QC G2E 2J1"), sourceUrl: 'https://cofortel.com/en/' }),
           customStop({ id: 'd3-kamouraska', dayId: '2026-08-16', time: '09:10–09:35', zone: 'ET', title: 'Visit Kamouraska Quai Miller', locationName: 'Kamouraska Quai Miller', parkingName: 'Quai de Kamouraska public parking — Avenue LeBlanc', parkingAddress: 'Avenue LeBlanc, Kamouraska, QC G0L 1M0', kind: 'Scenic heritage wharf / movement break', priority: 'required', address: 'Avenue LeBlanc, Kamouraska, QC G0L 1M0', city: 'Kamouraska, QC', leg: 'About 185 km / 2 h 10 from Québec City; about 55 km / 40 min to Rivière-du-Loup', timeBudget: '20-25 min', notes: 'This is the requested St. Lawrence stop. Use the named public day-parking area on Avenue LeBlanc, walk the restored heritage wharf and interpretation panels, take photos, and leave by 09:35 to protect the proper lunch in Rivière-du-Loup.', food: 'No meal here; hotel breakfast is already complete and lunch remains at L’Estaminet.', kidPlan: 'Short waterfront walk with close supervision around the wharf edge.', mapUrl: mapSearchUrl('Quai de Kamouraska public parking, Avenue LeBlanc, Kamouraska, QC G0L 1M0'), sourceUrl: 'https://www.tourismekamouraska.com/tourisme-responsable/' }),
-          foodStop('2026-08-16', 'L’Estaminet', { id: 'd3-lunch', time: '10:15', zone: 'ET', kind: 'Lunch / seated restaurant', priority: 'required', timeBudget: '45-60 min', notes: 'Early proper lunch after the hotel breakfast. Allow the meal time before calculating the New Brunswick arrival.' }),
+          foodStop('2026-08-16', 'resto-pub-lestaminet', { id: 'd3-lunch', time: '10:15', zone: 'ET', kind: 'Lunch / seated restaurant', priority: 'required', timeBudget: '45-60 min', notes: 'Early proper lunch after the hotel breakfast. Allow the meal time before calculating the New Brunswick arrival.' }),
           customStop({ id: 'd3-edmundston', dayId: '2026-08-16', time: '14:30', zone: 'AT', title: 'Edmundston service + driver swap', kind: 'Fuel / washroom / driver swap', priority: 'required', address: '100 Grey Rock Road, Edmundston, NB E7C 0B6', city: 'Edmundston, NB', leg: 'About 120 km / 1 h 45–1 h 50 from Rivière-du-Loup; Atlantic Time is one hour ahead', timeBudget: '20 min', notes: 'Required movement and driver-swap break. Official Shell listing shows 24-hour V-Power 91. Fill if at/below a quarter tank or displayed range approaches 120–150 km.', food: 'Shop, washroom, water and road snack.', kidPlan: 'Walk for 10 minutes before the next driving block.', mapUrl: mapSearchUrl('100 Grey Rock Road, Edmundston, NB E7C 0B6'), sourceUrl: 'https://find.shell.com/ca/fuel/10071398-grey-rock-road-edmundston/en_CA' }),
           customStop({ id: 'd3-hartland', dayId: '2026-08-16', time: '16:20', zone: 'AT', title: 'Hartland Covered Bridge photo stop', locationName: 'Hartland Covered Bridge', parkingName: 'Hartland Covered Bridge east-side riverside parking', parkingAddress: '365 Main St, Hartland, NB E7P 2N1', kind: 'Photo stop / stretch', priority: 'required', address: '365 Main St, Hartland, NB E7P 2N1', city: 'Hartland, NB', leg: 'About 170 km / 1 h 45 from Edmundston; about 120 km / 1 h 20 to Fredericton', timeBudget: '15-20 min', notes: 'Use the east-side riverside arrival point. Keep this short; it is the second movement break, not another full attraction visit.', food: 'No meal plan.', kidPlan: 'Drive through or take a short riverside walk.', mapUrl: mapSearchUrl('Hartland Covered Bridge east side, 365 Main St, Hartland, NB E7P 2N1'), sourceUrl: 'https://tourismnewbrunswick.ca/listing/hartland-covered-bridge' }),
-          sourceStop('2026-08-16', 'Check in: Delta Hotels by Marriott Fredericton', { id: 'd3-hotel', time: '17:50–18:15', zone: 'AT', title: 'Check in: Delta Hotels by Marriott Fredericton', address: '225 Woodstock Road, Fredericton, NB E3B 2H8', city: 'Fredericton, NB', priority: 'required', leg: 'About 125 km / 1 h 25 from Hartland', notes: 'Confirmed king + sofa-bed room for 2 adults + 1 child. Register the vehicle; official self-parking is paid. This arrival already includes the proper lunch and movement breaks, so check in and sit down at STMR.36—no downtown add-on.', food: 'STMR.36 is the proper seated dinner; The Diplomat is the nearby fallback.', kidPlan: 'King + sofa-bed room and indoor-pool reset if energy remains.', mapUrl: mapSearchUrl('225 Woodstock Road, Fredericton, NB E3B 2H8'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yfcdf-delta-hotels-fredericton/overview/' }),
-          foodStop('2026-08-16', 'Wolastoq Wharf', { id: 'd3-dinner', time: '18:45 only if separately confirmed', zone: 'AT', kind: 'Dinner branch', priority: 'conditional', conditional: true, choiceGated: true, routeEligible: false, saves: '90 min', notes: 'Choice-gated branch, not a lateness rule and not part of the full-day route. Use only after confirming Sunday hours by phone (506-449-0100) and only if the family reaches the hotel with energy. Delta on-site food is Plan A.' })
+          sourceStop('2026-08-16', 'check-in-delta-hotels-by-marriott-fredericton', { id: 'd3-hotel', time: '17:50–18:15', zone: 'AT', title: 'Check in: Delta Hotels by Marriott Fredericton', address: '225 Woodstock Road, Fredericton, NB E3B 2H8', city: 'Fredericton, NB', priority: 'required', leg: 'About 125 km / 1 h 25 from Hartland', notes: 'Confirmed king + sofa-bed room for 2 adults + 1 child. Register the vehicle; official self-parking is paid. This arrival already includes the proper lunch and movement breaks, so check in and sit down at STMR.36—no downtown add-on.', food: 'STMR.36 is the proper seated dinner; The Diplomat is the nearby fallback.', kidPlan: 'King + sofa-bed room and indoor-pool reset if energy remains.', mapUrl: mapSearchUrl('225 Woodstock Road, Fredericton, NB E3B 2H8'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yfcdf-delta-hotels-fredericton/overview/' }),
+          foodStop('2026-08-16', 'wolastoq-wharf', { id: 'd3-dinner', time: '18:45 only if separately confirmed', zone: 'AT', kind: 'Dinner branch', priority: 'conditional', conditional: true, choiceGated: true, routeEligible: false, saves: '90 min', notes: 'Choice-gated branch, not a lateness rule and not part of the full-day route. Use only after confirming Sunday hours by phone (506-449-0100) and only if the family reaches the hotel with energy. Delta on-site food is Plan A.' })
         ],
         meals: [
           mealSlot({ id: 'd3-breakfast', meal: 'Breakfast', title: 'Hôtel Cofortel included breakfast', selectedStopId: 'd3-depart', backup: 'Packed breakfast only if hotel service unexpectedly fails.' }),
@@ -749,12 +752,12 @@
         contingency: 'At 30 minutes late—or if staffed access is not confirmed—skip Magnetic Hill. At 45 minutes late, make Cape Jourimain a 20-minute washroom/bridge-view stop. Victoria Row is never part of Plan A.',
         emergency: 'Capital Drive takeout or delivery to Hampton is the late-arrival fallback. Protect hotel access, the early walk-in supper and bedtime rather than adding downtown driving during Old Home Week.',
         stops: [
-          sourceStop('2026-08-17', 'Depart Fredericton', { id: 'd4-depart', time: '08:00', zone: 'AT', title: 'Depart Delta Hotels by Marriott Fredericton', address: '225 Woodstock Road, Fredericton, NB E3B 2H8', city: 'Fredericton, NB', priority: 'required', notes: 'Wake 06:15, finish packing before the 06:30 on-site breakfast, check out by 07:40 and make 08:00 the actual wheels-moving time. Use a packed breakfast if service runs slowly.', food: 'Grove Café or STMR.36 breakfast; packed backup and road snack.', mapUrl: mapSearchUrl('225 Woodstock Road, Fredericton, NB E3B 2H8'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yfcdf-delta-hotels-fredericton/dining/' }),
-          sourceStop('2026-08-17', 'Magnetic Hill', { id: 'd4-magnetic', time: '09:50–10:20 only if staffed', zone: 'AT', locationName: 'Magnetic Hill Illusion', parkingName: 'Magnetic Hill Illusion entrance / visitor parking', parkingAddress: '2846 Mountain Road, Moncton, NB E1G 2W7', priority: 'optional', skipAt: 30, saves: '30 min', address: '2846 Mountain Road, Moncton, NB E1G 2W7', city: 'Moncton, NB', leg: 'About 170 km / 1 h 50 from Fredericton', timeBudget: '20-30 min', notes: 'Short on-time kid novelty. The City confirms the summer season but does not publish a daily clock; call shortly before travel and continue to Tony’s if the gate is not operating.', mapUrl: mapSearchUrl('Magnetic Hill Illusion entrance, 2846 Mountain Road, Moncton, NB E1G 2W7'), sourceUrl: 'https://www.moncton.ca/en/magnetic-hill-illusion', ticket: ticketGuidance.magneticHill }),
-          foodStop('2026-08-17', 'Tony’s Bistro', { id: 'd4-lunch', time: '10:40–11:40', zone: 'AT', kind: 'Lunch / seated restaurant', priority: 'required', timeBudget: '45-60 min', notes: 'Official Monday hours are 08:00–15:00. This early proper lunch removes the old idle gap and protects the bridge, hotel and dinner; leave by 11:40.' }),
-          sourceStop('2026-08-17', 'Cape Jourimain', { id: 'd4-cape', time: '12:45–13:25', zone: 'AT', locationName: 'Cape Jourimain Nature Centre', parkingName: 'Cape Jourimain Nature Centre visitor parking', parkingAddress: '5039 Route 16, Bayfield, NB E4M 3Z8', priority: 'required', timeBudget: '30-40 min', notes: 'This is the day’s one priority experience and a useful washroom/movement break. Official Monday hours are 10:00–17:00. Use the signed visitor-centre parking, bridge viewpoint and shortest family trail; shorten to 25 minutes if the hotel ETA moves past 15:30.', mapUrl: mapSearchUrl('Cape Jourimain Nature Centre visitor parking, 5039 Route 16, Bayfield, NB E4M 3Z8') }),
-          sourceStop('2026-08-17', 'Check in: Hampton Inn & Suites Charlottetown', { id: 'd4-hotel', time: '15:15 arrival request · 16:00 guaranteed · leave 16:20', zone: 'AT', title: 'Check in: Hampton Inn & Suites Charlottetown', address: '300 Capital Drive, Charlottetown, PE C1E 1E8', city: 'Charlottetown, PE', priority: 'required', leg: 'About 60 km / 50-60 min from Cape Jourimain including bridge traffic', notes: 'Confirmed two-queen room for 2 adults + 1 child, with free parking and hot breakfast. Treat 15:15 as an early-room request; check-in is guaranteed at 16:00. Unload only what is needed, use the washroom and leave at 16:20. Reconfirm tomorrow’s luggage-hold fallback before leaving.', food: 'Capital Drive services nearby; free hot breakfast tomorrow.', kidPlan: 'Quick room and bathroom reset only; pool is after dinner only if energy and posted hours fit.', mapUrl: mapSearchUrl('300 Capital Drive, Charlottetown, PE C1E 1E8'), sourceUrl: 'https://www.hilton.com/en/hotels/yqmchhx-hampton-suites-charlottetown/' }),
-          foodStop('2026-08-17', 'New Glasgow Lobster Suppers', { id: 'd4-dinner', time: '16:50–17:00 walk-in target', zone: 'AT', kind: 'Dinner', priority: 'required', timeBudget: '90-120 min including queue', notes: '2026 service is 16:00–19:30. A family of three is walk-in; reservations are limited to groups of 8+. Arriving before 17:00 gives the best chance of a family-friendly finish. Use Capital Drive takeout if the quoted wait threatens bedtime.', reservation: 'No family reservation; groups of 8+ only.' }),
+          sourceStop('2026-08-17', 'depart-fredericton', { id: 'd4-depart', time: '08:00', zone: 'AT', title: 'Depart Delta Hotels by Marriott Fredericton', address: '225 Woodstock Road, Fredericton, NB E3B 2H8', city: 'Fredericton, NB', priority: 'required', notes: 'Wake 06:15, finish packing before the 06:30 on-site breakfast, check out by 07:40 and make 08:00 the actual wheels-moving time. Use a packed breakfast if service runs slowly.', food: 'Grove Café or STMR.36 breakfast; packed backup and road snack.', mapUrl: mapSearchUrl('225 Woodstock Road, Fredericton, NB E3B 2H8'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yfcdf-delta-hotels-fredericton/dining/' }),
+          sourceStop('2026-08-17', 'magnetic-hill-illusion', { id: 'd4-magnetic', time: '09:50–10:20 only if staffed', zone: 'AT', locationName: 'Magnetic Hill Illusion', parkingName: 'Magnetic Hill Illusion entrance / visitor parking', parkingAddress: '2846 Mountain Road, Moncton, NB E1G 2W7', priority: 'optional', skipAt: 30, saves: '30 min', address: '2846 Mountain Road, Moncton, NB E1G 2W7', city: 'Moncton, NB', leg: 'About 170 km / 1 h 50 from Fredericton', timeBudget: '20-30 min', notes: 'Short on-time kid novelty. The City confirms the summer season but does not publish a daily clock; call shortly before travel and continue to Tony’s if the gate is not operating.', mapUrl: mapSearchUrl('Magnetic Hill Illusion entrance, 2846 Mountain Road, Moncton, NB E1G 2W7'), sourceUrl: 'https://www.moncton.ca/en/magnetic-hill-illusion', ticket: ticketGuidance.magneticHill }),
+          foodStop('2026-08-17', 'tonys-bistro-patisserie', { id: 'd4-lunch', time: '10:40–11:40', zone: 'AT', kind: 'Lunch / seated restaurant', priority: 'required', timeBudget: '45-60 min', notes: 'Official Monday hours are 08:00–15:00. This early proper lunch removes the old idle gap and protects the bridge, hotel and dinner; leave by 11:40.' }),
+          sourceStop('2026-08-17', 'cape-jourimain-nature-centre', { id: 'd4-cape', time: '12:45–13:25', zone: 'AT', locationName: 'Cape Jourimain Nature Centre', parkingName: 'Cape Jourimain Nature Centre visitor parking', parkingAddress: '5039 Route 16, Bayfield, NB E4M 3Z8', priority: 'required', timeBudget: '30-40 min', notes: 'This is the day’s one priority experience and a useful washroom/movement break. Official Monday hours are 10:00–17:00. Use the signed visitor-centre parking, bridge viewpoint and shortest family trail; shorten to 25 minutes if the hotel ETA moves past 15:30.', mapUrl: mapSearchUrl('Cape Jourimain Nature Centre visitor parking, 5039 Route 16, Bayfield, NB E4M 3Z8') }),
+          sourceStop('2026-08-17', 'check-in-hampton-inn-suites-charlottetown', { id: 'd4-hotel', time: '15:15 arrival request · 16:00 guaranteed · leave 16:20', zone: 'AT', title: 'Check in: Hampton Inn & Suites Charlottetown', address: '300 Capital Drive, Charlottetown, PE C1E 1E8', city: 'Charlottetown, PE', priority: 'required', leg: 'About 60 km / 50-60 min from Cape Jourimain including bridge traffic', notes: 'Confirmed two-queen room for 2 adults + 1 child, with free parking and hot breakfast. Treat 15:15 as an early-room request; check-in is guaranteed at 16:00. Unload only what is needed, use the washroom and leave at 16:20. Reconfirm tomorrow’s luggage-hold fallback before leaving.', food: 'Capital Drive services nearby; free hot breakfast tomorrow.', kidPlan: 'Quick room and bathroom reset only; pool is after dinner only if energy and posted hours fit.', mapUrl: mapSearchUrl('300 Capital Drive, Charlottetown, PE C1E 1E8'), sourceUrl: 'https://www.hilton.com/en/hotels/yqmchhx-hampton-suites-charlottetown/' }),
+          foodStop('2026-08-17', 'new-glasgow-lobster-suppers', { id: 'd4-dinner', time: '16:50–17:00 walk-in target', zone: 'AT', kind: 'Dinner', priority: 'required', timeBudget: '90-120 min including queue', notes: '2026 service is 16:00–19:30. A family of three is walk-in; reservations are limited to groups of 8+. Arriving before 17:00 gives the best chance of a family-friendly finish. Use Capital Drive takeout if the quoted wait threatens bedtime.', reservation: 'No family reservation; groups of 8+ only.' }),
           customStop({ id: 'd4-victoria', dayId: '2026-08-17', time: 'Bonus only—never Plan A', zone: 'AT', title: 'Victoria Row evening stroll (bonus only)', locationName: 'Victoria Row', parkingName: 'Queen Street Parkade', parkingAddress: '222 Queen Street, Charlottetown, PE', kind: 'Optional attraction', priority: 'optional', conditional: true, choiceGated: true, routeEligible: false, saves: '45 min', address: 'Richmond St (Victoria Row), Charlottetown, PE', city: 'Charlottetown, PE', leg: 'Separate branch after supper', timeBudget: '20-30 min', notes: 'Do this only if supper ends by 19:15, the child asks to continue and Old Home Week traffic/parking is calm. Use Queen Street Parkade because Pownal Parkade construction may restrict public access. Otherwise return directly to Hampton with no guilt.', food: 'Dessert only after supper.', kidPlan: 'Buskers and a short walk only if the child still has energy.', mapUrl: mapSearchUrl('Queen Street Parkade, 222 Queen Street, Charlottetown, PE'), sourceUrl: 'https://www.charlottetown.ca/resident_services/transportation_infrastructure/parking' }),
           customStop({ id: 'd4-return', dayId: '2026-08-17', time: '19:00–20:00 depending on queue', zone: 'AT', title: 'Return directly to Hampton Inn & Suites Charlottetown', kind: 'Hotel return / sleep', priority: 'required', address: '300 Capital Drive, Charlottetown, PE C1E 1E8', city: 'Charlottetown, PE', leg: 'About 30 km / 30 min direct from New Glasgow', notes: 'Plan A goes directly back to Hampton. Set out the beach/day bag and luggage-transfer items before bed.', food: 'No additional stop.', kidPlan: 'Pool only if supper was quick and posted hours still fit; otherwise bedtime.', mapUrl: mapSearchUrl('300 Capital Drive, Charlottetown, PE C1E 1E8'), sourceUrl: 'https://www.hilton.com/en/hotels/yqmchhx-hampton-suites-charlottetown/' })
         ],
@@ -784,14 +787,14 @@
         contingency: 'Protect the confirmed luggage handoff, Green Gables opening, Blue Mussel opening and the 18:30 dinner. If the Blue Mussel quote exceeds 45 minutes, use a quick Rustico/Cavendish lunch. Beach time is the flexible block.',
         emergency: 'If neither hotel will hold the bags, keep all luggage concealed in the locked trunk and park only in busy official lots. For thunder, heavy rain or beach closure, use the indoor Ripley’s branch and check in early.',
         stops: [
-          sourceStop('2026-08-18', 'Check out Hampton / begin hotel-switch day', { id: 'd5-checkout', time: '07:15', zone: 'AT', title: 'Check out Hampton / begin hotel-switch day', kind: 'Hotel transfer / start', address: '300 Capital Drive, Charlottetown, PE C1E 1E8', city: 'Charlottetown, PE', priority: 'required', timeBudget: '10 min', notes: 'Wake at 06:00, use the included breakfast only if service fits, and check out by 07:15 with the beach/day bag separated. Use the early bag drop at Canadas Best Value Inn only after the property confirms it directly; otherwise use the confirmed same-day Hampton hold. Never leave bags visible in the vehicle.', food: 'Included Hampton breakfast if timing fits; packed breakfast is the no-delay backup.', kidPlan: 'Bathroom and beach bag separated from the stored luggage.', mapUrl: mapSearchUrl('300 Capital Drive, Charlottetown, PE C1E 1E8'), sourceUrl: 'https://www.hilton.com/en/hotels/yqmchhx-hampton-suites-charlottetown/' }),
+          sourceStop('2026-08-18', 'check-out-hampton-begin-hotel-switch-day', { id: 'd5-checkout', time: '07:15', zone: 'AT', title: 'Check out Hampton / begin hotel-switch day', kind: 'Hotel transfer / start', address: '300 Capital Drive, Charlottetown, PE C1E 1E8', city: 'Charlottetown, PE', priority: 'required', timeBudget: '10 min', notes: 'Wake at 06:00, use the included breakfast only if service fits, and check out by 07:15 with the beach/day bag separated. Use the early bag drop at Canadas Best Value Inn only after the property confirms it directly; otherwise use the confirmed same-day Hampton hold. Never leave bags visible in the vehicle.', food: 'Included Hampton breakfast if timing fits; packed breakfast is the no-delay backup.', kidPlan: 'Bathroom and beach bag separated from the stored luggage.', mapUrl: mapSearchUrl('300 Capital Drive, Charlottetown, PE C1E 1E8'), sourceUrl: 'https://www.hilton.com/en/hotels/yqmchhx-hampton-suites-charlottetown/' }),
           customStop({ id: 'd5-bag-drop', dayId: '2026-08-18', time: '07:25–07:35 if confirmed', zone: 'AT', title: 'Pending confirmation: early bag drop at Canadas Best Value Inn', kind: 'Hotel transfer / luggage', priority: 'conditional', conditional: true, address: '20 Capital Drive, Charlottetown, PE C1E 1E7', city: 'Charlottetown, PE', leg: 'About 3 km / 5 min from Hampton; about 35 km / 35-40 min to Green Gables', timeBudget: '10 min', notes: 'This is not confirmed until the checklist call is completed. If declined, mark this stop skipped, use the confirmed same-day Hampton hold, and follow the 15:15 beach cutoff for return pickup. Never leave luggage visible in the car.', food: 'No food stop.', kidPlan: 'Keep the day bag, beach gear and medications with the family.', mapUrl: mapSearchUrl('20 Capital Drive, Charlottetown, PE C1E 1E7'), sourceUrl: 'https://cbvipei.ca/' }),
-          sourceStop('2026-08-18', 'Green Gables', { id: 'd5-green-gables', time: '08:10 parking · 08:45 queue · 09:00–10:40 visit', zone: 'AT', locationName: 'Green Gables Heritage Place', parkingName: 'Green Gables Visitor Centre parking', parkingAddress: '8619 Route 6, Cavendish, PE C0A 1N0', priority: 'required', notes: 'Official hours are 09:00–17:00; Parks Canada says the busiest period is 11:00–15:00 and visitor parking is free near the visitor centre. The early parking/bathroom buffer avoids the peak. Leave by 10:40 for the new Blue Mussel location.', mapUrl: mapSearchUrl('Green Gables Visitor Centre parking, 8619 Route 6, Cavendish, PE C0A 1N0'), sourceUrl: 'https://parks.canada.ca/lhn-nhs/pe/greengables/visit/services', ticket: ticketGuidance.greenGables }),
-          foodStop('2026-08-18', 'Blue Mussel', { id: 'd5-lunch', time: '11:10 parking · 11:30 opening', zone: 'AT', title: 'Blue Mussel Café — new Rustico location', address: '5033 Rustico Road, Rustico, PE C0A 1N0', city: 'Rustico, PE', kind: 'Lunch', priority: 'required', timeBudget: '75-90 min including wait', notes: 'Summer hours are 11:30–21:00. Arrive before opening. The live same-day waitlist is only for the current service: check it when nearby/on the way, not at 10:45 and not as an advance booking. Cap the quoted wait at 45 minutes to protect the afternoon.', mapUrl: mapSearchUrl('5033 Rustico Road, Rustico, PE C0A 1N0'), sourceUrl: 'https://bluemusselcafe.com/waitlist/' }),
-          sourceStop('2026-08-18', 'Cavendish Beach', { id: 'd5-beach', time: '13:30–15:30 · hard leave 15:45', zone: 'AT', locationName: 'Cavendish Main Beach — PEI National Park', parkingName: 'Cavendish Main Beach visitor parking', parkingAddress: '1416 Gulf Shore Parkway, Cavendish, PE', address: '1416 Gulf Shore Parkway, Cavendish, PE', priority: 'optional', skipAt: 30, saves: '90 min', timeBudget: '60-120 min', notes: 'Use the named main-beach visitor parking. Plan A with bags at the new hotel: leave by 15:45 for a real hotel reset. Hampton-hold fallback: leave by 15:15, retrieve bags at 300 Capital Drive, then continue 3 km to the new hotel. Surfguards operate 10:00–18:00 in this 2026 window; check PEI Now around 11:00. Swim only in the supervised area and between flags. Red flag, thunder, severe-weather warning or no supervision means no swimming.', mapUrl: mapSearchUrl('Cavendish Main Beach visitor parking, 1416 Gulf Shore Parkway, Cavendish, PE'), sourceUrl: 'https://parks.canada.ca/pn-np/pe/pei-ipe/activ/natation-swim/plages-beaches', ticket: ticketGuidance.cavendish }),
+          sourceStop('2026-08-18', 'green-gables-heritage-place', { id: 'd5-green-gables', time: '08:10 parking · 08:45 queue · 09:00–10:40 visit', zone: 'AT', locationName: 'Green Gables Heritage Place', parkingName: 'Green Gables Visitor Centre parking', parkingAddress: '8619 Route 6, Cavendish, PE C0A 1N0', priority: 'required', notes: 'Official hours are 09:00–17:00; Parks Canada says the busiest period is 11:00–15:00 and visitor parking is free near the visitor centre. The early parking/bathroom buffer avoids the peak. Leave by 10:40 for the new Blue Mussel location.', mapUrl: mapSearchUrl('Green Gables Visitor Centre parking, 8619 Route 6, Cavendish, PE C0A 1N0'), sourceUrl: 'https://parks.canada.ca/lhn-nhs/pe/greengables/visit/services', ticket: ticketGuidance.greenGables }),
+          foodStop('2026-08-18', 'blue-mussel-cafe', { id: 'd5-lunch', time: '11:10 parking · 11:30 opening', zone: 'AT', title: 'Blue Mussel Café — new Rustico location', address: '5033 Rustico Road, Rustico, PE C0A 1N0', city: 'Rustico, PE', kind: 'Lunch', priority: 'required', timeBudget: '75-90 min including wait', notes: 'Summer hours are 11:30–21:00. Arrive before opening. The live same-day waitlist is only for the current service: check it when nearby/on the way, not at 10:45 and not as an advance booking. Cap the quoted wait at 45 minutes to protect the afternoon.', mapUrl: mapSearchUrl('5033 Rustico Road, Rustico, PE C0A 1N0'), sourceUrl: 'https://bluemusselcafe.com/waitlist/' }),
+          sourceStop('2026-08-18', 'cavendish-beach-pei-national-park', { id: 'd5-beach', time: '13:30–15:30 · hard leave 15:45', zone: 'AT', locationName: 'Cavendish Main Beach — PEI National Park', parkingName: 'Cavendish Main Beach visitor parking', parkingAddress: '1416 Gulf Shore Parkway, Cavendish, PE', address: '1416 Gulf Shore Parkway, Cavendish, PE', priority: 'optional', skipAt: 30, saves: '90 min', timeBudget: '60-120 min', notes: 'Use the named main-beach visitor parking. Plan A with bags at the new hotel: leave by 15:45 for a real hotel reset. Hampton-hold fallback: leave by 15:15, retrieve bags at 300 Capital Drive, then continue 3 km to the new hotel. Surfguards operate 10:00–18:00 in this 2026 window; check PEI Now around 11:00. Swim only in the supervised area and between flags. Red flag, thunder, severe-weather warning or no supervision means no swimming.', mapUrl: mapSearchUrl('Cavendish Main Beach visitor parking, 1416 Gulf Shore Parkway, Cavendish, PE'), sourceUrl: 'https://parks.canada.ca/pn-np/pe/pei-ipe/activ/natation-swim/plages-beaches', ticket: ticketGuidance.cavendish }),
           customStop({ id: 'd5-rain', dayId: '2026-08-18', time: '13:15 only for rain/closure', zone: 'AT', title: 'Indoor Plan B: Ripley’s Believe It or Not! Cavendish', locationName: 'Ripley’s Believe It or Not! Cavendish', parkingName: 'Ripley’s Cavendish on-site visitor parking', parkingAddress: '8863 Cavendish Road, Cavendish, PE', kind: 'Indoor weather backup', priority: 'conditional', conditional: true, choiceGated: true, routeEligible: false, address: '8863 Cavendish Road, Cavendish, PE', city: 'Cavendish, PE', timeBudget: '45-60 min', notes: 'Use instead of the beach for sustained rain, thunder or a beach closure. It is indoors and the official FAQ says the self-guided visit takes about 45 minutes; verify seasonal hours before driving over.', food: 'Nearby Cavendish Boardwalk services.', kidPlan: 'Indoor oddities and exhibits for a six-year-old; leave by 15:15–15:30 for the hotel reset.', mapUrl: mapSearchUrl('Ripley’s Cavendish visitor parking, 8863 Cavendish Road, Cavendish, PE'), sourceUrl: 'https://www.ripleys.com/attractions/ripleys-believe-it-or-not-cavendish-beach/faq' }),
-          sourceStop('2026-08-18', 'Check in: Canadas Best Value Inn & Suites Charlottetown', { id: 'd5-hotel', time: '16:25–17:00 target', zone: 'AT', title: 'Check in: Canadas Best Value Inn & Suites Charlottetown', address: '20 Capital Drive, Charlottetown, PE C1E 1E7', city: 'Charlottetown, PE', priority: 'required', leg: 'About 40 km / 40 min from Cavendish Beach', notes: 'Booked non-smoking king suite with jetted tub; official check-in begins at 15:00. The stay is booked and safe. Retrieve Hampton-held bags first only if that optional luggage plan was used, register the vehicle and protect at least 35 minutes for the room reset.', food: 'Free hot breakfast tomorrow; Capital Drive services nearby.', kidPlan: 'Unpack, reset and keep the evening calm.', mapUrl: mapSearchUrl('20 Capital Drive, Charlottetown, PE C1E 1E7'), sourceUrl: 'https://cbvipei.ca/' }),
-          foodStop('2026-08-18', 'Slaymaker', { id: 'd5-dinner', time: '17:50 hotel departure · 18:30 reservation', zone: 'AT', kind: 'Dinner', priority: 'required', notes: 'Official Tuesday hours are 11:30–21:00. Book early. Old Home Week runs Aug 14–22, so preselect a downtown garage and allow 30–40 minutes for the short drive, parking and walk.' }),
+          sourceStop('2026-08-18', 'check-in-canadas-best-value-inn-suites-charlottetown', { id: 'd5-hotel', time: '16:25–17:00 target', zone: 'AT', title: 'Check in: Canadas Best Value Inn & Suites Charlottetown', address: '20 Capital Drive, Charlottetown, PE C1E 1E7', city: 'Charlottetown, PE', priority: 'required', leg: 'About 40 km / 40 min from Cavendish Beach', notes: 'Booked non-smoking king suite with jetted tub; official check-in begins at 15:00. The stay is booked and safe. Retrieve Hampton-held bags first only if that optional luggage plan was used, register the vehicle and protect at least 35 minutes for the room reset.', food: 'Free hot breakfast tomorrow; Capital Drive services nearby.', kidPlan: 'Unpack, reset and keep the evening calm.', mapUrl: mapSearchUrl('20 Capital Drive, Charlottetown, PE C1E 1E7'), sourceUrl: 'https://cbvipei.ca/' }),
+          foodStop('2026-08-18', 'slaymaker-nichols', { id: 'd5-dinner', time: '17:50 hotel departure · 18:30 reservation', zone: 'AT', kind: 'Dinner', priority: 'required', notes: 'Official Tuesday hours are 11:30–21:00. Book early. Old Home Week runs Aug 14–22, so preselect a downtown garage and allow 30–40 minutes for the short drive, parking and walk.' }),
           customStop({ id: 'd5-return', dayId: '2026-08-18', time: '19:45–20:00', zone: 'AT', title: 'Return to Canadas Best Value Inn & Suites Charlottetown', kind: 'Hotel return / sleep', priority: 'required', address: '20 Capital Drive, Charlottetown, PE C1E 1E7', city: 'Charlottetown, PE', leg: 'About 6 km / 10-15 min from Slaymaker & Nichols', notes: 'Return directly after dinner and stage the Hopewell clothes, breakfast and car supplies before bed.', food: 'No additional stop.', kidPlan: 'Early bedtime before the tide-anchored drive.', mapUrl: mapSearchUrl('20 Capital Drive, Charlottetown, PE C1E 1E7'), sourceUrl: 'https://cbvipei.ca/' })
         ],
         meals: [
@@ -825,11 +828,11 @@
           customStop({ id: 'd6-marine-rail', dayId: '2026-08-19', time: '08:00–08:10 only instead of Sackville', zone: 'AT', title: 'Fallback rest: Marine Rail Historical Park', locationName: 'Marine Rail Historical Park', parkingName: 'Marine Rail Park waterfront visitor parking', parkingAddress: '41 Borden Avenue, Borden-Carleton, PE C0B 1X0', kind: 'Optional bridge-view stretch', priority: 'conditional', conditional: true, choiceGated: true, routeEligible: false, address: '41 Borden Avenue, Borden-Carleton, PE C0B 1X0', city: 'Borden-Carleton, PE', timeBudget: '10 min', notes: 'Use only if the child needs an earlier stop or the family reaches Borden-Carleton ahead of schedule. Quick bridge/lighthouse photo and stretch, then skip Sackville entirely. Do not combine both pre-Hopewell attractions.', food: 'No meal stop; keep the tide clock moving.', kidPlan: 'Ten minutes of open-air movement with close waterfront supervision.', mapUrl: mapSearchUrl('Marine Rail Park waterfront visitor parking, 41 Borden Avenue, Borden-Carleton, PE C0B 1X0'), sourceUrl: 'https://www.borden-carleton.ca/copy-of-borden-carleton-regional-library' }),
           customStop({ id: 'd6-bridge', dayId: '2026-08-19', time: '08:10', zone: 'AT', title: 'Confederation Bridge crossing', kind: 'Drive', priority: 'required', address: 'Confederation Bridge, Borden-Carleton, PE', city: 'Borden-Carleton, PE', leg: 'About 60 km / 50 min from Charlottetown', notes: 'The current two-axle toll is C$20, collected while leaving PEI; cash, major cards and Interac are accepted. Check live bridge status, then continue to the one planned family rest in Sackville.', mapUrl: mapSearchUrl('Confederation Bridge, Borden-Carleton, PE'), sourceUrl: 'https://www.confederationbridge.com/tolls-fees/' }),
           customStop({ id: 'd6-sackville-rest', dayId: '2026-08-19', time: '09:00–09:20 · hard leave 09:20', zone: 'AT', title: 'Required rest: Sackville Waterfowl Park', locationName: 'Sackville Waterfowl Park & Tantramar Visitor Information Centre', parkingName: 'Tantramar Visitor Information Centre parking', parkingAddress: '34 Mallard Drive, Sackville, NB E4L 4C3', kind: 'Washroom / boardwalk / child stretch', priority: 'required', address: '34 Mallard Drive, Sackville, NB E4L 4C3', city: 'Sackville, NB', leg: 'Planning estimate: about 45 km / 35–40 min after the bridge; verify in live Maps', timeBudget: '20 min', notes: 'Park at the named Visitor Information Centre, use the washrooms and take only the shortest boardwalk out-and-back. The park is open year-round and the visitor centre is listed 09:00–18:00 in July/August; verify 2026 hours during the Aug 17 tide check. Hard leave 09:20. If arrival is after 09:10, make this a 10-minute washroom/stretch stop and skip the boardwalk.', food: 'Water and a small car snack only; the proper lunch remains at Hopewell Rocks.', kidPlan: 'Flat, accessible boardwalk and bird spotting. Stay beside the Visitor Centre so the stop cannot expand into the 3.5 km trail network.', mapUrl: mapSearchUrl('Tantramar Visitor Information Centre parking, 34 Mallard Drive, Sackville, NB E4L 4C3'), sourceUrl: 'https://tourismnewbrunswick.ca/listing/sackville-waterfowl-park', attractionQuality: attractionQuality.sackville }),
-          sourceStop('2026-08-19', 'Hopewell Rocks', { id: 'd6-hopewell', time: '10:15–10:30 entrance · 10:45 stairs', zone: 'AT', locationName: 'Hopewell Rocks Provincial Park', parkingName: 'Hopewell Rocks main visitor parking', parkingAddress: '131 Discovery Rd, Hopewell Cape, NB E4H 4Z5', kind: 'Tide-dependent attraction', priority: 'required', leg: 'Planning estimate: about 70 km / 55–65 min from Sackville; verify in live Maps', timeBudget: '2.5-3 h', notes: 'CHS predicts low tide at 11:52 AM ADT. Target the main visitor parking and entrance by 10:15–10:30 and the beach stairs by 10:45. Estimated access is roughly 9:00 AM–2:45 PM, but actual ocean-floor access is always at park staff discretion. Use closed-toe grippy footwear and recheck 24–48 hours before.', kidPlan: 'Use the shuttle if energy is marginal; 60–90 minutes on the floor is enough. Expect about 99 stairs down and 101 back up on the main route.', mapUrl: mapSearchUrl('Hopewell Rocks main visitor parking, 131 Discovery Rd, Hopewell Cape, NB E4H 4Z5'), sourceUrl: 'https://www.parcsnbparks.ca/en/parks/33/hopewell-rocks-provincial-park/26/tide-tables', ticket: ticketGuidance.hopewell }),
+          sourceStop('2026-08-19', 'hopewell-rocks-provincial-park', { id: 'd6-hopewell', time: '10:15–10:30 entrance · 10:45 stairs', zone: 'AT', locationName: 'Hopewell Rocks Provincial Park', parkingName: 'Hopewell Rocks main visitor parking', parkingAddress: '131 Discovery Rd, Hopewell Cape, NB E4H 4Z5', kind: 'Tide-dependent attraction', priority: 'required', leg: 'Planning estimate: about 70 km / 55–65 min from Sackville; verify in live Maps', timeBudget: '2.5-3 h', notes: 'CHS predicts low tide at 11:52 AM ADT. Target the main visitor parking and entrance by 10:15–10:30 and the beach stairs by 10:45. Estimated access is roughly 9:00 AM–2:45 PM, but actual ocean-floor access is always at park staff discretion. Use closed-toe grippy footwear and recheck 24–48 hours before.', kidPlan: 'Use the shuttle if energy is marginal; 60–90 minutes on the floor is enough. Expect about 99 stairs down and 101 back up on the main route.', mapUrl: mapSearchUrl('Hopewell Rocks main visitor parking, 131 Discovery Rd, Hopewell Cape, NB E4H 4Z5'), sourceUrl: 'https://www.parcsnbparks.ca/en/parks/33/hopewell-rocks-provincial-park/26/tide-tables', ticket: ticketGuidance.hopewell }),
           customStop({ id: 'd6-lunch', dayId: '2026-08-19', time: '13:30–14:20', zone: 'AT', title: 'Proper lunch: High Tide Restaurant', locationName: 'High Tide Restaurant — Hopewell Rocks', kind: 'Lunch / full-service restaurant', priority: 'required', address: '131 Discovery Rd, Hopewell Cape, NB E4H 4Z5', city: 'Hopewell Cape, NB', timeBudget: '45-50 min', notes: 'Change out of muddy footwear first, then sit down after the ocean-floor walk. The official 2026 schedule is 09:00–19:30 on Aug 19. This is a full-service restaurant with local New Brunswick food, not the snack café and not a picnic.', food: 'Full-service casual lunch with fresh local flavours and a tidal-flat view.', kidPlan: 'Wipes, dry shoes and a change of clothes before sitting down.', mapUrl: mapSearchUrl('High Tide Restaurant, Hopewell Rocks, 131 Discovery Rd, Hopewell Cape, NB E4H 4Z5'), sourceUrl: 'https://www.thehopewellrocks.ca/en/parks/33/hopewell-rocks-provincial-park/entities' }),
-          sourceStop('2026-08-19', 'Check in: Best Western Plus Moncton', { id: 'd6-hotel', time: '15:30 arrival buffer · 16:00 guaranteed', zone: 'AT', title: 'Check in: Best Western Plus Moncton', address: '300 Lewisville Road (Highway 15, Ramp 10), Moncton, NB E1A 5Y4', city: 'Moncton, NB', priority: 'required', leg: 'About 40 km / 35 min from Hopewell Rocks', notes: 'The booked room is guaranteed from 16:00; treat 15:30 as an early-check-in request or pool/lobby buffer. The stay is booked and safe. Free parking, full breakfast and an indoor pool make this the recovery stop.', food: 'Full breakfast tomorrow; Tide & Boar remains the relaxed dinner.', kidPlan: 'Indoor-pool reset after the room is ready.', mapUrl: mapSearchUrl('300 Lewisville Road, Moncton, NB E1A 5Y4'), sourceUrl: 'https://www.bestwestern.com/en_US/book/hotels-in-moncton/best-western-plus-moncton/propertyCode.64007.html' }),
+          sourceStop('2026-08-19', 'check-in-best-western-plus-moncton', { id: 'd6-hotel', time: '15:30 arrival buffer · 16:00 guaranteed', zone: 'AT', title: 'Check in: Best Western Plus Moncton', address: '300 Lewisville Road (Highway 15, Ramp 10), Moncton, NB E1A 5Y4', city: 'Moncton, NB', priority: 'required', leg: 'About 40 km / 35 min from Hopewell Rocks', notes: 'The booked room is guaranteed from 16:00; treat 15:30 as an early-check-in request or pool/lobby buffer. The stay is booked and safe. Free parking, full breakfast and an indoor pool make this the recovery stop.', food: 'Full breakfast tomorrow; Tide & Boar remains the relaxed dinner.', kidPlan: 'Indoor-pool reset after the room is ready.', mapUrl: mapSearchUrl('300 Lewisville Road, Moncton, NB E1A 5Y4'), sourceUrl: 'https://www.bestwestern.com/en_US/book/hotels-in-moncton/best-western-plus-moncton/propertyCode.64007.html' }),
           customStop({ id: 'd6-magnetic', dayId: '2026-08-19', time: '16:45 only if chosen instead of the pool', zone: 'AT', title: 'Magnetic Hill illusion', locationName: 'Magnetic Hill Illusion', parkingName: 'Magnetic Hill Illusion entrance / visitor parking', parkingAddress: '2846 Mountain Road, Moncton, NB E1G 2W7', kind: 'Optional attraction branch', priority: 'optional', conditional: true, choiceGated: true, routeEligible: false, saves: '45 min', address: '2846 Mountain Road, Moncton, NB E1G 2W7', city: 'Moncton, NB', leg: 'About 15 min from the hotel', timeBudget: '30-40 min', notes: 'Choice-gated branch, not a lateness rule and not part of the default route. Choose either the indoor-pool recovery block or Magnetic Hill—not both—and confirm staffed access before the 18:00 dinner.', food: 'Nearby services; keep it light before dinner.', kidPlan: 'Novelty backwards-rolling car moment, only if everyone prefers it to the pool.', mapUrl: mapSearchUrl('Magnetic Hill Illusion entrance, 2846 Mountain Road, Moncton, NB E1G 2W7'), sourceUrl: 'https://www.moncton.ca/en/magnetic-hill-illusion', ticket: ticketGuidance.magneticHill }),
-          foodStop('2026-08-19', 'Tide & Boar', { id: 'd6-dinner', time: '18:00', zone: 'AT', kind: 'Dinner', priority: 'required', skipAt: 60, saves: '90 min', notes: 'Relaxed dinner after either the hotel pool or the separate Magnetic Hill branch. Fall back to hotel/quick food only if the afternoon ran long.' }),
+          foodStop('2026-08-19', 'tide-boar-gastropub', { id: 'd6-dinner', time: '18:00', zone: 'AT', kind: 'Dinner', priority: 'required', skipAt: 60, saves: '90 min', notes: 'Relaxed dinner after either the hotel pool or the separate Magnetic Hill branch. Fall back to hotel/quick food only if the afternoon ran long.' }),
           customStop({ id: 'd6-return', dayId: '2026-08-19', time: '19:30–19:45', zone: 'AT', title: 'Return to Best Western Plus Moncton', kind: 'Hotel return / sleep', priority: 'required', address: '300 Lewisville Road (Highway 15, Ramp 10), Moncton, NB E1A 5Y4', city: 'Moncton, NB', leg: 'About 4 km / 10 min from Tide & Boar', notes: 'Return directly after dinner, preload the car and prepare a packed breakfast backup for the 06:45 departure.', food: 'No additional stop.', kidPlan: 'Pool only if it was not already used and posted hours still fit; otherwise bedtime.', mapUrl: mapSearchUrl('300 Lewisville Road, Moncton, NB E1A 5Y4'), sourceUrl: 'https://www.bestwestern.com/en_US/book/hotels-in-moncton/best-western-plus-moncton/propertyCode.64007.html' })
         ],
         meals: [
@@ -858,12 +861,12 @@
         contingency: '06:45 means wheels moving after breakfast and checkout. Keep the Edmundston lunch/driver swap; shorten Hartland or Kamouraska before cutting a fatigue break.',
         emergency: 'Go straight to DoubleTree and sit down at Le Dijon. If it cannot seat the family, use Normandin Charlesbourg; do not add a downtown detour.',
         stops: [
-          sourceStop('2026-08-20', 'Depart Moncton', { id: 'd7-depart', time: '06:45', zone: 'AT', title: 'Depart Best Western Plus Moncton', address: '300 Lewisville Road (Highway 15, Ramp 10), Moncton, NB E1A 5Y4', city: 'Moncton, NB', priority: 'required', notes: 'Wake 05:30–05:45, preload most luggage the night before and make 06:45 the actual wheels-moving time. Confirm breakfast hours with the hotel; if service does not fit, use the packed breakfast.', food: 'Included full breakfast only if timing fits; packed breakfast is the no-delay backup.', mapUrl: mapSearchUrl('300 Lewisville Road, Moncton, NB E1A 5Y4'), sourceUrl: 'https://www.bestwestern.com/en_US/book/hotels-in-moncton/best-western-plus-moncton/propertyCode.64007.html' }),
-          sourceStop('2026-08-20', 'Fredericton service', { id: 'd7-fredericton', time: '08:45', zone: 'AT', title: 'Regent Mall — washroom and stretch', locationName: 'Regent Mall', address: '1381 Regent Street, Fredericton, NB E3C 1A2', city: 'Fredericton, NB', kind: 'Washroom / stretch', priority: 'required', leg: 'About 180 km / 2 h from Moncton', notes: 'Use the mall’s complimentary customer parking for a quick washroom, coffee and movement break; do not leave the property.', mapUrl: mapSearchUrl('Regent Mall, 1381 Regent Street, Fredericton, NB E3C 1A2'), sourceUrl: 'https://www.regentmall.ca/pages/directions-parking' }),
+          sourceStop('2026-08-20', 'depart-moncton', { id: 'd7-depart', time: '06:45', zone: 'AT', title: 'Depart Best Western Plus Moncton', address: '300 Lewisville Road (Highway 15, Ramp 10), Moncton, NB E1A 5Y4', city: 'Moncton, NB', priority: 'required', notes: 'Wake 05:30–05:45, preload most luggage the night before and make 06:45 the actual wheels-moving time. Confirm breakfast hours with the hotel; if service does not fit, use the packed breakfast.', food: 'Included full breakfast only if timing fits; packed breakfast is the no-delay backup.', mapUrl: mapSearchUrl('300 Lewisville Road, Moncton, NB E1A 5Y4'), sourceUrl: 'https://www.bestwestern.com/en_US/book/hotels-in-moncton/best-western-plus-moncton/propertyCode.64007.html' }),
+          sourceStop('2026-08-20', 'fredericton-service-lunch-light-break', { id: 'd7-fredericton', time: '08:45', zone: 'AT', title: 'Regent Mall — washroom and stretch', locationName: 'Regent Mall', address: '1381 Regent Street, Fredericton, NB E3C 1A2', city: 'Fredericton, NB', kind: 'Washroom / stretch', priority: 'required', leg: 'About 180 km / 2 h from Moncton', notes: 'Use the mall’s complimentary customer parking for a quick washroom, coffee and movement break; do not leave the property.', mapUrl: mapSearchUrl('Regent Mall, 1381 Regent Street, Fredericton, NB E3C 1A2'), sourceUrl: 'https://www.regentmall.ca/pages/directions-parking' }),
           customStop({ id: 'd7-hartland', dayId: '2026-08-20', time: '10:30', zone: 'AT', title: 'Hartland Covered Bridge photo stop', locationName: 'Hartland Covered Bridge', parkingName: 'Hartland Covered Bridge east-side riverside parking', parkingAddress: '365 Main St, Hartland, NB E7P 2N1', kind: 'Photo stop / stretch', priority: 'optional', skipAt: 30, saves: '15 min', address: '365 Main St, Hartland, NB E7P 2N1', city: 'Hartland, NB', leg: 'About 120 km / 1 h 15 from Fredericton; about 150 km / 1 h 35 to Edmundston', timeBudget: '10-15 min', notes: 'Use the east-side riverside arrival point. Keep this to a short photo/stretch; the required longer break and lunch are in Edmundston.', food: 'No meal plan.', kidPlan: 'Quick bridge photo.', mapUrl: mapSearchUrl('Hartland Covered Bridge east side, 365 Main St, Hartland, NB E7P 2N1'), sourceUrl: 'https://tourismnewbrunswick.ca/listing/hartland-covered-bridge' }),
           customStop({ id: 'd7-edmundston', dayId: '2026-08-20', time: '12:15–13:10', zone: 'AT', title: 'Proper lunch: Frank’s Bar & Grill', locationName: 'Frank’s Bar & Grill — Four Points Edmundston', kind: 'Lunch / seated restaurant / driver swap', priority: 'required', address: '100 Rice Street, Edmundston, NB E3V 1T4', city: 'Edmundston, NB', leg: 'About 150 km / 1 h 35 from Hartland', timeBudget: '50-55 min', notes: 'Required real break before the Québec stretch. Sit down for lunch, walk and swap drivers. Frank’s serves lunch until 14:00 Thursday. If fuel is at/below a quarter tank or range approaches 120–150 km, use Shell Grey Rock after lunch; do not replace lunch with convenience-store food.', food: 'Full lunch menu with salads, pasta, mixed grills and regional food.', kidPlan: 'At least 35 minutes seated and out of the booster.', mapUrl: mapSearchUrl('Frank’s Bar & Grill, 100 Rice Street, Edmundston, NB E3V 1T4'), sourceUrl: 'https://www.marriott.com/en-us/hotels/yqbep-four-points-edmundston-hotel-and-conference-center/dining/franks-bar-and-grill/' }),
           customStop({ id: 'd7-rdl', dayId: '2026-08-20', time: '13:45', zone: 'ET', title: 'Rivière-du-Loup washroom + final fuel decision', kind: 'Fuel / washroom check', priority: 'required', address: '80 Boulevard Cartier, Rivière-du-Loup, QC G5R 2M9', city: 'Rivière-du-Loup, QC', timeBudget: '10-15 min', notes: 'Québec time begins after the border. This single card replaces the duplicate fuel checks. Official Shell listing shows V-Power 91 and 06:00–23:00 forecourt hours. Fill only if still needed after Edmundston; the proper lunch already happened.', food: 'Convenience store and washroom; no second lunch.', kidPlan: 'Quick reset, then continue.', mapUrl: mapSearchUrl('80 Boulevard Cartier, Rivière-du-Loup, QC G5R 2M9'), sourceUrl: 'https://find.shell.com/ca/fuel/10060859-boul-cartier-rue-du-quai/en_CA' }),
-          sourceStop('2026-08-20', 'Check in: DoubleTree by Hilton Quebec Resort', { id: 'd7-hotel', time: '16:30–17:15', zone: 'ET', title: 'Check in: DoubleTree by Hilton Quebec Resort', address: '7900 Rue du Marigot, Québec City, QC G1G 6T8', city: 'Québec City, QC', priority: 'required', leg: 'About 225 km / 2 h 20–2 h 35 from Rivière-du-Loup', notes: 'Confirmed one-bedroom suite for 2 adults + 1 child; the stay is booked and safe. The return route protects a real recovery window. Register for free parking, settle in, stay on site tonight and use the direct Highway 73 approach tomorrow.', food: 'Le Dijon is the on-site seated dinner; breakfast is available for a fee.', kidPlan: 'One-bedroom suite and outdoor pool if open and energy remains.', mapUrl: mapSearchUrl('7900 Rue du Marigot, Québec City, QC G1G 6T8'), sourceUrl: 'https://www.hilton.com/en/hotels/yqbqcdt-doubletree-quebec-resort/' }),
+          sourceStop('2026-08-20', 'check-in-doubletree-by-hilton-quebec-resort', { id: 'd7-hotel', time: '16:30–17:15', zone: 'ET', title: 'Check in: DoubleTree by Hilton Quebec Resort', address: '7900 Rue du Marigot, Québec City, QC G1G 6T8', city: 'Québec City, QC', priority: 'required', leg: 'About 225 km / 2 h 20–2 h 35 from Rivière-du-Loup', notes: 'Confirmed one-bedroom suite for 2 adults + 1 child; the stay is booked and safe. The return route protects a real recovery window. Register for free parking, settle in, stay on site tonight and use the direct Highway 73 approach tomorrow.', food: 'Le Dijon is the on-site seated dinner; breakfast is available for a fee.', kidPlan: 'One-bedroom suite and outdoor pool if open and energy remains.', mapUrl: mapSearchUrl('7900 Rue du Marigot, Québec City, QC G1G 6T8'), sourceUrl: 'https://www.hilton.com/en/hotels/yqbqcdt-doubletree-quebec-resort/' }),
           customStop({ id: 'd7-dinner', dayId: '2026-08-20', time: '18:45–19:00 · after settling', zone: 'ET', title: 'Proper dinner: Le Dijon dining room', kind: 'Dinner / seated restaurant', priority: 'required', address: '7900 Rue du Marigot, Québec City, QC G1G 6T8', city: 'Québec City, QC', timeBudget: '60-75 min', notes: 'Reserve a dining-room table and sit down after parking, registration and unloading. If arrival is near 18:15, make 19:00 the target. Normandin Charlesbourg is the named sit-down fallback; no downtown detour after the 770 km driving day.', food: 'Le Dijon dining room; Normandin Charlesbourg fallback.', kidPlan: 'Le Dijon has a children’s menu; eat, then protect the early bedtime.', mapUrl: mapSearchUrl('7900 Rue du Marigot, Québec City, QC G1G 6T8'), sourceUrl: 'https://www.hilton.com/en/hotels/yqbqcdt-doubletree-quebec-resort/dining/' })
         ],
         meals: [
@@ -892,10 +895,10 @@
         contingency: 'At westbound Mallorytown North around 14:00, make an honest go/rest decision using driver fatigue, child condition, weather and traffic—not lateness. If continuing, keep the final Colborne movement break.',
         emergency: 'If neither driver can safely cover the remaining distance, stop at the nearest ONroute or safe pull-off, switch drivers, rest and do not move until safe. Never drive tired to keep to the clock.',
         stops: [
-          sourceStop('2026-08-21', 'Depart Québec City', { id: 'd8-depart', time: '06:30 wheels moving', zone: 'ET', title: 'Depart DoubleTree by Hilton Quebec Resort', address: '7900 Rue du Marigot, Québec City, QC G1G 6T8', city: 'Québec City, QC', priority: 'required', notes: 'Wake 05:15 and preload the car the night before. Ask Le Dijon to confirm whether a full hotel breakfast can be finished before the 06:30 departure; if not, request takeaway and use the packed breakfast safety exception. Use Highway 73 south and swap drivers every 90–120 minutes or sooner for fatigue.', food: 'Prefer Le Dijon hotel breakfast if the confirmed service time protects the 06:30 departure; otherwise takeaway or packed breakfast.', mapUrl: mapSearchUrl('7900 Rue du Marigot, Québec City, QC G1G 6T8'), sourceUrl: 'https://www.hilton.com/en/hotels/yqbqcdt-doubletree-quebec-resort/' }),
+          sourceStop('2026-08-21', 'depart-quebec-city-for-vaughan', { id: 'd8-depart', time: '06:30 wheels moving', zone: 'ET', title: 'Depart DoubleTree by Hilton Quebec Resort', address: '7900 Rue du Marigot, Québec City, QC G1G 6T8', city: 'Québec City, QC', priority: 'required', notes: 'Wake 05:15 and preload the car the night before. Ask Le Dijon to confirm whether a full hotel breakfast can be finished before the 06:30 departure; if not, request takeaway and use the packed breakfast safety exception. Use Highway 73 south and swap drivers every 90–120 minutes or sooner for fatigue.', food: 'Prefer Le Dijon hotel breakfast if the confirmed service time protects the 06:30 departure; otherwise takeaway or packed breakfast.', mapUrl: mapSearchUrl('7900 Rue du Marigot, Québec City, QC G1G 6T8'), sourceUrl: 'https://www.hilton.com/en/hotels/yqbqcdt-doubletree-quebec-resort/' }),
           customStop({ id: 'd8-chambly', dayId: '2026-08-21', time: '09:15 arrive · ~30–40 min grounds', zone: 'ET', title: 'Fort Chambly National Historic Site', locationName: 'Fort Chambly National Historic Site', parkingName: 'Fort Chambly visitor parking (P1/P2, off Avenue Bourgogne)', parkingAddress: '2 Richelieu Street, Chambly, QC J3L 2B9', address: '2 Richelieu Street, Chambly, QC J3L 2B9', city: 'Chambly, QC', kind: 'Morning attraction / stretch', priority: 'required', leg: 'About 245 km / 2 h 30–2 h 45 from the DoubleTree', timeBudget: '30-40 min', notes: 'Replaces the former Fromagerie Lemaire stop. A compact riverside stone fort with washrooms, open lawn and picnic space beside the Richelieu River. The grounds, riverside walk and washrooms are the plan and cost nothing; the fort interior/exhibits typically open at 10:00 (verify 2026 hours that morning) and are worth adding only if you are comfortably ahead — otherwise the interior would push the whole afternoon late. Leave by about 09:55 to reach Scores for the 11:00 opening.', food: 'Washrooms and picnic tables on site; pack light snacks. The proper lunch is Scores Boucherville at 11:00.', kidPlan: 'Open ramparts, cannons and riverside lawn to run before the long afternoon drive.', mapUrl: mapSearchUrl('Fort Chambly National Historic Site, 2 Richelieu Street, Chambly, QC J3L 2B9'), sourceUrl: 'https://parks.canada.ca/lhn-nhs/qc/fortchambly/visit/directions', coords: [45.44862, -73.27591] }),
           customStop({ id: 'd8-restaurant-lunch', dayId: '2026-08-21', time: '11:00–11:50', zone: 'ET', title: 'Proper lunch: Scores Restaurant Boucherville', locationName: 'Scores Restaurant Boucherville', kind: 'Lunch / seated restaurant', priority: 'required', address: '1200 Rue Volta, Boucherville, QC J4B 7A2', city: 'Boucherville, QC', leg: 'About 25 km / 25–30 min from Fort Chambly', timeBudget: '45-50 min', notes: 'The dining room opens at 11:00 Friday and is just off the South Shore route. Sit down for a real lunch and leave by 11:50 before the Ontario push. This replaces the park/cooler plan entirely.', food: 'Rotisserie chicken, ribs, lunch menu and salad bar in the dining room.', kidPlan: 'Bathroom and a seated reset before the longest afternoon block.', mapUrl: mapSearchUrl('Scores Restaurant Boucherville, 1200 Rue Volta, Boucherville, QC J4B 7A2'), sourceUrl: 'https://www.scores.ca/en/restaurants/boucherville/' }),
-          sourceStop('2026-08-21', 'ONroute Mallorytown', { id: 'd8-mallory', time: '14:00 fatigue checkpoint', zone: 'ET', title: 'ONroute Mallorytown North — westbound fatigue checkpoint', locationName: 'ONroute Mallorytown North — westbound service centre', address: '678 Highway 401 Westbound, Mallorytown, ON K0E 1R0', city: 'Mallorytown, ON', kind: 'Rest / fuel / fatigue decision', priority: 'required', leg: 'About 190 km / 2 h plus Montréal-area traffic from Boucherville', timeBudget: '35-45 min', notes: 'This is the correct westbound plaza, open 24/7. Walk, snack and honestly assess both drivers and the child. Use Canadian Tire Gas+ if 91 is available and the car is at the trigger; verify premium availability before travel. If anyone is struggling, take a longer rest and swap drivers here before continuing.', food: 'Snack/coffee only—the proper lunch was at Scores in Boucherville.', kidPlan: 'Pet area/seasonal picnic tables and a real out-of-car reset.', mapUrl: mapSearchUrl('ONroute Mallorytown North, 678 Highway 401 Westbound, Mallorytown, ON K0E 1R0'), sourceUrl: 'https://www.onroute.ca/locations/mallorytown-north' }),
+          sourceStop('2026-08-21', 'onroute-mallorytown-south', { id: 'd8-mallory', time: '14:00 fatigue checkpoint', zone: 'ET', title: 'ONroute Mallorytown North — westbound fatigue checkpoint', locationName: 'ONroute Mallorytown North — westbound service centre', address: '678 Highway 401 Westbound, Mallorytown, ON K0E 1R0', city: 'Mallorytown, ON', kind: 'Rest / fuel / fatigue decision', priority: 'required', leg: 'About 190 km / 2 h plus Montréal-area traffic from Boucherville', timeBudget: '35-45 min', notes: 'This is the correct westbound plaza, open 24/7. Walk, snack and honestly assess both drivers and the child. Use Canadian Tire Gas+ if 91 is available and the car is at the trigger; verify premium availability before travel. If anyone is struggling, take a longer rest and swap drivers here before continuing.', food: 'Snack/coffee only—the proper lunch was at Scores in Boucherville.', kidPlan: 'Pet area/seasonal picnic tables and a real out-of-car reset.', mapUrl: mapSearchUrl('ONroute Mallorytown North, 678 Highway 401 Westbound, Mallorytown, ON K0E 1R0'), sourceUrl: 'https://www.onroute.ca/locations/mallorytown-north' }),
           customStop({ id: 'd8-big-apple', dayId: '2026-08-21', time: '17:15–17:40 if continuing', zone: 'ET', title: 'The Big Apple final movement stop', locationName: 'The Big Apple', parkingName: 'The Big Apple visitor parking', parkingAddress: '262 Orchard Rd, Colborne, ON K0K 1S0', kind: 'Attraction / snack', priority: 'optional', skipAt: 30, saves: '20 min', address: '262 Orchard Rd, Colborne, ON K0K 1S0', city: 'Colborne, ON', leg: 'About 250 km / 2 h 30 from Mallorytown North; about 130 km / 1 h 25 plus GTA traffic to Vaughan', timeBudget: '20-25 min', notes: 'Use this as the final movement/washroom break only if continuing safely. If it is closed or everyone wants the shortest safe route, use the next westbound service instead.', food: 'Pie/snack/washroom stop.', kidPlan: 'One last stretch before the GTA.', mapUrl: mapSearchUrl('The Big Apple visitor parking, 262 Orchard Rd, Colborne, ON K0K 1S0'), sourceUrl: 'https://thebigapple.ca/' }),
           customStop({ id: 'd8-home', dayId: '2026-08-21', time: '20:00–21:00+ realistic', zone: 'ET', title: 'Arrive Vaughan', kind: 'Finish', priority: 'required', address: 'Vaughan, ON', city: 'Vaughan, ON', notes: 'Friday Montréal/GTA traffic can push this later. Stopping to rest when tired is a successful safety decision, not a failed schedule.', mapUrl: mapSearchUrl('Vaughan, ON') })
         ],
@@ -3245,8 +3248,7 @@
     var type = uiFilters.dayType;
     var query = normalize(uiFilters.daySearch);
     var filtered = visibleStops(day).filter(function (stop) {
-      var searchText = normalize([stop.title, stop.locationName, stop.parkingName, stop.parkingAddress, stop.kind, stop.address, stop.city, stop.notes, stop.food, stop.kidPlan].join(' '));
-      return (!type || stop.kind === type) && (!query || searchText.indexOf(query) !== -1);
+      return (!type || stop.kind === type) && (!query || stop.searchText.indexOf(query) !== -1);
     });
     document.getElementById('daySelectV2').value = day.id;
     document.getElementById('dayMode').value = tripState.modes[day.id] || 'preview';
@@ -3290,7 +3292,13 @@
     return match ? match[0] : '';
   }
 
+  // Built from static trip data only — the picked/removed marks live in
+  // pickState and are read separately — so the list is built once and reused.
+  // Without this it was rebuilt on every keystroke in the food search box.
+  var foodSuggestionCache = null;
+
   function foodSuggestionList() {
+    if (foodSuggestionCache) return foodSuggestionCache;
     var planned = rawData.foodies.map(function (food) {
       var day = sourceDay(food.date);
       var label = day ? day.dateLabel : food.date;
@@ -3328,7 +3336,12 @@
         icon: '🍽️'
       };
     });
-    return planned.concat(extras);
+    foodSuggestionCache = planned.concat(extras);
+    foodSuggestionCache.forEach(function (item) {
+      item.searchText = normalize([item.name, item.city, item.meal, item.region,
+        item.dayLabel, item.summary, item.order, item.tip, item.menuRank.join(' ')].join(' '));
+    });
+    return foodSuggestionCache;
   }
 
   function sortSuggestions(list) {
@@ -3505,6 +3518,12 @@
     ]
   };
 
+  // Plan B stops never change after load, so the text its search box matches
+  // against is joined and normalized here rather than on every keystroke.
+  planBData.stops.forEach(function (stop) {
+    stop.searchText = normalize([stop.name, stop.segment, stop.why, stop.skipIf, stop.useIf, stop.foodPlan].join(' '));
+  });
+
   // Coordinates (OpenStreetMap Nominatim) for the Plan B stops that are NOT the
   // same physical place as an existing operational stop or route-side idea —
   // e.g. Green Gables, Hopewell Rocks and Cape Jourimain are already numbered
@@ -3618,8 +3637,7 @@
     var filtered = planBData.stops.filter(function (stop) {
       if (uiFilters.planbDay && stop.date !== uiFilters.planbDay) return false;
       if (uiFilters.planbType && planBTypeBucket(stop.type) !== uiFilters.planbType) return false;
-      var text = normalize([stop.name, stop.segment, stop.why, stop.useIf, stop.skipIf, stop.foodPlan].join(' '));
-      return !query || text.indexOf(query) !== -1;
+      return !query || stop.searchText.indexOf(query) !== -1;
     });
     document.getElementById('planbResultStatus').textContent = 'Showing ' + filtered.length + ' of ' + planBData.stops.length + ' Plan B stops.';
     var groups = operationalPlan.days.map(function (day) {
@@ -3693,8 +3711,7 @@
     var filtered = all.filter(function (item) {
       if (uiFilters.foodDay === 'extras' ? item.planned : (uiFilters.foodDay && item.dayId !== uiFilters.foodDay)) return false;
       if (uiFilters.foodMeal && item.meal !== uiFilters.foodMeal) return false;
-      var text = normalize([item.name, item.city, item.meal, item.region, item.dayLabel, item.summary, item.order, item.tip, (item.menuRank || []).join(' ')].join(' '));
-      return !query || text.indexOf(query) !== -1;
+      return !query || item.searchText.indexOf(query) !== -1;
     });
     var rows = sortSuggestions(filtered.filter(function (item) {
       return showRemoved ? itemMark(item.id) === 'removed' : itemMark(item.id) !== 'removed';
@@ -3716,7 +3733,11 @@
     wirePhotoFallbacks(document.getElementById('foodResult'));
   }
 
+  // Cached for the same reason as foodSuggestionList above.
+  var attractionSuggestionCache = null;
+
   function attractionSuggestionList() {
+    if (attractionSuggestionCache) return attractionSuggestionCache;
     var sundayDriveAttractions = [
       {
         id: 'xattr-nb-botanical-garden', name: 'New Brunswick Botanical Garden', rating: 4.6,
@@ -3798,7 +3819,16 @@
         icon: '🗺️'
       };
     });
-    return planned.concat(operationalScenicAttractions, extras);
+    attractionSuggestionCache = planned.concat(operationalScenicAttractions, extras);
+    attractionSuggestionCache.forEach(function (item) {
+      var ticket = ticketForAttraction(item.name);
+      var quality = qualityForAttractionName(item.name);
+      item.searchText = normalize([item.name, item.summary, item.address, item.kid,
+        item.region, item.dayLabel, ticket && ticket.label, ticket && ticket.note,
+        quality && 'kid backup', quality && quality.backupTitle,
+        quality && quality.backupAddress].join(' '));
+    });
+    return attractionSuggestionCache;
   }
 
   function mountAttractionsSection() {
@@ -3842,10 +3872,7 @@
     if (!removedAll.length) uiFilters.attractionShowRemoved = false;
     var showRemoved = uiFilters.attractionShowRemoved;
     var filtered = all.filter(function (item) {
-      var ticket = ticketForAttraction(item.name);
-      var quality = qualityForAttractionName(item.name);
-      var text = normalize([item.name, item.summary, item.address, item.kid, item.region, item.dayLabel, ticket && ticket.label, ticket && ticket.note, quality && 'kid backup', quality && quality.backupTitle, quality && quality.backupAddress].join(' '));
-      return !query || text.indexOf(query) !== -1;
+      return !query || item.searchText.indexOf(query) !== -1;
     });
     var rows = sortSuggestions(filtered.filter(function (item) {
       return showRemoved ? itemMark(item.id) === 'removed' : itemMark(item.id) !== 'removed';
