@@ -3006,10 +3006,9 @@
     if (dayField) dayField.addEventListener('change', function () {
       state.filters.day = dayField.value;
       refreshMap(state, true);
-      // The Plan-tab route map shares its Day filter with the itinerary dropdown
-      // just below it, so changing one changes both (skip the "entire trip" value,
-      // which the itinerary has no equivalent for).
-      if (state === tripMap && dayField.value !== 'all') syncItineraryDayFromMap(dayField.value);
+      // Each route map shares its Day filter with the day dropdown further down
+      // the same page, so changing one changes both.
+      syncPageDayFromMap(state, dayField.value);
     });
     if (typeField) typeField.addEventListener('change', function () { state.filters.type = typeField.value; refreshMap(state, true); });
     if (optionalField) optionalField.addEventListener('change', function () { state.filters.optional = optionalField.checked; refreshMap(state, false); });
@@ -3025,6 +3024,7 @@
       if (ideasField) ideasField.checked = true;
       if (routeField) routeField.checked = true;
       refreshMap(state, true);
+      syncPageDayFromMap(state, 'all');
     });
   }
 
@@ -3036,6 +3036,18 @@
     persist();
     renderDayContent();
     renderLive();
+  }
+
+  // A route map's Day filter changed -> move the day dropdown on that same page
+  // to match, so the map and the list below it never disagree about the date.
+  function syncPageDayFromMap(state, dayId) {
+    // The itinerary always shows exactly one day, so it has no equivalent of the
+    // map's "Show entire trip".
+    if (state === tripMap) {
+      if (dayId !== 'all') syncItineraryDayFromMap(dayId);
+      return;
+    }
+    if (state === planBMap) syncPlanBDayFromMap(dayId);
   }
 
   // Map Day filter changed -> move the itinerary dropdown to match. Setting
@@ -3055,6 +3067,18 @@
     dayField.value = dayId;
     tripMap.filters.day = dayId;
     refreshMap(tripMap, true);
+  }
+
+  // Plan B map Day filter changed -> move the Plan B list's Day dropdown to
+  // match. That list does have an "All days" option, so the map's "Show entire
+  // trip" maps straight onto it.
+  function syncPlanBDayFromMap(dayId) {
+    var value = dayId === 'all' ? '' : dayId;
+    var select = document.getElementById('planbDay');
+    if (!select || uiFilters.planbDay === value) return;
+    select.value = value;
+    uiFilters.planbDay = value;
+    renderPlanBContent();
   }
 
   function mountDaySection() {

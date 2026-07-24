@@ -306,8 +306,10 @@ function check(name, ok, detail) {
   const planbAllPins = await page.locator('#planb #planbMap .trip-pin:not(.is-idea)').count();
   await page.selectOption('#planbMapDay', '2026-08-18');
   check('Plan B map day filter narrows the pins', (await page.locator('#planb #planbMap .trip-pin:not(.is-idea)').count()) < planbAllPins);
+  check('Plan B map day filter moves the Plan B list to the same date', (await page.locator('#planbDay').inputValue()) === '2026-08-18' && (await page.locator('#planbResult .day-group').count()) === 1 && (await page.locator('#planbResult .day-group[data-day="2026-08-18"]').count()) === 1);
   await page.click('#planbMapReset');
   check('Plan B map reset restores all pins', (await page.locator('#planb #planbMap .trip-pin:not(.is-idea)').count()) === planbAllPins && (await page.locator('#planbMapDay').inputValue()) === 'all');
+  check('Plan B map reset also clears the list back to all days', (await page.locator('#planbDay').inputValue()) === '' && (await page.locator('#planbResult .day-group').count()) === 8);
   check('Plan B map adds no horizontal overflow at phone width', (await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) <= 0);
   check('map shows OpenStreetMap attribution', (await page.locator('#planbMap .leaflet-control-attribution').innerText()).includes('OpenStreetMap'));
 
