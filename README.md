@@ -10,7 +10,8 @@ Live public site: https://henrymaplehonda.github.io/pei-foodie-road-trip/
 
 ## Contents
 
-- `index.html` — page shell, styles, and compact trip reference data
+- `index.html` — page shell, styles, and the source itinerary as `#trip-data` JSON. Every source stop and foodie record carries a stable `id`; the plan joins on those ids, so renaming a stop is safe but changing an `id` is not
+- `data/` — the trip content itself, split out of `app.js` so the plan can be edited without reading application code: `plan.js` (the eight days), `plan-b.js` (rated alternates), `route-options.js`, `meals.js`, `practical.js` (tickets, per-stop notes, fuel) and `places.js` (coordinates and rating snapshots). Plain scripts that publish onto `window.TripData` and must load before `app.js`; the ones that build URLs or stops take those helpers as an argument so they stay free of application logic
 - `app.js` — interactive itinerary renderer, live trip controls, consolidated route map, checklist, and offline pack
 - `vendor/leaflet/` — locally hosted Leaflet 1.9.4 (map library) so the map needs no CDN. Map tiles come from OpenStreetMap (licensed, with attribution); the service worker caches every tile you view, and the **Safety** tab's "Save map + photos" button pre-fetches the whole route corridor so the map still draws with no signal
 - `test/` — `smoke.js` (headless browser end-to-end), `unit.js` (fast pure-function tests), `validate-trip.js` (trip-data integrity check), and `trip-utils.js` (shared helpers)
@@ -42,7 +43,7 @@ The larger food, attraction, hotel, and overview catalogues stay out of the prim
 
 ## Development
 
-`npm install && npx playwright install chromium && npm test` runs three checks in order: `npm run validate` (fast, no browser) checks the trip data in `index.html` — day/stop structure, ordered dates, clock times, valid map links — and scans every coordinate literal in `app.js` for typos or swapped lat/lng; `npm run test:unit` (`node --test`) covers the pure helpers (string normalization, geo distance, XYZ tile math, URL/bounds validation), testing the app's own functions extracted from source; and `npm run test:smoke` (`test/smoke.js`) is the headless browser end-to-end test — four-tab phone layout, first-viewport next action, booked hotels, tide-anchored Aug 19 plan, dark mode, legacy deep links, OpenStreetMap tiles, the offline pack and nearest-stop controls, and horizontal overflow. The validator and unit tests need no browser install, so they fail fast; the same `npm test` runs in GitHub Actions on every pull request.
+`npm install && npx playwright install chromium && npm test` runs three checks in order: `npm run validate` (fast, no browser) checks the trip data in `index.html` — day/stop structure, ordered dates, clock times, valid map links — and scans every coordinate literal in `app.js` and `data/` for typos or swapped lat/lng; `npm run test:unit` (`node --test`) covers the pure helpers (string normalization, geo distance, XYZ tile math, URL/bounds validation), testing the app's own functions extracted from source; and `npm run test:smoke` (`test/smoke.js`) is the headless browser end-to-end test — four-tab phone layout, first-viewport next action, booked hotels, tide-anchored Aug 19 plan, dark mode, legacy deep links, OpenStreetMap tiles, the offline pack and nearest-stop controls, and horizontal overflow. The validator and unit tests need no browser install, so they fail fast; the same `npm test` runs in GitHub Actions on every pull request.
 
 ## Before traveling
 

@@ -94,7 +94,7 @@ function validateTripData(data) {
 // Every lat/lng pair in app.js should sit inside the trip corridor. Requiring a
 // decimal point in both numbers keeps this from matching integer arrays like
 // autoPan padding [16, 18].
-function validateCoordinates(source) {
+function validateCoordinates(label, source) {
   const pattern = /\[\s*(-?\d{1,3}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)\s*\]/;
   const lines = source.split(/\r?\n/);
   let checked = 0;
@@ -105,13 +105,27 @@ function validateCoordinates(source) {
       const coords = [Number(match[1]), Number(match[2])];
       checked += 1;
       if (!utils.withinTripBounds(coords)) {
-        fail('app.js:' + (index + 1) + ': coordinate [' + coords[0] + ', ' + coords[1]
+        fail(label + ':' + (index + 1) + ': coordinate [' + coords[0] + ', ' + coords[1]
           + '] is outside the trip bounds (check for a typo or swapped lat/lng).');
       }
       rest = rest.slice(match.index + match[0].length);
     }
   });
-  if (!checked) warn('app.js: no coordinate literals found to validate.');
+  return checked;
+}
+
+// Coordinates live in the data/ files now; app.js still carries a few (map
+// defaults, bounds), so both are scanned.
+function validateAllCoordinates() {
+  const sources = ['app.js'].concat(
+    fs.readdirSync(path.join(ROOT, 'data'))
+      .filter(function (name) { return name.endsWith('.js'); })
+      .map(function (name) { return 'data/' + name; })
+  );
+  const checked = sources.reduce(function (sum, rel) {
+    return sum + validateCoordinates(rel, readFile(rel));
+  }, 0);
+  if (!checked) warn('no coordinate literals found to validate.');
   return checked;
 }
 
@@ -119,11 +133,10 @@ function validateCoordinates(source) {
 
 function main() {
   const html = readFile('index.html');
-  const appSource = readFile('app.js');
 
   const data = extractTripData(html);
   if (data) validateTripData(data);
-  const coordCount = validateCoordinates(appSource);
+  const coordCount = validateAllCoordinates();
 
   const dayCount = data && Array.isArray(data.days) ? data.days.length : 0;
   const stopCount = data && Array.isArray(data.days)
