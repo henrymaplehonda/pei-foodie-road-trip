@@ -1330,7 +1330,7 @@
   function createMapState(ids) {
     return {
       map: null, tiles: null, routeLayer: null, markerLayer: null,
-      built: false, unavailable: false, markers: [], ids: ids,
+      built: false, unavailable: false, pendingFit: false, markers: [], ids: ids,
       filters: { day: 'all', type: 'all', optional: true, ideas: true, route: true },
       locating: false, locateWatchId: null, locateMarker: null, locateAccuracy: null
     };
@@ -1536,6 +1536,16 @@
     status.textContent = text;
   }
 
+  // A section that is not the active tab is hidden, so its map host measures
+  // 0x0. Leaflet usually rides that out because it caches the container size,
+  // but its own trackResize handler clears that cache: rotate the phone while
+  // on Today, and the next fit of the hidden Plan map measures 0x0 for real and
+  // clamps to maxZoom instead of framing the day.
+  function mapIsVisible(state) {
+    var host = document.getElementById(state.ids.host);
+    return Boolean(host && host.clientWidth > 0 && host.clientHeight > 0);
+  }
+
   function fitMap(state, coords) {
     if (!state.map || !coords || !coords.length) return;
     try {
@@ -1579,7 +1589,12 @@
       }
     }
     updateMapStatus(state, shownStops, shownIdeas);
-    if (fit) fitMap(state, fitCoords);
+    // The Today tab can change the day while the Plan tab is hidden, so a fit
+    // asked for off-screen is deferred until that tab is opened and measurable.
+    if (fit) {
+      if (mapIsVisible(state)) fitMap(state, fitCoords);
+      else state.pendingFit = true;
+    }
   }
 
   function buildMapMarkers(state) {
@@ -1604,6 +1619,11 @@
     if (state.unavailable) return;
     if (state.built) {
       if (state.map) { try { state.map.invalidateSize(); } catch (error) {} }
+      // invalidateSize() first, so the deferred fit measures the real container.
+      if (state.pendingFit) {
+        state.pendingFit = false;
+        refreshMap(state, true);
+      }
       return;
     }
     var host = document.getElementById(state.ids.host);
@@ -1793,13 +1813,19 @@
     renderLive();
   }
 
-  // Select a day in the itinerary: update state, persist and re-render. Shared by
-  // the itinerary Day dropdown and by the route map's Day filter, which sync.
+  // The single way to select a day: update state, persist, re-render both plan
+  // views and move the Plan-tab route map to match. Every day control goes
+  // through here — the Day dropdowns, the previous/next paging buttons, "Open
+  // full plan" and "Jump to today" — so a day change can never land in one place
+  // and not the others. Calling it from the map's own Day filter is safe: that
+  // handler sets tripMap.filters.day first, so syncMapDayFromItinerary() sees no
+  // change and returns before it can bounce back.
   function applyItineraryDay(dayId) {
     uiFilters.dayId = dayId;
     tripState.activeDate = dayId;
     persist();
     renderPlanViews();
+    syncMapDayFromItinerary(dayId);
   }
 
   // A route map's Day filter changed -> move the day dropdown on that same page
@@ -1880,7 +1906,6 @@
     select.value = uiFilters.dayId;
     select.addEventListener('change', function () {
       applyItineraryDay(select.value);
-      syncMapDayFromItinerary(select.value);
     });
     document.getElementById('dayMode').addEventListener('change', function (event) {
       tripState.modes[uiFilters.dayId] = event.target.value;
@@ -2033,14 +2058,12 @@
     var dayIndex = operationalPlan.days.findIndex(function (item) { return item.id === day.id; });
     document.getElementById('previousDay').addEventListener('click', function () {
       if (dayIndex <= 0) return;
-      uiFilters.dayId = operationalPlan.days[dayIndex - 1].id;
-      renderDayContent();
+      applyItineraryDay(operationalPlan.days[dayIndex - 1].id);
       document.getElementById('daybyday-heading').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     document.getElementById('nextDay').addEventListener('click', function () {
       if (dayIndex >= operationalPlan.days.length - 1) return;
-      uiFilters.dayId = operationalPlan.days[dayIndex + 1].id;
-      renderDayContent();
+      applyItineraryDay(operationalPlan.days[dayIndex + 1].id);
       document.getElementById('daybyday-heading').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
@@ -2965,10 +2988,7 @@
     document.getElementById('liveDay').value = day.id;
     document.getElementById('liveMode').value = mode;
     document.getElementById('liveDay').addEventListener('change', function (event) {
-      tripState.activeDate = event.target.value;
-      uiFilters.dayId = event.target.value;
-      persist();
-      renderPlanViews();
+      applyItineraryDay(event.target.value);
       var nextDaySelect = document.getElementById('liveDay');
       if (nextDaySelect) nextDaySelect.focus();
     });
@@ -3035,8 +3055,7 @@
       });
     });
     document.getElementById('openDayPlan').addEventListener('click', function () {
-      uiFilters.dayId = day.id;
-      renderDayContent();
+      applyItineraryDay(day.id);
       activateSection('daybyday', true);
     });
     var wakeToggle = document.getElementById('wakeLockToggle');
@@ -3051,11 +3070,7 @@
     var jumpToday = document.getElementById('jumpToday');
     if (jumpToday) {
       jumpToday.addEventListener('click', function () {
-        var today = localIsoDate();
-        tripState.activeDate = today;
-        uiFilters.dayId = today;
-        persist();
-        renderPlanViews();
+        applyItineraryDay(localIsoDate());
       });
     }
   }
