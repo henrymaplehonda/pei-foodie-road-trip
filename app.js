@@ -2567,14 +2567,15 @@
   // appear in more than one place: the Plan tab and the Plan B tab each get their
   // own independent Leaflet map, both driven from the one shared model built
   // below. Each state carries the element ids of its own DOM host and controls.
-  var TRIP_MAP_IDS = { host: 'tripMap', fallback: 'tripMapFallback', status: 'tripMapStatus', day: 'tripMapDay', type: 'tripMapType', optional: 'tripMapOptional', ideas: 'tripMapIdeas', route: 'tripMapRoute', fit: 'tripMapFit', reset: 'tripMapReset' };
-  var PLANB_MAP_IDS = { host: 'planbMap', fallback: 'planbMapFallback', status: 'planbMapStatus', day: 'planbMapDay', type: 'planbMapType', optional: 'planbMapOptional', ideas: 'planbMapIdeas', route: 'planbMapRoute', fit: 'planbMapFit', reset: 'planbMapReset' };
+  var TRIP_MAP_IDS = { host: 'tripMap', fallback: 'tripMapFallback', status: 'tripMapStatus', day: 'tripMapDay', type: 'tripMapType', optional: 'tripMapOptional', ideas: 'tripMapIdeas', route: 'tripMapRoute', fit: 'tripMapFit', reset: 'tripMapReset', locate: 'tripMapLocate', locateStatus: 'tripMapLocateStatus' };
+  var PLANB_MAP_IDS = { host: 'planbMap', fallback: 'planbMapFallback', status: 'planbMapStatus', day: 'planbMapDay', type: 'planbMapType', optional: 'planbMapOptional', ideas: 'planbMapIdeas', route: 'planbMapRoute', fit: 'planbMapFit', reset: 'planbMapReset', locate: 'planbMapLocate', locateStatus: 'planbMapLocateStatus' };
 
   function createMapState(ids) {
     return {
       map: null, tiles: null, routeLayer: null, markerLayer: null,
       built: false, unavailable: false, markers: [], ids: ids,
-      filters: { day: 'all', type: 'all', optional: true, ideas: true, route: true }
+      filters: { day: 'all', type: 'all', optional: true, ideas: true, route: true },
+      locating: false, locateWatchId: null, locateMarker: null, locateAccuracy: null
     };
   }
   var tripMap = createMapState(TRIP_MAP_IDS);
@@ -2921,13 +2922,75 @@
       '<label class="trip-map-check"><input type="checkbox" id="' + ids.route + '" checked> Route line</label>',
       '<button type="button" class="button subtle" id="' + ids.fit + '">Fit route to screen</button>',
       '<button type="button" class="button subtle" id="' + ids.reset + '">Show entire trip</button>',
+      '<button type="button" class="button subtle" id="' + ids.locate + '">Show my location</button>',
       '</div>',
       '<div id="' + ids.host + '" class="trip-map" role="application" aria-label="', escapeHtml(opts.mapAria), '"></div>',
       '<p id="' + ids.fallback + '" class="trip-map-fallback" hidden></p>',
+      '<p id="' + ids.locateStatus + '" class="small muted" role="status" aria-live="polite"></p>',
       '<div class="trip-map-foot"><div class="trip-legend" aria-label="Map legend">', tripMapLegendHtml(), '</div>',
       '<p id="' + ids.status + '" class="small muted" role="status" aria-live="polite"></p></div>',
       '</div>'
     ].join('');
+  }
+
+  // Opt-in live location for a route map: toggled on/off by its "Show my
+  // location" button. Uses watchPosition so the dot tracks movement while the
+  // tab stays open; like findNearestStop above, the position is only ever used
+  // in-page to place the marker and is never stored or transmitted.
+  function liveLocationIcon() {
+    return L.divIcon({
+      className: 'trip-you-wrap',
+      html: '<span class="trip-you-dot"></span>',
+      iconSize: [16, 16], iconAnchor: [8, 8]
+    });
+  }
+
+  function stopLiveLocation(state) {
+    if (state.locateWatchId != null && navigator.geolocation) navigator.geolocation.clearWatch(state.locateWatchId);
+    state.locateWatchId = null;
+    state.locating = false;
+    if (state.locateMarker) { state.map.removeLayer(state.locateMarker); state.locateMarker = null; }
+    if (state.locateAccuracy) { state.map.removeLayer(state.locateAccuracy); state.locateAccuracy = null; }
+    var button = document.getElementById(state.ids.locate);
+    if (button) button.textContent = 'Show my location';
+  }
+
+  function toggleLiveLocation(state) {
+    var status = document.getElementById(state.ids.locateStatus);
+    if (state.locating) { stopLiveLocation(state); if (status) status.textContent = ''; return; }
+    if (!state.map) {
+      if (status) status.textContent = 'The map is unavailable, so live location can’t be shown here.';
+      return;
+    }
+    if (!navigator.geolocation) {
+      if (status) status.textContent = 'Location is not available on this device.';
+      return;
+    }
+    state.locating = true;
+    var button = document.getElementById(state.ids.locate);
+    if (button) button.textContent = 'Stop live location';
+    if (status) status.textContent = 'Getting your location…';
+    var firstFix = true;
+    state.locateWatchId = navigator.geolocation.watchPosition(function (position) {
+      var here = [position.coords.latitude, position.coords.longitude];
+      var accuracy = position.coords.accuracy || 0;
+      if (!state.locateMarker) {
+        state.locateMarker = L.marker(here, { icon: liveLocationIcon(), zIndexOffset: 1000, keyboard: false, interactive: false }).addTo(state.map);
+        state.locateAccuracy = L.circle(here, { radius: accuracy, color: '#1a73e8', weight: 1, fillColor: '#1a73e8', fillOpacity: 0.08, interactive: false }).addTo(state.map);
+      } else {
+        state.locateMarker.setLatLng(here);
+        state.locateAccuracy.setLatLng(here).setRadius(accuracy);
+      }
+      if (status) status.textContent = 'Live location on · accurate to about ' + Math.round(accuracy) + ' m.';
+      if (firstFix) { state.map.setView(here, Math.max(state.map.getZoom(), 13)); firstFix = false; }
+    }, function (error) {
+      if (status) {
+        status.textContent = error && error.code === 1
+          ? 'Location permission was declined.'
+          : 'Could not get your location. Check that GPS/location is on and try again.';
+      }
+      stopLiveLocation(state);
+    }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
   }
 
   function wireMapControls(state) {
@@ -2939,6 +3002,7 @@
     var routeField = document.getElementById(ids.route);
     var fitButton = document.getElementById(ids.fit);
     var resetButton = document.getElementById(ids.reset);
+    var locateButton = document.getElementById(ids.locate);
     if (dayField) dayField.addEventListener('change', function () {
       state.filters.day = dayField.value;
       refreshMap(state, true);
@@ -2952,6 +3016,7 @@
     if (ideasField) ideasField.addEventListener('change', function () { state.filters.ideas = ideasField.checked; refreshMap(state, false); });
     if (routeField) routeField.addEventListener('change', function () { state.filters.route = routeField.checked; refreshMap(state, false); });
     if (fitButton) fitButton.addEventListener('click', function () { refreshMap(state, true); });
+    if (locateButton) locateButton.addEventListener('click', function () { toggleLiveLocation(state); });
     if (resetButton) resetButton.addEventListener('click', function () {
       state.filters = { day: 'all', type: 'all', optional: true, ideas: true, route: true };
       if (dayField) dayField.value = 'all';
