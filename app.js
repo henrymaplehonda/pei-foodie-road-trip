@@ -2941,7 +2941,7 @@
     return L.divIcon({
       className: 'trip-you-wrap',
       html: '<span class="trip-you-dot"></span>',
-      iconSize: [16, 16], iconAnchor: [8, 8]
+      iconSize: [20, 20], iconAnchor: [10, 10]
     });
   }
 
@@ -2975,14 +2975,14 @@
       var here = [position.coords.latitude, position.coords.longitude];
       var accuracy = position.coords.accuracy || 0;
       if (!state.locateMarker) {
-        state.locateMarker = L.marker(here, { icon: liveLocationIcon(), zIndexOffset: 1000, keyboard: false, interactive: false }).addTo(state.map);
+        state.locateMarker = L.marker(here, { icon: liveLocationIcon(), zIndexOffset: 2000, keyboard: false, interactive: false }).addTo(state.map);
         state.locateAccuracy = L.circle(here, { radius: accuracy, color: '#1a73e8', weight: 1, fillColor: '#1a73e8', fillOpacity: 0.08, interactive: false }).addTo(state.map);
       } else {
         state.locateMarker.setLatLng(here);
         state.locateAccuracy.setLatLng(here).setRadius(accuracy);
       }
       if (status) status.textContent = 'Live location on · accurate to about ' + Math.round(accuracy) + ' m.';
-      if (firstFix) { state.map.setView(here, Math.max(state.map.getZoom(), 13)); firstFix = false; }
+      if (firstFix) { state.map.setView(here, Math.max(state.map.getZoom(), 15)); firstFix = false; }
     }, function (error) {
       if (status) {
         status.textContent = error && error.code === 1
