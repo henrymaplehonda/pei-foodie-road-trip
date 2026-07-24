@@ -279,6 +279,39 @@ function check(name, ok, detail) {
   check('day navigation buttons render', (await page.locator('#previousDay').count()) === 1 && (await page.locator('#nextDay').count()) === 1);
   await page.click('#previousDay');
   check('previous-day control changes the selected day', (await page.locator('#daySelectV2').inputValue()) === '2026-08-20');
+  check('previous-day control moves the route map filter with the list', (await page.locator('#tripMapDay').inputValue()) === '2026-08-20');
+  await page.click('#nav [data-section=live]');
+  check('previous-day control carries the day into the Today tab', (await page.locator('#liveDay').inputValue()) === '2026-08-20');
+  await page.goto(base + '/index.html#daybyday', { waitUntil: 'networkidle' });
+  check('a day chosen by paging survives a reload', (await page.locator('#daySelectV2').inputValue()) === '2026-08-20');
+
+  // The Today day selector is the same commit path, so it has to move the Plan
+  // tab's list and its route map filter too.
+  await page.click('#nav [data-section=live]');
+  await page.selectOption('#liveDay', '2026-08-17');
+  await page.click('#nav [data-section=daybyday]');
+  check('the Today day selector moves the Plan list and route map together', (await page.locator('#daySelectV2').inputValue()) === '2026-08-17' && (await page.locator('#tripMapDay').inputValue()) === '2026-08-17');
+  check('the deferred fit redraws the map for the day picked off-screen', (await page.locator('#tripMapStatus').textContent()).trim().length > 0 && (await page.locator('#tripMap .leaflet-marker-icon').count()) > 0);
+
+  // Rotating the phone on the Today tab makes Leaflet re-measure the hidden Plan
+  // map as 0x0, so a fit run there clamps to maxZoom and frames nothing. Tile
+  // URLs carry the zoom, so they show whether the day was actually framed.
+  const tileZoom = () => page.evaluate(() => {
+    const zooms = [...document.querySelectorAll('#tripMap img.leaflet-tile')]
+      .map((i) => (i.src.match(/\/(\d+)\/\d+\/\d+\.png/) || [])[1]).filter(Boolean).map(Number);
+    return zooms.length ? Math.max(...zooms) : null;
+  });
+  await page.click('#nav [data-section=live]');
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.waitForTimeout(200);
+  await page.selectOption('#liveDay', '2026-08-18');
+  await page.click('#nav [data-section=daybyday]');
+  await page.waitForTimeout(1200);
+  const rotatedZoom = await tileZoom();
+  check('a day picked while rotated on Today still frames that day on the map', rotatedZoom !== null && rotatedZoom < 12, 'tile zoom=' + rotatedZoom);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(200);
+  await page.selectOption('#daySelectV2', '2026-08-14');
 
   await page.goto(base + '/index.html#live', { waitUntil: 'networkidle' });
   const liveMapStops = await page.locator('#live .day-map .map-stop').count();
