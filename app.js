@@ -127,6 +127,12 @@
 
   var STOP_RATINGS = TripData.STOP_RATINGS;
 
+  // Plan B alternates and their map coordinates are needed by the effective-
+  // route resolver (next-stop swaps), so they are read here with the other
+  // TripData tables rather than down in the Plan B section.
+  var planBData = TripData.planBData;
+  var PLAN_B_IDEA_COORDS = TripData.PLAN_B_IDEA_COORDS;
+
   // Every stop has the same shape whether it was hand-written, lifted from a row
   // of the source itinerary, or built from a foodie record. The shape lives here
   // once, as field -> value used when neither the caller nor the source record
@@ -874,7 +880,7 @@
   }
 
   function emptyState() {
-    return { version: 3, activeDate: defaultDate(), modes: {}, stops: {}, tasks: {}, routeChoices: {}, mealChoices: {}, calmByDay: {}, offlineReadiness: {}, milestones: {}, offlineMode: false };
+    return { version: 3, activeDate: defaultDate(), modes: {}, stops: {}, tasks: {}, routeChoices: {}, mealChoices: {}, stopSwaps: {}, calmByDay: {}, offlineReadiness: {}, milestones: {}, offlineMode: false };
   }
 
   function readState() {
@@ -890,6 +896,7 @@
       base.tasks = parsed.tasks && typeof parsed.tasks === 'object' ? parsed.tasks : {};
       base.routeChoices = parsed.routeChoices && typeof parsed.routeChoices === 'object' ? parsed.routeChoices : {};
       base.mealChoices = parsed.mealChoices && typeof parsed.mealChoices === 'object' ? parsed.mealChoices : {};
+      base.stopSwaps = parsed.stopSwaps && typeof parsed.stopSwaps === 'object' ? parsed.stopSwaps : {};
       base.calmByDay = parsed.calmByDay && typeof parsed.calmByDay === 'object' ? parsed.calmByDay : {};
       base.offlineReadiness = parsed.offlineReadiness && typeof parsed.offlineReadiness === 'object' ? parsed.offlineReadiness : {};
       base.milestones = parsed.milestones && typeof parsed.milestones === 'object' ? parsed.milestones : {};
@@ -897,6 +904,7 @@
       operationalPlan.days.forEach(function (day) {
         day.stops.forEach(function (stop) {
           if (isHotelStop(stop) && base.stops[stop.id] === 'skipped') delete base.stops[stop.id];
+          if (isHotelStop(stop)) delete base.stopSwaps[stop.id];
         });
       });
       if (!currentRaw && legacyRaw) {
@@ -1146,6 +1154,61 @@
     return stop;
   }
 
+  // ----- Next-stop swaps -----------------------------------------------------
+  // A stop can be swapped in place for a rated Plan B alternate (used by the
+  // Today view's next-stop chooser, food swaps limited to well-rated venues).
+  // The swap keeps the slot's id, clock time, and priority, so progress
+  // tracking, meal rules, and every stop after it stay aligned; only the venue
+  // — and its rating, arrival target, and links — changes.
+  function planBRowsForDay(dayId) {
+    return ((planBData && planBData.stops) || []).filter(function (row) { return row.date === dayId; });
+  }
+
+  function planBRowById(dayId, rowId) {
+    if (!rowId) return null;
+    return planBRowsForDay(dayId).find(function (row) { return slug(row.name) === rowId; }) || null;
+  }
+
+  // The routable place text from a curated Google Maps search link. Plan B's
+  // "parking" field is advisory prose, not an address, so the swap stop routes
+  // to the link's own "query=" place instead.
+  function mapsQueryText(url) {
+    var match = /[?&]query=([^&]+)/.exec(String(url || ''));
+    if (!match) return '';
+    try { return decodeURIComponent(match[1].replace(/\+/g, ' ')); } catch (error) { return ''; }
+  }
+
+  function makeSwapStop(day, stop, row) {
+    var swapped = buildStop({
+      id: stop.id,
+      dayId: day.id,
+      time: stop.time,
+      zone: stop.zone,
+      title: row.name,
+      locationName: row.name,
+      kind: stop.kind,
+      priority: stop.priority,
+      routeEligible: stop.routeEligible,
+      address: mapsQueryText(row.mapsUrl) || row.name,
+      city: stop.city,
+      leg: stop.leg,
+      timeBudget: row.duration || stop.timeBudget,
+      notes: [row.why, row.useIf ? 'Use if: ' + row.useIf : '', row.skipIf ? 'Skip if: ' + row.skipIf : '', row.parking ? 'Parking: ' + row.parking : ''].filter(Boolean).join(' '),
+      food: row.foodPlan || stop.food,
+      kidPlan: stop.kidPlan,
+      mapUrl: row.mapsUrl,
+      sourceUrl: row.taUrl
+    }, null);
+    // Same-id fallbacks in buildStop would keep the replaced venue's pin and
+    // review score; the swap must carry its own (or none, never the old one).
+    swapped.coords = PLAN_B_IDEA_COORDS[row.name] || null;
+    swapped.rating = row.rating ? { source: 'TripAdvisor', rating: row.rating, reviews: row.reviews, url: row.taUrl } : null;
+    swapped.selectedFlex = true;
+    swapped.flexSource = 'swap';
+    swapped.swapOfTitle = stop.title;
+    return swapped;
+  }
+
   function makeMealExperienceStop(day, option) {
     var experienceEffect = option.experienceEffect || {};
     var impact = Math.max(0, Number(experienceEffect.totalImpactMin) || 0);
@@ -1231,7 +1294,10 @@
   }
 
   function effectiveStops(day) {
-    var stops = day.stops.map(function (stop) { return Object.assign({}, stop); });
+    var stops = day.stops.map(function (stop) {
+      var row = !isHotelStop(stop) && tripState.stopSwaps ? planBRowById(day.id, tripState.stopSwaps[stop.id]) : null;
+      return row ? makeSwapStop(day, stop, row) : Object.assign({}, stop);
+    });
     var calm = calmDayState(day);
     var mealOption = selectedMealFlex(day);
     if (tripState.mealChoices[day.id] === 'quick' && mealOption) {
@@ -2555,15 +2621,11 @@
     }).join('');
   }
 
-  var planBData = TripData.planBData;
-
   // Plan B stops never change after load, so the text its search box matches
   // against is joined and normalized here rather than on every keystroke.
   planBData.stops.forEach(function (stop) {
     stop.searchText = normalize([stop.name, stop.segment, stop.why, stop.skipIf, stop.useIf, stop.foodPlan].join(' '));
   });
-
-  var PLAN_B_IDEA_COORDS = TripData.PLAN_B_IDEA_COORDS;
 
   function planBRatingChip(rating, reviews, source) {
     var ratingHtml = rating
@@ -3103,6 +3165,135 @@
     var id = tripState.routeChoices[day.id];
     var plan = routeOptionsByDay[day.id];
     return plan && plan.options.find(function (option) { return routeOptionId(option) === id; }) || null;
+  }
+
+  // ----- Next-stop chooser ---------------------------------------------------
+  // At each decision point (ready to roll, or standing at a stop) the Today
+  // view offers a short menu of what the next stop could be: the planned stop,
+  // well-rated Plan B food swaps, and route-side ideas that would slot in
+  // next. Every choice flows through effectiveStops, so the stops after it —
+  // directions, timing, map order — follow automatically.
+
+  function nextChooserTarget(day, calm) {
+    var pending = visibleStops(day).filter(function (stop) {
+      return !stop.choiceGated && stopStatus(stop.id) === 'pending';
+    });
+    if (calm.phase === 'ready') return pending[0] || null;
+    if (calm.phase !== 'at-stop') return null;
+    return pending[0] && pending[0].id === calm.stopId ? pending[1] || null : pending[0] || null;
+  }
+
+  // Good-food rule: only alternates with a solid TripAdvisor score (4.2+) are
+  // offered for a meal slot, best-rated first. Venues already in the day's
+  // plan and rows scheduled for a different meal (over 3 h away) are excluded.
+  function nextFoodSwapRows(day, target) {
+    if (!target || !isMealStop(target) || isHotelStop(target)) return [];
+    if (target.flexSource && target.flexSource !== 'swap') return [];
+    var targetMinutes = clockMinutes(target.time);
+    var targetName = normalize(target.locationName || target.title);
+    var planNames = effectiveStops(day).filter(function (stop) { return stop.id !== target.id; })
+      .map(function (stop) { return normalize(stop.locationName || stop.title); });
+    return planBRowsForDay(day.id).filter(function (row) {
+      if (normalize(row.type).indexOf('food') === -1) return false;
+      if (!(Number(row.rating) >= 4.2)) return false;
+      var name = normalize(row.name);
+      if (!name || targetName.indexOf(name) !== -1 || name.indexOf(targetName) !== -1) return false;
+      if (planNames.some(function (planName) { return planName && (planName.indexOf(name) !== -1 || name.indexOf(planName) !== -1); })) return false;
+      var rowMinutes = clockMinutes(row.time);
+      if (targetMinutes != null && rowMinutes != null && Math.abs(rowMinutes - targetMinutes) > 180) return false;
+      return true;
+    }).sort(function (a, b) { return Number(b.rating) - Number(a.rating); }).slice(0, 2);
+  }
+
+  // Route-side ideas that would actually be encountered next: each candidate
+  // is simulated through applyStopEffect and offered only when it lands at or
+  // immediately after the chooser target, still costs no more than the Calm
+  // Bank, and no idea has been chosen for the day yet.
+  function nextRouteIdeaOptions(day, target) {
+    if (!target || selectedRouteOption(day) || tripState.routeChoices[day.id] === 'dismissed') return [];
+    var plan = routeOptionsByDay[day.id];
+    if (!plan) return [];
+    var bankMinutes = calmBank(day).minutes;
+    var mealOption = selectedMealFlex(day);
+    var base = visibleStops(day).filter(function (stop) { return !stop.choiceGated; });
+    return plan.options.filter(function (option) {
+      if (optionCostMinutes(option) > bankMinutes) return false;
+      if (sameRouteAsQuickMeal(day, option, mealOption)) return false;
+      var flexId = 'route-flex-' + day.id + '-' + routeOptionId(option);
+      if (stopStatus(flexId) !== 'pending') return false;
+      var simulated = applyStopEffect(base.map(function (stop) { return Object.assign({}, stop); }), makeRouteChoiceStop(day, option), option.effect || {});
+      var ideaIndex = simulated.findIndex(function (stop) { return stop.id === flexId; });
+      if (ideaIndex === -1) return false;
+      var firstPendingIndex = simulated.findIndex(function (stop) { return stopStatus(stop.id) === 'pending'; });
+      var targetIndex = simulated.findIndex(function (stop) { return stop.id === target.id; });
+      return ideaIndex >= Math.max(0, firstPendingIndex) && (targetIndex === -1 || ideaIndex <= targetIndex + 1);
+    }).sort(function (a, b) { return optionCostMinutes(a) - optionCostMinutes(b); }).slice(0, 2);
+  }
+
+  // One-line "what this stop is about" summary for a quick decision.
+  function stopBrief(stop) {
+    var text = String(stop.notes || stop.kidPlan || stop.food || '');
+    var sentence = /^[^.!?]*[.!?]/.exec(text);
+    var brief = sentence ? sentence[0].trim() : text.slice(0, 140);
+    return brief;
+  }
+
+  function renderNextStopChooser(day) {
+    var calm = calmDayState(day);
+    if (calm.phase !== 'ready' && calm.phase !== 'at-stop') return '';
+    if (calm.protectRecovery) return '';
+    var target = nextChooserTarget(day, calm);
+    if (!target) return '';
+    var swapped = target.flexSource === 'swap';
+    var foods = nextFoodSwapRows(day, target);
+    var ideas = nextRouteIdeaOptions(day, target);
+    if (!foods.length && !ideas.length && !swapped && calm.phase === 'ready') return '';
+    var pendingAfter = visibleStops(day).filter(function (stop) {
+      return !stop.choiceGated && stopStatus(stop.id) === 'pending';
+    });
+    var targetPosition = pendingAfter.findIndex(function (stop) { return stop.id === target.id; });
+    var following = targetPosition !== -1 ? pendingAfter[targetPosition + 1] : null;
+    var kindClass = categoryClass(target.kind);
+    var plannedTags = '<span class="tag">Planned next</span>'
+      + (isHotelStop(target) ? '<span class="tag category-hotel">Booked hotel · fixed</span>' : kindClass ? '<span class="tag ' + kindClass + '">' + escapeHtml(target.kind) + '</span>' : '')
+      + (target.rating ? stopRatingChip(target.rating) : '');
+    var plannedBlock = [
+      '<div class="next-option is-selected" data-testid="next-option-planned"><div class="next-option-head">', plannedTags, '</div>',
+      '<h4>', escapeHtml(target.time), (target.zone ? ' ' + escapeHtml(target.zone) : ''), ' · ', escapeHtml(target.title), '</h4>',
+      '<p class="small">', escapeHtml(stopBrief(target)), target.timeBudget ? ' · About ' + escapeHtml(target.timeBudget) : '', '</p>',
+      swapped ? '<p class="small muted">Swapped in for ' + escapeHtml(target.swapOfTitle || 'the planned stop') + '.</p><div class="decision-actions"><button type="button" class="button subtle" data-next-restore="' + escapeHtml(target.id) + '">Back to ' + escapeHtml(target.swapOfTitle || 'the planned stop') + '</button></div>' : '',
+      calm.phase === 'at-stop' && target.priority === 'optional' && canSkipStop(target) && following ? '<div class="decision-actions"><button type="button" class="button subtle" data-next-skip="' + escapeHtml(target.id) + '">Skip it · go straight to ' + escapeHtml(following.title) + '</button></div>' : '',
+      '</div>'
+    ].join('');
+    var foodBlocks = foods.map(function (row) {
+      return [
+        '<div class="next-option" data-testid="next-option-food"><div class="next-option-head">',
+        '<span class="tag category-food">', row.rating >= 4.5 ? 'Top-rated food' : 'Highly rated food', '</span>', planBRatingChip(row.rating, row.reviews),
+        '</div><h4>', escapeHtml(row.name), '</h4>',
+        '<p class="small">', escapeHtml(row.why), ' ', escapeHtml(row.foodPlan || ''), row.duration ? ' · ' + escapeHtml(row.duration) : '', '</p>',
+        '<div class="decision-actions"><button type="button" class="button primary" data-next-swap="', escapeHtml(slug(row.name)), '" data-swap-target="', escapeHtml(target.id), '">Make this the next stop</button>', externalLink(row.mapsUrl, 'Map', 'button subtle'), externalLink(row.taUrl, 'Reviews', 'button subtle'), '</div></div>'
+      ].join('');
+    });
+    var ideaBlocks = ideas.map(function (option) {
+      return [
+        '<div class="next-option" data-testid="next-option-idea"><div class="next-option-head">',
+        '<span class="tag category-attraction">Route-side idea</span><span class="tag">−', optionCostMinutes(option), ' min</span>',
+        '</div><h4>', escapeHtml(option.name), '</h4>',
+        '<p class="small">', escapeHtml(option.why), option.visit ? ' · ' + escapeHtml(option.visit) : '', '</p>',
+        '<p class="small muted"><strong>Where it fits:</strong> ', escapeHtml(option.routePoint), '</p>',
+        '<div class="decision-actions"><button type="button" class="button primary" data-next-route="', escapeHtml(routeOptionId(option)), '">Make this the next stop</button>', externalLink(option.map, 'Parking map', 'button subtle'), '</div></div>'
+      ].join('');
+    });
+    var alternatives = foodBlocks.concat(ideaBlocks).slice(0, 3);
+    return [
+      '<article class="decision-card next-chooser" data-testid="next-chooser"><div class="decision-head"><div><span class="tag">Next stop options</span>',
+      '<h3>', calm.phase === 'at-stop' ? 'After this: choose the next stop' : 'Choose the next stop', '</h3>',
+      '<p class="muted">One tap decides. Everything after it adjusts automatically.</p></div></div>',
+      plannedBlock,
+      alternatives.join(''),
+      '<p class="small muted">Choosing updates directions, timing and the map for the rest of the day. Booked hotels never move.</p>',
+      '</article>'
+    ].join('');
   }
 
   function renderTodayRouteOption(day) {
@@ -3809,6 +4000,7 @@
       '</article>',
       '</div>',
       context,
+      renderNextStopChooser(day),
       renderFamilyPulse(day, calm),
       '<div class="calm-summary-grid">', renderCalmBank(day), renderNoRegrets(day, calm), '</div>',
       renderHotelSafeBanner(day),
@@ -4010,6 +4202,54 @@
         else tripState.routeChoices[day.id] = choice;
         persist();
         renderPlanViews();
+      });
+    });
+    section.querySelectorAll('[data-next-swap]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var currentCalm = calmDayState(day);
+        if (currentCalm.protectRecovery || (currentCalm.phase !== 'ready' && currentCalm.phase !== 'at-stop')) {
+          setStatus('Finish the active step before changing the next stop.');
+          return;
+        }
+        var targetId = button.dataset.swapTarget;
+        var row = planBRowById(day.id, button.dataset.nextSwap);
+        var targetStop = stopById(day, targetId);
+        if (!row || !targetStop || isHotelStop(targetStop)) return;
+        tripState.stopSwaps[targetId] = button.dataset.nextSwap;
+        persist();
+        renderPlanViews();
+        setStatus('Next stop switched to ' + row.name + (row.rating ? ' (' + row.rating + '★)' : '') + '. The stops after it stay on plan.');
+      });
+    });
+    section.querySelectorAll('[data-next-restore]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var stopId = button.dataset.nextRestore;
+        var original = stopById(day, stopId);
+        delete tripState.stopSwaps[stopId];
+        persist();
+        renderPlanViews();
+        setStatus('Restored the planned stop' + (original ? ': ' + original.title : '') + '.');
+      });
+    });
+    section.querySelectorAll('[data-next-route]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var currentCalm = calmDayState(day);
+        if (currentCalm.protectRecovery || (currentCalm.phase !== 'ready' && currentCalm.phase !== 'at-stop')) {
+          setStatus('Finish the active step or unprotect recovery before adding a route stop.');
+          return;
+        }
+        tripState.routeChoices[day.id] = button.dataset.nextRoute;
+        persist();
+        renderPlanViews();
+        setStatus('Added to the route. The stops after it adjust automatically; booked hotels stay fixed.');
+      });
+    });
+    section.querySelectorAll('[data-next-skip]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        if (!setStopStatus(day, button.dataset.nextSkip, 'skipped')) return;
+        persist();
+        renderPlanViews();
+        setStatus('Optional stop skipped. The next stop moved up.');
       });
     });
     section.querySelectorAll('[data-meal-choice]').forEach(function (button) {
@@ -4260,6 +4500,7 @@
       tasks: taskData,
       routeChoices: tripState.routeChoices,
       mealChoices: tripState.mealChoices,
+      stopSwaps: tripState.stopSwaps,
       calmByDay: calmData,
       offlineReadiness: tripState.offlineReadiness,
       milestones: tripState.milestones,
@@ -4329,6 +4570,17 @@
     if (imported.mealChoices && typeof imported.mealChoices === 'object') {
       Object.keys(imported.mealChoices).forEach(function (key) {
         if (validDays.has(key) && ['proper', 'quick'].indexOf(imported.mealChoices[key]) !== -1) tripState.mealChoices[key] = imported.mealChoices[key];
+      });
+    }
+    if (imported.stopSwaps && typeof imported.stopSwaps === 'object') {
+      var dayIdByStop = {};
+      operationalPlan.days.forEach(function (day) {
+        day.stops.forEach(function (stop) { dayIdByStop[stop.id] = day.id; });
+      });
+      Object.keys(imported.stopSwaps).forEach(function (key) {
+        var swapDayId = dayIdByStop[key];
+        if (!swapDayId || isHotelStop(validStopById[key])) return;
+        if (planBRowById(swapDayId, imported.stopSwaps[key])) tripState.stopSwaps[key] = String(imported.stopSwaps[key]);
       });
     }
     if (imported.calmByDay && typeof imported.calmByDay === 'object') {

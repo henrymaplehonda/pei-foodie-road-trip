@@ -33,6 +33,7 @@ The larger food, attraction, hotel, and overview catalogues stay out of the prim
 
 - Schedule controls stay synchronized between **Today** and **Plan**, including 30/60-minute ahead and late modes.
 - Route and meal choices are operational: a selection changes Next, progress, directions, and map order; replacements use stable stop IDs and conservative time debits/credits instead of parsing display copy.
+- At each decision point, **Today** shows a next-stop chooser: the planned stop summarized in one line beside well-rated alternatives — food swaps limited to TripAdvisor 4.2+ venues (best first) and route-side ideas that would actually be encountered next and fit the Calm Bank. One tap swaps the stop in place (same slot, time, and priority) or adds the idea, and everything after it — directions, timing, map order, print sheet — follows automatically. Booked hotels are never offered or replaced.
 - **Protect recovery time** removes only pending optional stops. Every booked hotel remains an immutable route anchor, and validation fails if any flexible choice tries to replace one.
 - Saved trip state uses schema v3; existing v2 browser state and phone sync codes migrate forward without losing progress.
 - The booked-hotel summary keeps all seven safe stays, check-in/out times, rooms, addresses, cancellation details, and official links available without false booking alarms.

@@ -377,6 +377,12 @@ main{max-width:960px;padding:24px 16px 52px}
 .decision-card{margin:12px 0 0;padding:var(--sp-2) var(--sp-3);border:1px solid var(--line);border-radius:16px;background:var(--panel)}
 .decision-card.is-selected{border-color:#6ec19e;background:#eefaf3}.decision-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .decision-head h3{margin:2px 0 5px;font-size:18px}.decision-card p{margin:6px 0}.decision-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.next-chooser .next-option{border-top:1px solid var(--line);padding:10px 0 6px;margin-top:10px}
+.next-chooser .next-option.is-selected{border:1px solid #6ec19e;border-radius:12px;background:#eefaf3;padding:10px 12px}
+.next-chooser .next-option h4{margin:6px 0 2px;font-size:16px}
+.next-chooser .next-option-head{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.next-chooser .next-option-head .ta-rating{margin:0}
+:root[data-theme="dark"] .next-chooser .next-option.is-selected{background:#0f2a20;border-color:#286746;color:#c7ecd9}
 .meal-choice-buttons{display:flex;gap:7px;flex-wrap:wrap;margin:9px 0}.meal-choice-buttons button[aria-pressed="true"]{background:linear-gradient(135deg,var(--accent2),#0a5259);border-color:var(--accent2);color:#fff}
 .freshness-card{margin:12px 0 0;padding:var(--sp-2) var(--sp-3);border:1px solid var(--line);border-left:4px solid var(--accent2);border-radius:12px;background:var(--panel)}
 .freshness-card.is-due{border-left-color:var(--warn);background:#fdf3e4}.freshness-card p{margin:4px 0}
