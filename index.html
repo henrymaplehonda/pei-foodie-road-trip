@@ -618,6 +618,57 @@ a.trip-pop-dir{font-size:12px;font-weight:700;color:var(--accent2)}
 @media(max-width:380px){.choice-chip{flex:1 1 calc(50% - 8px);padding-inline:8px}.arrival-steps li{grid-template-columns:1fr}.arrival-target-actions{grid-template-columns:1fr}.journey-beads{grid-template-columns:1fr 1fr}.family-pulse .decision-actions,.arrival-bubble .decision-actions,.wait-pivot .decision-actions{grid-template-columns:1fr}}
 @media print{.family-pulse,.calm-context,.planning-drawer,.resync-control,.choice-chips{display:none!important}}
 </style>
+<style id="trip-fun-styles">
+.button.spotify-play{display:inline-flex;align-items:center;gap:7px;background:#1db954;border-color:#1db954;color:#04210f;font-weight:800}
+.button.spotify-play .spotify-icon{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;background:#04210f;color:#1db954;font-size:9px;line-height:1;padding-left:2px}
+@media(hover:hover){.button.spotify-play:hover{background:#1ed760;border-color:#1ed760;color:#04210f}}
+:root[data-theme="dark"] .button.spotify-play{background:#1db954;border-color:#1db954;color:#04210f}
+.kid-units{margin:2px 0 0;padding:8px 11px;border-radius:10px;background:var(--surface-alt);color:var(--muted);font-size:14px;font-weight:700}
+.journey-beads.kid-view+.kid-units{font-size:15px}
+.journey-beads li.is-milestone{border-style:dashed;border-color:var(--warn);background:#fdf3e4;color:#8a4d0f}
+.journey-beads li.is-milestone>span{background:var(--warn);color:#fff}
+.journey-beads li.is-milestone.is-current{border-style:solid;box-shadow:0 0 0 2px rgba(181,114,31,.25)}
+.celebration-overlay{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:rgba(11,20,25,.45);overflow:hidden}
+.celebration-overlay i{position:absolute;top:-18px;width:10px;height:16px;border-radius:3px;opacity:.9;animation:confetti-fall 3s linear forwards}
+@keyframes confetti-fall{0%{transform:translateY(-20px) rotate(0deg)}100%{transform:translateY(105vh) rotate(540deg)}}
+.celebration-card{position:relative;max-width:340px;margin:16px;padding:22px 20px;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:0 18px 44px -14px rgba(0,0,0,.45)}
+.celebration-emoji{display:block;margin-bottom:6px;font-size:46px;line-height:1}
+.celebration-card h3{margin:0 0 6px;font-family:var(--display);font-size:25px;letter-spacing:-.01em}
+.celebration-card p{margin:0 0 14px;color:var(--muted)}
+@media(prefers-reduced-motion:reduce){.celebration-overlay i{display:none}}
+.food-passport{margin:12px 0;padding:0;border-left:5px solid var(--accent)}
+.food-passport>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;padding:11px 14px;cursor:pointer;font-size:16px}
+.food-passport .passport-intro{margin:0 14px 4px;color:var(--muted)}
+.passport-count{font-weight:850;color:var(--accent);font-variant-numeric:tabular-nums}
+.passport-grid{list-style:none;margin:8px 0 0;padding:6px 14px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.passport-stamp{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:13px 8px 11px;text-align:center;border:2px dashed var(--line);border-radius:14px;background:var(--surface-alt);color:var(--muted);transform:rotate(var(--stamp-rot,0deg))}
+.passport-stamp .stamp-icon{font-size:27px;line-height:1;filter:grayscale(1);opacity:.4}
+.passport-stamp .stamp-name{font-size:13px;font-weight:750;line-height:1.25;overflow-wrap:anywhere}
+.passport-stamp .stamp-day{font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+.passport-stamp.is-earned{border-style:solid;border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--panel));color:var(--ink)}
+.passport-stamp.is-earned .stamp-icon{filter:none;opacity:1}
+.passport-stamp.is-earned::after{content:"STAMPED";position:absolute;top:5px;right:-7px;padding:2px 6px;border-radius:999px;background:var(--accent);color:#fff;font-size:9px;font-weight:900;letter-spacing:.07em;transform:rotate(8deg)}
+.day-playlists{margin:12px 0;padding:0;border-left:5px solid #1db954}
+.day-playlists>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;padding:11px 14px;cursor:pointer;font-size:16px}
+.playlist-count{font-weight:850;color:#12833c;font-variant-numeric:tabular-nums}
+:root[data-theme="dark"] .playlist-count{color:#1ed760}
+.day-playlist-list{list-style:none;margin:4px 0 0;padding:0 14px 14px;display:grid;gap:8px}
+.day-playlist{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface-alt)}
+.day-playlist>div{display:grid;gap:2px;min-width:0}
+.day-playlist strong{font-size:13px}
+.day-playlist span{font-size:13px;color:var(--muted);font-weight:700;overflow-wrap:anywhere}
+.day-playlist .button{margin:0;flex:none}
+.day-playlist.is-today{border-color:#1db954;box-shadow:0 0 0 2px rgba(29,185,84,.18)}
+:root[data-theme="dark"] .day-playlists{background:var(--panel);border-color:var(--line);border-left-color:#1db954}
+@media print{.day-playlists{display:none!important}}
+.milestone-chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px;padding:0;list-style:none}
+.milestone-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface-alt);color:var(--muted);font-size:13px;font-weight:750}
+.milestone-chip.is-earned{border-color:var(--accent2);background:color-mix(in srgb,var(--accent2) 12%,var(--panel));color:var(--ink)}
+:root[data-theme="dark"] .journey-beads li.is-milestone{background:#332613;color:#f5d9ac}
+:root[data-theme="dark"] .food-passport{background:var(--panel);border-color:var(--line);border-left-color:var(--accent)}
+:root[data-theme="dark"] .celebration-card{background:var(--panel);border-color:var(--line)}
+@media print{.food-passport,.celebration-overlay{display:none!important}}
+</style>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to trip content</a>

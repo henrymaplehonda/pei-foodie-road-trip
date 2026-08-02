@@ -115,6 +115,10 @@ function check(name, ok, detail) {
   check('calm home exposes the core recovery tools', (await page.locator('#live [data-testid="calm-bank"]').count()) === 1
     && (await page.locator('#live [data-testid="family-pulse"]').count()) === 1
     && (await page.locator('#live .success-card').count()) === 1);
+  check('Today hero offers a one-tap Spotify day mix', (await page.locator('#live .next-stop .spotify-play').count()) === 1
+    && (await page.locator('#live .next-stop .spotify-play').getAttribute('href')).includes('open.spotify.com/playlist/')
+    && /Day \d mix/.test(await page.locator('#live .next-stop .spotify-play').innerText())
+    && (await page.locator('#live [data-testid="day-playlists"] .day-playlist').count()) === 8);
   check('the day-start checkpoint never pretends the family is driving to its origin', (await page.locator('#live [data-calm-action="start-day"]').count()) === 1 && (await page.locator('#live [data-calm-action="skip"]').count()) === 0);
   await page.click('#live [data-calm-action="start-day"]');
   check('starting the day advances the origin checkpoint', (await page.locator('#live .trip-progress').innerText()).includes('1/'));
@@ -168,6 +172,8 @@ function check(name, ok, detail) {
   await page.selectOption('#liveDay', '2026-08-15');
   await page.selectOption('#liveMode', 'ahead60');
   check('ahead mode suggests one safe route-side option with named parking', (await page.locator('#live .decision-card').filter({ hasText: 'Trois-Rivieres Harbourfront Park' }).count()) === 1 && (await page.locator('#live').innerText()).includes('Parc portuaire / tourist information visitor parking'));
+  check('the Spotify day mix follows the selected day', (await page.locator('#live .next-stop .spotify-play').getAttribute('href')).includes('4vT2PCq9qwDtwqrN8xAz4S')
+    && (await page.locator('#live .next-stop .spotify-play').innerText()).includes('Day 2 mix'));
   await page.click('#live [data-route-choice="trois-rivieres-harbourfront-park"]');
   const routeChoiceState = await page.evaluate(() => ({
     stops: window.__tripControlTest.dayStops('2026-08-15'),
