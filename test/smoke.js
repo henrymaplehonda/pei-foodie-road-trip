@@ -351,6 +351,45 @@ function check(name, ok, detail) {
   }));
   await hotelArrivalSession.context.close();
 
+  // The next-stop chooser: at the pre-lunch decision point the planned stop is
+  // summarized beside the day's top-rated Plan B food swap; one tap swaps the
+  // venue in place while the stops after it — including the booked hotel —
+  // hold. A seeded hotel swap must be discarded on load.
+  const chooserSession = await openIsolatedStatePage(v3State('2026-08-14', {
+    stops: {
+      'd1-depart': 'done',
+      'd1-fuel': 'done',
+      'd1-big-apple': 'skipped',
+      'd1-odessa': 'done'
+    },
+    stopSwaps: { 'd1-hotel': 'the-big-apple' }
+  }), { label: 'D1 next-stop chooser' });
+  const chooserPage = chooserSession.page;
+  const chooser = chooserPage.locator('#live [data-testid="next-chooser"]');
+  check('next-stop chooser summarizes the planned lunch beside the top-rated food swap', (await chooser.count()) === 1
+    && (await chooser.locator('[data-testid="next-option-planned"]').innerText()).includes('Tata')
+    && (await chooser.locator('[data-testid="next-option-planned"]').innerText()).includes('★ 3.7')
+    && (await chooser.locator('[data-testid="next-option-food"]').first().innerText()).includes('1000 Islands Restaurant & Pizzeria')
+    && (await chooser.locator('[data-testid="next-option-food"]').first().innerText()).includes('★ 4.6')
+    && await chooserPage.evaluate(() => !window.__tripControlTest.state().stopSwaps['d1-hotel']));
+  await chooserPage.click('#live [data-next-swap="1000-islands-restaurant-pizzeria"]');
+  const swappedState = await chooserPage.evaluate(() => ({
+    stops: window.__tripControlTest.dayStops('2026-08-14'),
+    state: window.__tripControlTest.state()
+  }));
+  check('choosing the top-rated swap rewrites Next in place and keeps the stops after it', (await chooserPage.locator('#live .next-stop h3').innerText()).includes('1000 Islands')
+    && swappedState.state.stopSwaps['d1-lunch'] === '1000-islands-restaurant-pizzeria'
+    && swappedState.stops.some((stop) => stop.id === 'd1-lunch' && stop.title.includes('1000 Islands') && stop.flexSource === 'swap')
+    && swappedState.stops.some((stop) => stop.id === 'd1-prehistoric-world')
+    && swappedState.stops.some((stop) => stop.id === 'd1-hotel' && stop.hotel));
+  check('the chooser marks the swap and offers one-tap restore', (await chooser.locator('[data-testid="next-option-planned"]').innerText()).includes('Swapped in for')
+    && (await chooser.locator('[data-next-restore="d1-lunch"]').count()) === 1);
+  await chooserPage.click('#live [data-next-restore="d1-lunch"]');
+  check('restore returns the planned lunch without touching progress', (await chooserPage.locator('#live .next-stop h3').innerText()).includes('Tata')
+    && await chooserPage.evaluate(() => !window.__tripControlTest.state().stopSwaps['d1-lunch']
+      && window.__tripControlTest.state().stops['d1-odessa'] === 'done'));
+  await chooserSession.context.close();
+
   const onSiteQuickSession = await openIsolatedStatePage(v3State('2026-08-16', {
     stops: {
       'd3-depart': 'done',
