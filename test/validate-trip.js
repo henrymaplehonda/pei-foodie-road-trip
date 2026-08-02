@@ -8,6 +8,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 const utils = require('./trip-utils.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -129,6 +130,100 @@ function validateAllCoordinates() {
   return checked;
 }
 
+// --- Flexible-choice schema ------------------------------------------------
+
+function loadTripFactory(rel, key) {
+  const context = { window: {} };
+  vm.createContext(context);
+  vm.runInContext(readFile(rel), context, { filename: rel });
+  const factory = context.window.TripData && context.window.TripData[key];
+  if (typeof factory !== 'function') {
+    fail(rel + ': missing TripData.' + key + ' factory.');
+    return {};
+  }
+  return factory({ mapSearchUrl: function (value) { return 'https://maps.example/?q=' + encodeURIComponent(value); } });
+}
+
+function validateFlexibleChoices(data) {
+  const planSource = readFile('data/plan.js');
+  const knownStopIds = new Set(Array.from(planSource.matchAll(/\bid:\s*'([^']+)'/g), function (match) { return match[1]; }));
+  const hotelIds = new Set(Array.from(knownStopIds).filter(function (id) { return /-hotel$/.test(id); }));
+  const replaceableRouteTargets = new Set();
+  planSource.split(/\r?\n/).forEach(function (line) {
+    const match = /\bid:\s*'([^']+)'/.exec(line);
+    if (match && (/priority:\s*'optional'/.test(line) || /choiceGated:\s*true/.test(line) || /replaceable:\s*true/.test(line))) {
+      replaceableRouteTargets.add(match[1]);
+    }
+  });
+  const dayIds = new Set((data && data.days || []).map(function (day) { return day.date; }));
+  const routes = loadTripFactory('data/route-options.js', 'routeOptionsByDay');
+  const meals = loadTripFactory('data/meals.js', 'mealFlexByDay');
+
+  function validateEffect(dayId, label, item, expectDebit) {
+    if (!item.id || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.id)) fail(label + ': missing or invalid stable id.');
+    if (!item.effect || typeof item.effect !== 'object') { fail(label + ': missing effect metadata.'); return; }
+    const anchors = [item.effect.insertBeforeStopId, item.effect.insertAfterStopId].filter(Boolean);
+    anchors.forEach(function (id) {
+      if (!knownStopIds.has(id)) fail(label + ': unknown insertion anchor "' + id + '".');
+    });
+    const replacements = item.effect.replaceStopIds;
+    if (!Array.isArray(replacements)) fail(label + ': replaceStopIds must be an array.');
+    else replacements.forEach(function (id) {
+      if (!knownStopIds.has(id)) fail(label + ': unknown replacement stop "' + id + '".');
+      if (hotelIds.has(id)) fail(label + ': booked hotel "' + id + '" may never be replaced.');
+      if (expectDebit && !replaceableRouteTargets.has(id)) fail(label + ': route replacement "' + id + '" is not optional, choice-gated, or explicitly replaceable.');
+    });
+    if (!item.timing || !Number.isFinite(Number(item.timing.bankDeltaMin))) fail(label + ': missing numeric Calm Bank impact.');
+    if (expectDebit && Number(item.timing.bankDeltaMin) >= 0) fail(label + ': route option must debit the Calm Bank.');
+    if (!expectDebit && Number(item.timing.savedMin) < 0) fail(label + ': meal shortcut savings cannot be negative.');
+    const dayPrefix = 'd' + (Array.from(dayIds).sort().indexOf(dayId) + 1) + '-';
+    anchors.concat(Array.isArray(replacements) ? replacements : []).forEach(function (id) {
+      if (dayPrefix !== 'd0-' && id.indexOf(dayPrefix) !== 0) fail(label + ': stop "' + id + '" belongs to another day.');
+    });
+  }
+
+  Object.keys(routes).forEach(function (dayId) {
+    if (!dayIds.has(dayId)) fail('route options: unknown day "' + dayId + '".');
+    const seen = new Set();
+    (routes[dayId].options || []).forEach(function (option, index) {
+      const label = 'route option ' + dayId + ' #' + (index + 1);
+      validateEffect(dayId, label, option, true);
+      if (seen.has(option.id)) fail(label + ': duplicate id "' + option.id + '".');
+      seen.add(option.id);
+      if (!Number.isFinite(Number(option.timing && option.timing.totalImpactMin)) || Number(option.timing.totalImpactMin) < 0) fail(label + ': invalid totalImpactMin.');
+    });
+  });
+  Object.keys(meals).forEach(function (dayId) {
+    if (!dayIds.has(dayId)) fail('meal options: unknown day "' + dayId + '".');
+    (meals[dayId].options || []).forEach(function (option, index) {
+      const label = 'meal option ' + dayId + ' #' + (index + 1);
+      validateEffect(dayId, label, option, false);
+      if (!Number.isFinite(Number(option.triggerWaitMin)) || Number(option.triggerWaitMin) < 0) fail(label + ': invalid wait trigger.');
+      if (!option.foodCity || !option.foodLeg) fail(label + ': quick meal needs explicit foodCity and foodLeg logistics.');
+      const experience = option.experienceEffect;
+      if (!experience || typeof experience !== 'object') {
+        fail(label + ': missing explicit experienceEffect.');
+      } else {
+        const modes = ['activateStopId', 'mergeWithStopId', 'insertAfterStopId', 'insertBeforeStopId'].filter(function (key) { return Boolean(experience[key]); });
+        if (modes.length !== 1) fail(label + ': experienceEffect must use exactly one activate, merge, or insert mode.');
+        modes.forEach(function (key) {
+          const id = experience[key];
+          const syntheticQuickId = 'meal-quick-' + dayId;
+          if (!knownStopIds.has(id) && id !== syntheticQuickId) fail(label + ': unknown paired-experience target "' + id + '".');
+          if (key === 'activateStopId' && hotelIds.has(id)) fail(label + ': a hotel can only be merged with an on-site experience, never activated as a flexible stop.');
+        });
+        if (!Number.isFinite(Number(experience.totalImpactMin)) || Number(experience.totalImpactMin) < 0) fail(label + ': invalid paired-experience totalImpactMin.');
+      }
+    });
+  });
+  const expectedHotelIds = new Set(['d1-hotel', 'd2-hotel', 'd3-hotel', 'd4-hotel', 'd5-hotel', 'd6-hotel', 'd7-hotel']);
+  const missingHotels = Array.from(expectedHotelIds).filter(function (id) { return !hotelIds.has(id); });
+  const unexpectedHotels = Array.from(hotelIds).filter(function (id) { return !expectedHotelIds.has(id); });
+  if (hotelIds.size !== 7 || missingHotels.length || unexpectedHotels.length) {
+    fail('immutable hotel anchors must be exactly d1-hotel through d7-hotel; missing [' + missingHotels.join(', ') + '], unexpected [' + unexpectedHotels.join(', ') + '].');
+  }
+}
+
 // --- Run --------------------------------------------------------------------
 
 function main() {
@@ -136,6 +231,7 @@ function main() {
 
   const data = extractTripData(html);
   if (data) validateTripData(data);
+  if (data) validateFlexibleChoices(data);
   const coordCount = validateAllCoordinates();
 
   const dayCount = data && Array.isArray(data.days) ? data.days.length : 0;

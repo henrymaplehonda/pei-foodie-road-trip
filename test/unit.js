@@ -31,9 +31,9 @@ const sandbox = {};
 vm.createContext(sandbox);
 vm.runInContext(
   [extractFunction('normalize'), extractFunction('escapeHtml'),
-    extractFunction('slug'), extractFunction('categoryClass'),
+    extractFunction('slug'), extractFunction('categoryClass'), extractFunction('durationRange'),
     'this.normalize = normalize; this.escapeHtml = escapeHtml;',
-    'this.slug = slug; this.categoryClass = categoryClass;'].join('\n'),
+    'this.slug = slug; this.categoryClass = categoryClass; this.durationRange = durationRange;'].join('\n'),
   sandbox
 );
 
@@ -65,6 +65,13 @@ test('categoryClass buckets stop labels', function () {
   assert.strictEqual(sandbox.categoryClass('Scenic waterfront'), 'category-attraction');
   assert.strictEqual(sandbox.categoryClass('Depart Vaughan'), 'category-drive');
   assert.strictEqual(sandbox.categoryClass('Something else'), '');
+});
+
+test('durationRange uses the conservative edge of minute and hour ranges', function () {
+  assert.deepStrictEqual({ ...sandbox.durationRange('35\u201345 min') }, { min: 35, max: 45 });
+  assert.deepStrictEqual({ ...sandbox.durationRange('1 h 15 - 2 h') }, { min: 75, max: 120 });
+  assert.deepStrictEqual({ ...sandbox.durationRange('2.5 h') }, { min: 150, max: 150 });
+  assert.deepStrictEqual({ ...sandbox.durationRange('not timed') }, { min: 0, max: 0 });
 });
 
 // --- trip-utils: URLs & bounds ---------------------------------------------
