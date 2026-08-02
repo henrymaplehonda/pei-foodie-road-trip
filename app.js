@@ -874,7 +874,7 @@
   }
 
   function emptyState() {
-    return { version: 3, activeDate: defaultDate(), modes: {}, stops: {}, tasks: {}, routeChoices: {}, mealChoices: {}, calmByDay: {}, offlineReadiness: {}, offlineMode: false };
+    return { version: 3, activeDate: defaultDate(), modes: {}, stops: {}, tasks: {}, routeChoices: {}, mealChoices: {}, calmByDay: {}, offlineReadiness: {}, milestones: {}, offlineMode: false };
   }
 
   function readState() {
@@ -892,6 +892,7 @@
       base.mealChoices = parsed.mealChoices && typeof parsed.mealChoices === 'object' ? parsed.mealChoices : {};
       base.calmByDay = parsed.calmByDay && typeof parsed.calmByDay === 'object' ? parsed.calmByDay : {};
       base.offlineReadiness = parsed.offlineReadiness && typeof parsed.offlineReadiness === 'object' ? parsed.offlineReadiness : {};
+      base.milestones = parsed.milestones && typeof parsed.milestones === 'object' ? parsed.milestones : {};
       base.offlineMode = Boolean(parsed.offlineMode);
       operationalPlan.days.forEach(function (day) {
         day.stops.forEach(function (stop) {
@@ -1055,7 +1056,7 @@
       stopId: typeof input.stopId === 'string' ? input.stopId : '',
       legStartedAt: typeof input.legStartedAt === 'string' ? input.legStartedAt : '',
       arrivedAt: typeof input.arrivedAt === 'string' ? input.arrivedAt : '',
-      beadIndex: Math.max(0, Math.min(3, Number(input.beadIndex) || 0)),
+      beadIndex: Math.max(0, Math.min(4, Number(input.beadIndex) || 0)),
       kidView: Boolean(input.kidView),
       pulseNeed: ['late', 'hungry', 'tired', 'rain', 'washroom'].indexOf(input.pulseNeed) !== -1 ? input.pulseNeed : '',
       pulseApplied: Boolean(input.pulseApplied),
@@ -3329,12 +3330,187 @@
       && (/on-site|inside|at the hotel|same property/i.test(stop.leg || '') || /on-site/i.test(stop.kind || ''));
   }
 
+  // Private family playlists built for this trip: one themed mix per day plus
+  // a whole-trip fallback. open.spotify.com links deep-link into the installed
+  // Spotify app on the phone, so one tap starts the day's music.
+  var TRIP_PLAYLIST_URL = 'https://open.spotify.com/playlist/1byJDLhhKB6Gch1HkiLdoi';
+  var DAY_PLAYLISTS = {
+    '2026-08-14': { name: 'Highway Kickoff', url: 'https://open.spotify.com/playlist/3fG4avguTHymjGfz7RYTBH' },
+    '2026-08-15': { name: 'Bonjour Québec', url: 'https://open.spotify.com/playlist/4vT2PCq9qwDtwqrN8xAz4S' },
+    '2026-08-16': { name: 'East Coast Mix', url: 'https://open.spotify.com/playlist/6jVUxDUNvt6acwcK06MKnR' },
+    '2026-08-17': { name: 'Bridge to the Island', url: 'https://open.spotify.com/playlist/0JGFk98TJnqVJd58HMAANC' },
+    '2026-08-18': { name: 'Green Gables Beach Day', url: 'https://open.spotify.com/playlist/3f1XXk5hGdKpsOW1pq5XPN' },
+    '2026-08-19': { name: 'Hopewell Rocks Mix', url: 'https://open.spotify.com/playlist/4wWRQRgx77d2IuL3j4AUsQ' },
+    '2026-08-20': { name: 'The Big Push West', url: 'https://open.spotify.com/playlist/7v2jSbQ3LqAftiqt7c4QGV' },
+    '2026-08-21': { name: 'Homeward Bound', url: 'https://open.spotify.com/playlist/4Z5OpLtFZ0aOZPtb4HnxrL' }
+  };
+
+  function spotifyQuickPlay(day) {
+    var pick = day && DAY_PLAYLISTS[day.id];
+    var index = day ? operationalPlan.days.findIndex(function (item) { return item.id === day.id; }) : -1;
+    var label = pick && index !== -1 ? 'Day ' + (index + 1) + ' mix · ' + pick.name : 'Trip playlist';
+    var safe = safeExternalUrl(pick ? pick.url : TRIP_PLAYLIST_URL);
+    if (!safe) return '';
+    return '<a class="button spotify-play" href="' + escapeHtml(safe) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="Play ' + escapeHtml(label + (day ? ' for ' + shortDate(day.id) : '')) + ' on Spotify (opens in a new tab)"><span class="spotify-icon" aria-hidden="true">▶</span>' + escapeHtml(label) + '</a>';
+  }
+
+  // The full day-by-day music map, so the family always knows which mix
+  // belongs to which trip day even away from the hero button.
+  function renderDayPlaylists() {
+    var rows = operationalPlan.days.map(function (day, index) {
+      var pick = DAY_PLAYLISTS[day.id];
+      if (!pick) return '';
+      var dayLabel = String(day.label || shortDate(day.id)).replace(/, \d{4}$/, '');
+      return '<li class="day-playlist' + (day.id === tripState.activeDate ? ' is-today' : '') + '"><div><strong>Day ' + (index + 1) + ' · ' + escapeHtml(dayLabel) + '</strong><span>' + escapeHtml(pick.name) + '</span></div>' + externalLink(pick.url, 'Play', 'button subtle') + '</li>';
+    }).join('');
+    return '<details class="quick-card day-playlists" data-testid="day-playlists"><summary><strong>🎶 Day mixes</strong><span class="playlist-count">8 playlists</span></summary>'
+      + '<p class="small passport-intro">One Spotify mix per trip day. The green play button above always starts the mix for the day shown.</p>'
+      + '<ol class="day-playlist-list">' + rows + '</ol></details>';
+  }
+
+  // Legs that cross a provincial border or the Confederation Bridge, keyed by
+  // the id of the stop that leg arrives at. Each fires one celebration per
+  // trip, recorded in tripState.milestones under the milestone id.
+  var LEG_MILESTONES = {
+    'd1-hotel': { id: 'quebec-in', emoji: '⚜️', bead: 'Border moment: wave hello to Québec', title: 'Bienvenue au Québec!', message: 'The first provincial line of the trip is behind you.' },
+    'd3-edmundston': { id: 'new-brunswick-in', emoji: '🦞', bead: 'Border moment: welcome to New Brunswick', title: 'Welcome to New Brunswick!', message: 'Atlantic Canada! Clocks jump one hour ahead to Atlantic Time.' },
+    'd4-hotel': { id: 'bridge-to-pei', emoji: '🌉', bead: 'The big one: 12.9 km over the sea to PEI', title: 'Confederation Bridge crossed!', message: '12.9 km over the Northumberland Strait — you are on Prince Edward Island!' },
+    'd6-sackville-rest': { id: 'bridge-back', emoji: '🌉', bead: 'Cross the Confederation Bridge one more time', title: 'Bridge crossed both ways!', message: 'Goodbye PEI, hello again New Brunswick. What a view.' },
+    'd7-rdl': { id: 'quebec-back', emoji: '⚜️', bead: 'Border moment: back into Québec', title: 'Back in Québec!', message: 'Clocks fall back one hour to Eastern Time. Enjoy the extra hour.' },
+    'd8-mallory': { id: 'ontario-back', emoji: '🏠', bead: 'Border moment: home province ahead', title: 'Welcome back to Ontario!', message: 'Home province. One more calm push to Vaughan.' }
+  };
+
+  function milestoneForStop(stop) {
+    return (stop && LEG_MILESTONES[stop.id]) || null;
+  }
+
+  function celebrateMilestone(milestone) {
+    if (!milestone || tripState.milestones[milestone.id]) return;
+    tripState.milestones[milestone.id] = new Date().toISOString();
+    persistSilently();
+    showCelebration(milestone);
+  }
+
+  // Fixed overlay on <body> so a Today re-render cannot remove the moment
+  // mid-animation. Confetti positions are derived from the index, not
+  // Math.random, so reduced-motion and repeat renders stay deterministic.
+  function showCelebration(milestone) {
+    var existing = document.getElementById('milestoneCelebration');
+    if (existing) existing.remove();
+    var overlay = document.createElement('div');
+    overlay.id = 'milestoneCelebration';
+    overlay.className = 'celebration-overlay';
+    var pieces = '';
+    if (!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+      var colors = ['#c1442c', '#0b6b72', '#eeab52', '#1f8f6e', '#e8795f', '#49c2c2'];
+      for (var i = 0; i < 64; i += 1) {
+        pieces += '<i style="left:' + ((i * 61) % 100) + '%;background:' + colors[i % colors.length]
+          + ';animation-delay:' + (((i * 37) % 90) / 100) + 's;animation-duration:' + (2.4 + ((i * 13) % 12) / 10) + 's"></i>';
+      }
+    }
+    overlay.innerHTML = pieces
+      + '<div class="celebration-card" role="status"><span class="celebration-emoji" aria-hidden="true">' + milestone.emoji + '</span>'
+      + '<h3>' + escapeHtml(milestone.title) + '</h3><p>' + escapeHtml(milestone.message) + '</p>'
+      + '<button type="button" class="button primary">Keep rolling</button></div>';
+    document.body.appendChild(overlay);
+    var timer = setTimeout(dismiss, 7000);
+    function dismiss() {
+      clearTimeout(timer);
+      if (overlay.parentNode) overlay.remove();
+    }
+    overlay.addEventListener('click', dismiss);
+    overlay.querySelector('button').focus({ preventScroll: true });
+  }
+
+  // "Are we there yet?" in kid math: fuzzy song/show counts from the planned
+  // leg estimate — deliberately never a live countdown.
+  function kidTimeUnits(stop) {
+    var minutes = durationRange(stop && stop.leg).max;
+    if (!minutes || minutes < 6) return '';
+    var songs = Math.max(2, Math.round(minutes / 3.5));
+    var parts = ['about ' + songs + ' singalong songs 🎵'];
+    var shows = Math.round(minutes / 22);
+    if (shows >= 1) parts.push(shows + ' episode' + (shows === 1 ? '' : 's') + ' 📺');
+    if (minutes >= 100) parts.push('or one good car nap 😴');
+    return '<p class="kid-units" data-testid="kid-units">In kid math this drive is ' + parts.join(' · ') + '</p>';
+  }
+
+  // Food passport: every non-conditional sit-down meal in the plan earns a
+  // stamp once its stop — or the quick-meal stop that replaced it — is done.
+  function passportEligibleStop(stop) {
+    return Boolean(stop && isMealStop(stop) && !stop.conditional && !stop.choiceGated);
+  }
+
+  function passportEntries() {
+    var entries = [];
+    operationalPlan.days.forEach(function (day) {
+      day.stops.forEach(function (stop) {
+        if (passportEligibleStop(stop)) entries.push({ day: day, stop: stop });
+      });
+    });
+    return entries;
+  }
+
+  function passportStampEarned(day, stop) {
+    if (stopStatus(stop.id) === 'done') return true;
+    var meal = selectedMealFlex(day);
+    var replaces = (meal && meal.effect && meal.effect.replaceStopIds) || [];
+    return replaces.indexOf(stop.id) !== -1 && stopStatus('meal-quick-' + day.id) === 'done';
+  }
+
+  function passportStampIcon(stop) {
+    var text = normalize([stop.title, stop.kind, stop.food].join(' '));
+    if (text.indexOf('lobster') !== -1) return '🦞';
+    if (text.indexOf('mussel') !== -1 || text.indexOf('oyster') !== -1) return '🦪';
+    if (text.indexOf('buche') !== -1) return '🍁';
+    if (text.indexOf('patisserie') !== -1 || text.indexOf('bakery') !== -1) return '🥐';
+    if (text.indexOf('pizza') !== -1 || text.indexOf('pasta') !== -1) return '🍕';
+    if (text.indexOf('breakfast') !== -1) return '🥞';
+    if (text.indexOf('boar') !== -1) return '🐗';
+    if (/fish|seafood|wharf|tide/.test(text)) return '🐟';
+    if (text.indexOf('rotisserie') !== -1 || text.indexOf('grill') !== -1) return '🍗';
+    if (text.indexOf('market') !== -1) return '🥡';
+    return '🍽️';
+  }
+
+  function renderFoodPassport(open) {
+    var entries = passportEntries();
+    var rotations = [-4, 3, -2, 4, -3, 2];
+    var earned = 0;
+    var items = entries.map(function (entry, index) {
+      var done = passportStampEarned(entry.day, entry.stop);
+      if (done) earned += 1;
+      var mealLabel = String(entry.stop.kind || 'Meal').split('/')[0].trim() || 'Meal';
+      return '<li class="passport-stamp' + (done ? ' is-earned' : '') + '" style="--stamp-rot:' + rotations[index % rotations.length] + 'deg">'
+        + '<span class="stamp-icon" aria-hidden="true">' + passportStampIcon(entry.stop) + '</span>'
+        + '<span class="stamp-name">' + escapeHtml(entry.stop.locationName || entry.stop.title) + '</span>'
+        + '<span class="stamp-day">' + escapeHtml(shortDate(entry.day.id) + ' · ' + mealLabel) + '</span>'
+        + (done ? '<span class="sr-only">Stamp earned</span>' : '') + '</li>';
+    }).join('');
+    return '<details class="quick-card food-passport" data-testid="food-passport"' + (open ? ' open' : '') + '><summary><strong>🛂 Food passport</strong><span class="passport-count">' + earned + '/' + entries.length + ' stamps</span></summary>'
+      + '<p class="small passport-intro">Every planned sit-down meal earns a stamp when it is marked done on the road. Collect all ' + entries.length + '.</p>'
+      + '<ol class="passport-grid">' + items + '</ol></details>';
+  }
+
+  function renderMilestoneChips() {
+    var order = ['d1-hotel', 'd3-edmundston', 'd4-hotel', 'd6-sackville-rest', 'd7-rdl', 'd8-mallory'];
+    return '<ul class="milestone-chips" aria-label="Bridge and border moments">' + order.map(function (stopId) {
+      var milestone = LEG_MILESTONES[stopId];
+      var done = Boolean(tripState.milestones[milestone.id]);
+      return '<li class="milestone-chip' + (done ? ' is-earned' : '') + '">' + milestone.emoji + ' ' + escapeHtml(milestone.title) + (done ? ' ✓' : '') + '</li>';
+    }).join('') + '</ul>';
+  }
+
   function journeyBeads(stop) {
     var drive = durationRange(stop && stop.leg).max;
     var destination = stop && (stop.locationName || stop.title) || 'the next stop';
-    if (drive && drive <= 35) return ['Settle in', 'Look for the arrival signs', 'Arrive at ' + destination];
-    if (drive && drive <= 90) return ['Settle in', 'Halfway stretch', 'Look for the destination', 'Arrive at ' + destination];
-    return ['Settle in', 'Snack and comfort check', 'Movement-break moment', 'Arrive at ' + destination];
+    var beads;
+    if (drive && drive <= 35) beads = ['Settle in', 'Look for the arrival signs', 'Arrive at ' + destination];
+    else if (drive && drive <= 90) beads = ['Settle in', 'Halfway stretch', 'Look for the destination', 'Arrive at ' + destination];
+    else beads = ['Settle in', 'Snack and comfort check', 'Movement-break moment', 'Arrive at ' + destination];
+    var milestone = milestoneForStop(stop);
+    if (milestone) beads.splice(beads.length - 1, 0, milestone.emoji + ' ' + milestone.bead);
+    return beads;
   }
 
   function liveCalmState(day, next) {
@@ -3369,13 +3545,19 @@
 
   function renderJourneyBeads(day, stop, calm) {
     var beads = journeyBeads(stop);
+    var milestone = milestoneForStop(stop);
     var index = Math.min(calm.beadIndex, beads.length - 1);
     var paused = Boolean(calm.pulseNeed && !calm.pulseApplied);
     return [
       '<article class="quick-card journey-card calm-context" data-testid="journey-beads"><div class="calm-card-head"><div><span class="tag">Road moments</span><h3 tabindex="-1" id="calmContextHeading">', calm.kidView ? 'Kid view: just a few moments' : 'No exact countdown—just the next moments', '</h3></div><strong>', index + 1, '/', beads.length, '</strong></div>',
       '<div class="bead-progress" role="progressbar" aria-label="Road moment ', index + 1, ' of ', beads.length, '" aria-valuemin="1" aria-valuemax="', beads.length, '" aria-valuenow="', index + 1, '"><span style="width:', Math.round(((index + 1) / beads.length) * 100), '%"></span></div>',
+      kidTimeUnits(stop),
       '<ol class="journey-beads', calm.kidView ? ' kid-view' : '', '">', beads.map(function (bead, beadIndex) {
-        return '<li' + (beadIndex === index ? ' aria-current="step" class="is-current"' : beadIndex < index ? ' class="is-done"' : '') + '><span>' + (beadIndex + 1) + '</span>' + escapeHtml(bead) + '</li>';
+        var classes = [];
+        if (beadIndex === index) classes.push('is-current');
+        if (beadIndex < index) classes.push('is-done');
+        if (milestone && beadIndex === beads.length - 2) classes.push('is-milestone');
+        return '<li' + (beadIndex === index ? ' aria-current="step"' : '') + (classes.length ? ' class="' + classes.join(' ') + '"' : '') + '><span>' + (beadIndex + 1) + '</span>' + escapeHtml(bead) + '</li>';
       }).join(''), '</ol>',
       paused ? '<p class="small calm-paused">Road moments paused while you choose a family reset.</p>' : '',
       '<div class="decision-actions"><button type="button" class="button primary" data-calm-action="next-bead"', paused || index >= beads.length - 1 ? ' disabled' : '', '>Next road moment</button><button type="button" class="button subtle" data-calm-action="kid-view" aria-pressed="', calm.kidView, '">', calm.kidView ? 'Standard view' : 'Show kid view', '</button></div></article>'
@@ -3564,7 +3746,10 @@
       '<p class="section-intro">The road trip is complete. Keep the memories; the logistics can rest.</p>',
       '<article class="phase-card is-complete recap-card"><span class="tag category-ok">Home safely</span><h3>Eight days · seven fixed hotel stays</h3><p>You protected the booked route anchors while keeping meals and optional stops flexible.</p>',
       '<div class="trip-progress"><strong>', completed, '/', total, ' active checkpoints recorded complete</strong><div class="progress-meter" aria-label="', completed, ' of ', total, ' active checkpoints complete"><span style="width:', pct, '%"></span></div></div>',
+      '<p class="route-label">Bridge and border moments</p>',
+      renderMilestoneChips(),
       '<div class="decision-actions"><button type="button" class="button primary" id="recapPlan">Review the trip plan</button><button type="button" class="button subtle" id="recapPrep">Review prep notes</button></div></article>',
+      renderFoodPassport(true),
       renderHotelSafeBanner(operationalPlan.days[operationalPlan.days.length - 1])
     ].join('');
     document.getElementById('recapPlan').addEventListener('click', function () { activateSection('daybyday', true); });
@@ -3614,7 +3799,7 @@
       next ? '<h3>' + escapeHtml(next.title) + '</h3><p class="muted next-time">' + escapeHtml(next.time) + (next.zone ? ' ' + escapeHtml(next.zone) : '') + ' · ' + escapeHtml(next.city) + '</p>' : '<h3>Day complete</h3><p class="muted">All active stops are complete.</p>',
       '<p class="small"><strong>Hotel arrival target:</strong> ', escapeHtml(tonightTarget), '</p>',
       renderTodayNowLine(day),
-      '<div class="action-bar">', heroActions, '</div>',
+      '<div class="action-bar">', heroActions, spotifyQuickPlay(day), '</div>',
       next && canSkipStop(next) && next.priority !== 'required' && calm.phase !== 'at-stop' && calm.phase !== 'waiting' ? '<div class="today-action-row"><button type="button" class="button subtle" data-calm-action="skip">Skip this optional stop</button><button type="button" class="button subtle" data-protect-recovery>Bank the time</button></div>' : '',
       '<div class="trip-progress"><strong>', completed, '/', stops.length, ' active stops complete</strong><div class="progress-meter" aria-label="' + completed + ' of ' + stops.length + ' active stops complete"><span style="width:' + progress + '%"></span></div></div>',
       next ? '<details class="next-details"><summary>What to know</summary><p>' + escapeHtml(next.notes) + '</p></details>' : '',
@@ -3630,6 +3815,8 @@
       tideDetails,
       renderTodayRouteOption(day),
       renderTodayMealChoice(day),
+      renderFoodPassport(false),
+      renderDayPlaylists(),
       '<details class="planning-drawer"><summary>Change day or schedule</summary><div class="control-grid primary-controls today-controls" aria-label="Trip control settings">',
       '<label for="liveDay">Day<select id="liveDay">', operationalPlan.days.map(function (item) { return '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(dayOptionLabel(item)) + '</option>'; }).join(''), '</select></label>',
       '<label for="liveMode">Schedule<select id="liveMode"><option value="preview">Planning</option><option value="on-time">On schedule</option><option value="ahead30">30 min ahead</option><option value="ahead60">60+ min ahead</option><option value="late30">30+ min late</option><option value="late60">60+ min late</option></select></label>',
@@ -3672,11 +3859,13 @@
         if (!next) return;
         var action = button.dataset.calmAction;
         var patch = { stopId: next.id };
+        var celebration = null;
         if (action === 'start-day') {
           tripState.stops[next.id] = 'done';
           tripState.calmByDay[day.id] = { phase: 'ready', protectRecovery: calm.protectRecovery };
           persist();
           renderPlanViews();
+          if (passportEligibleStop(next)) setStatus('Passport stamp earned · ' + passportStampIcon(next) + ' ' + (next.locationName || next.title));
           return;
         } else if (action === 'start-stop') patch = { phase: 'at-stop', stopId: next.id, arrivedAt: new Date().toISOString(), legStartedAt: '' };
         else if (action === 'start-leg') patch = { phase: 'driving', stopId: next.id, legStartedAt: new Date().toISOString(), beadIndex: 0 };
@@ -3685,6 +3874,7 @@
         else if (action === 'parked') {
           patch.phase = 'at-stop';
           patch.arrivedAt = new Date().toISOString();
+          celebration = milestoneForStop(next);
           if (day.id === localIsoDate()) {
             var planned = clockMinutes(next.time);
             var now = new Date();
@@ -3696,8 +3886,10 @@
         } else if (action === 'undo-arrival') patch = { phase: 'arriving', stopId: next.id, arrivedAt: '' };
         else if (action === 'start-wait') patch = { phase: 'waiting', stopId: next.id, waitStopId: next.id, waitMinutes: 0, waitAction: '' };
         else if (action === 'meal-started') patch = { phase: 'at-stop', stopId: next.id, waitMinutes: 0, waitAction: '' };
-        else if (action === 'next-bead') patch.beadIndex = calm.beadIndex + 1;
-        else if (action === 'kid-view') patch.kidView = !calm.kidView;
+        else if (action === 'next-bead') {
+          patch.beadIndex = calm.beadIndex + 1;
+          if (milestoneForStop(next) && patch.beadIndex === journeyBeads(next).length - 2) celebration = milestoneForStop(next);
+        } else if (action === 'kid-view') patch.kidView = !calm.kidView;
         else if (action === 'skip' && next.priority !== 'required') {
           if (!setStopStatus(day, next.id, 'skipped')) return;
           tripState.calmByDay[day.id] = { phase: 'ready' };
@@ -3710,6 +3902,8 @@
           tripState.calmByDay[day.id] = { phase: 'ready', protectRecovery: calm.protectRecovery };
           persist();
           renderPlanViews();
+          celebrateMilestone(milestoneForStop(next));
+          if (passportEligibleStop(next)) setStatus('Passport stamp earned · ' + passportStampIcon(next) + ' ' + (next.locationName || next.title));
           return;
         }
         saveCalmDayState(day, patch);
@@ -3722,6 +3916,7 @@
             if (contextCard) contextCard.scrollIntoView({ block: 'start' });
           } else contextHeading.focus({ preventScroll: true });
         }
+        if (celebration) celebrateMilestone(celebration);
       });
     });
     section.querySelectorAll('[data-arrival-copy]').forEach(function (button) {
@@ -4067,6 +4262,7 @@
       mealChoices: tripState.mealChoices,
       calmByDay: calmData,
       offlineReadiness: tripState.offlineReadiness,
+      milestones: tripState.milestones,
       picks: pickState.items,
       packing: packingState.items,
       expenses: redacted ? undefined : { budget: expenseState.budget, items: expenseState.items }
@@ -4146,6 +4342,13 @@
       var readinessIds = new Set(offlineReadinessItems.map(function (item) { return item.id; }));
       Object.keys(imported.offlineReadiness).forEach(function (key) {
         if (readinessIds.has(key) && imported.offlineReadiness[key]) tripState.offlineReadiness[key] = true;
+      });
+    }
+    if (imported.milestones && typeof imported.milestones === 'object') {
+      var milestoneIds = new Set(Object.keys(LEG_MILESTONES).map(function (stopId) { return LEG_MILESTONES[stopId].id; }));
+      Object.keys(imported.milestones).forEach(function (key) {
+        if (!milestoneIds.has(key) || !imported.milestones[key]) return;
+        tripState.milestones[key] = typeof imported.milestones[key] === 'string' ? imported.milestones[key].slice(0, 40) : true;
       });
     }
     if (imported.picks && typeof imported.picks === 'object') {
