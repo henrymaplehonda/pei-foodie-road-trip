@@ -157,6 +157,7 @@
     stop.locationName = details.locationName || details.title || source.locationName || stop.title;
     stop.skipAt = Number(details.skipAt || 0);
     stop.mapUrl = stop.mapUrl || mapSearchUrl(stop.address);
+    stop.arrival = details.arrival || source.arrival || null;
     stop.parkingEntrance = details.parkingEntrance || null;
     stop.ticket = details.ticket || null;
     stop.attractionQuality = details.attractionQuality || attractionQualityForStop(stop.kind, stop.title);
@@ -398,12 +399,12 @@
     ].join('');
   }
 
-  function renderParkingEntrance(entrance) {
+  function renderParkingEntrance(entrance, includeNote) {
     if (!entrance) return '';
     return [
       '<div class="parking-entrance">',
       '<h4>Underground parking entrance</h4>',
-      entrance.note ? '<p class="small">' + escapeHtml(entrance.note) + '</p>' : '',
+      includeNote !== false && entrance.note ? '<p class="small">' + escapeHtml(entrance.note) + '</p>' : '',
       '<div class="action-bar">',
       externalLink(entrance.streetViewUrl, 'Street View of entrance', 'button subtle'),
       externalLink(entrance.satelliteUrl, 'Satellite view of entrance', 'button subtle'),
@@ -1100,6 +1101,7 @@
       locationName: option.foodName,
       kind: source ? source.kind : 'Quick meal',
       priority: 'required',
+      routeEligible: source ? source.routeEligible : true,
       address: option.foodAddress,
       city: option.foodCity || (source ? source.city : ''),
       leg: option.foodLeg || (source ? source.leg : ''),
@@ -3380,33 +3382,77 @@
     ].join('');
   }
 
-  function arrivalFirstStep(stop) {
-    var practical = practicalForStop(stop);
-    if (practical) {
-      var keys = Object.keys(practical);
-      if (keys.length) return keys[0] + ': ' + practical[keys[0]];
-    }
-    if (/washroom/i.test(stop.food || '')) return stop.food;
-    if (isHotelStop(stop)) return 'Park first, then check in with the booked reservation details kept offline.';
-    return 'Park first, then use the verified stop details below.';
+  function arrivalForStop(stop) {
+    var explicit = stop.arrival || {};
+    var hasStructuredParking = Boolean(stop.parkingName && stop.parkingAddress
+      && normalize(stop.parkingName) !== normalize(stop.parkingAddress));
+    var mode = explicit.mode || (isOnSiteStop(stop) ? 'on-site' : hasStructuredParking ? 'parking' : 'venue');
+    if (['parking', 'venue', 'on-site'].indexOf(mode) === -1) mode = 'venue';
+    var label = explicit.label || (mode === 'parking' ? stop.parkingName : stop.locationName || stop.title);
+    if (isHotelStop(stop)) label = String(label || '').replace(/^\s*check in:\s*/i, '');
+    var address = explicit.address || (mode === 'parking' ? stop.parkingAddress : stop.address || stop.parkingAddress);
+    var directionsUrl = explicit.directionsUrl || '';
+    if (!directionsUrl && mode === 'parking' && address) directionsUrl = mapSearchUrl([label, address].filter(Boolean).join(', '));
+    if (!directionsUrl && explicit.address) directionsUrl = mapSearchUrl([label, address].filter(Boolean).join(', '));
+    if (!directionsUrl) directionsUrl = stop.mapUrl || mapSearchUrl(address);
+    return {
+      mode: mode,
+      label: label || stop.title,
+      address: address,
+      directionsUrl: directionsUrl,
+      instruction: explicit.instruction || '',
+      firstStep: explicit.firstStep || '',
+      entrance: stop.parkingEntrance || null
+    };
+  }
+
+  function arrivalFirstStep(stop, arrival) {
+    if (arrival.firstStep) return arrival.firstStep;
+    if (isHotelStop(stop)) return 'Check in using the saved booking confirmation; this hotel is already fixed.';
+    if (arrival.instruction) return arrival.instruction;
+    if (arrival.entrance) return 'Use the saved entrance details below.';
+    if (arrival.mode === 'on-site') return 'Continue inside; no second parking step is needed.';
+    if (/washroom/i.test(stop.food || '')) return 'Use the on-site washroom first if anyone needs it.';
+    return 'Follow posted signs on arrival; no entrance detail is assumed.';
   }
 
   function renderArrivalBubble(day, stop, calm) {
-    var arrivalName = stop.parkingName || stop.locationName || stop.title;
-    var arrivalAddress = stop.parkingAddress || stop.address;
+    var arrival = arrivalForStop(stop);
+    var isParking = arrival.mode === 'parking';
     var parked = calm.phase === 'at-stop';
+    var thenStep = stop.kidPlan || stop.food || '';
+    var hotelTag = isHotelStop(stop) ? '<span class="tag category-hotel">Booked hotel · fixed</span>' : '';
+    var targetLabel = isParking ? 'Parking target' : arrival.mode === 'on-site' ? 'Already on site' : 'Arrival target';
+    var leadCopy = parked
+      ? (isHotelStop(stop) ? 'Check in when ready; the booking stays fixed.' : 'Take the next step when ready.')
+      : isParking ? 'Park first. The rest can wait.' : arrival.mode === 'on-site' ? 'You’re already here. Take the next step when ready.' : 'Arrive first. The rest can wait.';
+    var headingLead = parked ? (isParking ? 'You’re parked at ' : 'You’ve arrived at ') : 'Aim for ';
+    var stepLabel = isParking ? 'Park' : arrival.mode === 'on-site' ? 'Continue' : 'Arrive';
+    var stepSummary = isParking ? 'Use the saved parking target above.' : arrival.mode === 'on-site' ? 'Continue from this property.' : 'Use the saved arrival target above.';
+    var directionsLabel = isParking ? 'Open parking directions' : 'Open directions';
+    var confirmationLabel = isParking ? 'We’re parked' : arrival.mode === 'on-site' ? 'We’re ready' : 'We’ve arrived';
+    var completionLabel = isHotelStop(stop) ? 'Checked in · room secured' : 'Done here';
+    var missingEntrance = arrival.mode === 'on-site'
+      ? 'No separate entrance step is needed.'
+      : (isParking ? 'No saved entrance detail is available. Follow posted signs on arrival.' : 'No separate entrance detail is saved. Use the saved address above and follow posted signs on arrival.');
     return [
-      '<article class="decision-card arrival-bubble calm-context is-selected" data-testid="arrival-bubble"><div class="calm-card-head"><div><span class="tag category-hotel">', parked ? 'Landed' : 'Arrival in view', '</span><h3 tabindex="-1" id="calmContextHeading">Land smoothly at ', escapeHtml(stop.locationName || stop.title), '</h3></div></div>',
-      '<ol class="arrival-steps"><li><strong>Park</strong><span>', escapeHtml(arrivalName), arrivalAddress ? ' · ' + escapeHtml(arrivalAddress) : '', '</span></li>',
-      '<li><strong>First</strong><span>', escapeHtml(arrivalFirstStep(stop)), '</span></li>',
-      '<li><strong>Then</strong><span>', escapeHtml(stop.kidPlan || stop.food || 'Take a breath and open the stop details when ready.'), '</span></li></ol>',
-      isHotelStop(stop) ? '<p class="hotel-lock-note"><strong>Booked hotel anchor:</strong> this stay is fixed and will not be swapped by flexible planning.</p>' : '',
-      stop.parkingEntrance ? renderParkingEntrance(stop.parkingEntrance) : '',
-      '<details class="arrival-details"><summary>Entrance and stop details</summary><p>', escapeHtml(stop.notes), '</p>', stop.reservation ? '<p><strong>Reservation:</strong> ' + escapeHtml(stop.reservation) + '</p>' : '', '</details>',
-      '<div class="decision-actions">', externalLink(stop.mapUrl, 'Parking directions', 'button'),
-      parked ? '<button type="button" class="button primary" data-calm-action="done">Done here</button>' : '<button type="button" class="button primary" data-calm-action="parked">We’re parked</button>',
+      '<article class="decision-card arrival-bubble calm-context is-selected" data-testid="arrival-bubble" data-arrival-state="', parked ? 'landed' : 'final-approach', '" data-arrival-mode="', escapeHtml(arrival.mode), '"><div class="calm-card-head"><div><div class="arrival-tags"><span class="tag">', parked ? 'Landed' : 'Final approach', '</span>', hotelTag, '</div><h3 tabindex="-1" id="calmContextHeading">', escapeHtml(headingLead), escapeHtml(arrival.label), '</h3><p class="arrival-calm-copy">', escapeHtml(leadCopy), '</p>', parked ? '' : '<p class="small arrival-distance-note">Shown because you tapped “We’re close” · no location tracking or distance claim.</p>', '</div></div>',
+      '<div class="arrival-target" role="group" aria-labelledby="arrivalTargetHeading"><p class="route-label" id="arrivalTargetHeading">', escapeHtml(targetLabel), '</p><strong>', escapeHtml(arrival.label), '</strong>',
+      arrival.address ? '<address>' + escapeHtml(arrival.address) + '</address>' : '<p class="small muted">No separate arrival address is saved. Follow the pinned destination and posted signs.</p>',
+      '<div class="arrival-target-actions">', arrival.mode === 'on-site' ? '' : externalLink(arrival.directionsUrl, directionsLabel, 'button primary'), arrival.address ? '<button type="button" class="button subtle" data-arrival-copy data-address="' + escapeHtml(arrival.address) + '">Copy address</button>' : '', '</div></div>',
+      '<div class="decision-actions">',
+      parked ? '<button type="button" class="button primary" data-calm-action="done">' + escapeHtml(completionLabel) + '</button>' : '<button type="button" class="button primary" data-calm-action="parked">' + escapeHtml(confirmationLabel) + '</button>',
       parked && isMealStop(stop) ? '<button type="button" class="button subtle" data-calm-action="start-wait">Restaurant wait?</button>' : '',
-      parked ? '<button type="button" class="button subtle" data-calm-action="undo-arrival">Not here yet</button>' : '', '</div></article>'
+      parked ? '<button type="button" class="button subtle" data-calm-action="undo-arrival">Not here yet</button>' : '<button type="button" class="button subtle" data-calm-action="back-to-road">Back to road view</button>', '</div>',
+      !navigator.onLine ? '<p class="small offline-arrival-note">Offline · the saved address remains available; Maps may need a connection.</p>' : '',
+      arrival.entrance && arrival.entrance.note ? '<p class="arrival-entrance-note"><strong>Saved entrance note:</strong> ' + escapeHtml(arrival.entrance.note) + '</p>' : '',
+      '<ol class="arrival-steps"><li data-arrival-step="arrive"><strong>', escapeHtml(stepLabel), '</strong><span>', escapeHtml(stepSummary), '</span></li>',
+      '<li data-arrival-step="first"><strong>First</strong><span>', escapeHtml(arrivalFirstStep(stop, arrival)), '</span></li>',
+      thenStep ? '<li data-arrival-step="then"><strong>Then</strong><span>' + escapeHtml(thenStep) + '</span></li>' : '', '</ol>',
+      isHotelStop(stop) ? '<p class="hotel-lock-note"><strong>Booked hotel anchor:</strong> this is tonight’s fixed stay. Flexible planning can change only what happens before or after arrival.</p>' : '',
+      '<details class="arrival-details"><summary>Entrance and stop details</summary>',
+      arrival.entrance ? renderParkingEntrance(arrival.entrance, false) : '<p class="small"><strong>Entrance:</strong> ' + escapeHtml(missingEntrance) + '</p>',
+      stop.notes ? '<p>' + escapeHtml(stop.notes) + '</p>' : '', stop.reservation ? '<p><strong>Reservation:</strong> ' + escapeHtml(stop.reservation) + '</p>' : '', '</details></article>'
     ].join('');
   }
 
@@ -3635,6 +3681,7 @@
         } else if (action === 'start-stop') patch = { phase: 'at-stop', stopId: next.id, arrivedAt: new Date().toISOString(), legStartedAt: '' };
         else if (action === 'start-leg') patch = { phase: 'driving', stopId: next.id, legStartedAt: new Date().toISOString(), beadIndex: 0 };
         else if (action === 'near') patch.phase = 'arriving';
+        else if (action === 'back-to-road') patch = { phase: 'driving', stopId: next.id, arrivedAt: '' };
         else if (action === 'parked') {
           patch.phase = 'at-stop';
           patch.arrivedAt = new Date().toISOString();
@@ -3668,7 +3715,18 @@
         saveCalmDayState(day, patch);
         renderPlanViews();
         var contextHeading = document.getElementById('calmContextHeading');
-        if (contextHeading) contextHeading.focus({ preventScroll: true });
+        if (contextHeading) {
+          if (action === 'near' || action === 'parked' || action === 'undo-arrival' || action === 'back-to-road') {
+            contextHeading.focus({ preventScroll: true });
+            var contextCard = contextHeading.closest('.calm-context');
+            if (contextCard) contextCard.scrollIntoView({ block: 'start' });
+          } else contextHeading.focus({ preventScroll: true });
+        }
+      });
+    });
+    section.querySelectorAll('[data-arrival-copy]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        copyText(button.dataset.address || '').then(function () { setStatus('Arrival address copied.'); });
       });
     });
     section.querySelectorAll('[data-wait-minutes]').forEach(function (button) {

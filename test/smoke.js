@@ -64,7 +64,7 @@ function check(name, ok, detail) {
   }
 
   async function openIsolatedStatePage(state, options = {}) {
-    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const context = await browser.newContext({ viewport: options.viewport || { width: 390, height: 844 } });
     await context.addInitScript(({ seed, fixedDate }) => {
       if (fixedDate) {
         const NativeDate = Date;
@@ -122,9 +122,46 @@ function check(name, ok, detail) {
   await page.click('#live [data-calm-action="start-leg"]');
   check('starting a leg opens Journey Beads', (await page.locator('#live [data-testid="journey-beads"]').count()) === 1 && (await page.locator('#live').innerText()).includes('No exact countdown'));
   await page.click('#live [data-calm-action="near"]');
-  check('approaching a stop opens the Arrival Bubble', (await page.locator('#live [data-testid="arrival-bubble"]').count()) === 1 && (await page.locator('#live [data-calm-action="parked"]').count()) === 1);
+  const finalApproach = page.locator('#live [data-testid="arrival-bubble"]');
+  check('approaching a stop opens the manual Final Approach view', (await finalApproach.count()) === 1
+    && (await finalApproach.getAttribute('data-arrival-state')) === 'final-approach'
+    && (await finalApproach.getAttribute('data-arrival-mode')) === 'venue'
+    && /Final approach/i.test(await finalApproach.innerText())
+    && /Arrival target/i.test(await finalApproach.innerText())
+    && (await finalApproach.innerText()).includes('no location tracking or distance claim')
+    && (await page.locator('#live [data-calm-action="parked"]').count()) === 1);
+  check('address-only arrivals stay useful without inventing an entrance', (await finalApproach.locator('[data-arrival-copy]').count()) === 1
+    && (await finalApproach.locator('.arrival-details').textContent()).includes('No separate entrance detail is saved')
+    && await finalApproach.locator('.arrival-target').isVisible()
+    && await finalApproach.locator('[data-arrival-copy]').isVisible()
+    && await finalApproach.locator('a').filter({ hasText: 'Open directions' }).isVisible());
+  check('arrival heading receives focus inside the phone viewport', await page.evaluate(() => {
+    const heading = document.getElementById('calmContextHeading');
+    const card = heading && heading.closest('.calm-context');
+    const actions = card && card.querySelector('.arrival-target-actions');
+    const confirm = card && card.querySelector('[data-calm-action="parked"]');
+    if (!heading || !card || !actions || !confirm || document.activeElement !== heading) return false;
+    const headingBox = heading.getBoundingClientRect();
+    const cardBox = card.getBoundingClientRect();
+    const actionsBox = actions.getBoundingClientRect();
+    const confirmBox = confirm.getBoundingClientRect();
+    return headingBox.bottom > 0 && headingBox.top < window.innerHeight
+      && cardBox.top >= 0 && cardBox.top < 40
+      && actionsBox.bottom > 0 && actionsBox.top < window.innerHeight
+      && confirmBox.bottom > 0 && confirmBox.top < window.innerHeight;
+  }));
+  await page.click('#live [data-calm-action="back-to-road"]');
+  check('Back to road view safely restores Journey Beads', (await page.locator('#live [data-testid="journey-beads"]').count()) === 1
+    && await page.evaluate(() => window.__tripControlTest.state().calmByDay['2026-08-14'].phase === 'driving'));
+  await page.click('#live [data-calm-action="near"]');
   await page.click('#live [data-calm-action="parked"]');
-  check('Done appears only after arrival is confirmed', (await page.locator('#live [data-calm-action="done"]').count()) === 1 && (await page.locator('#live [data-calm-action="skip"]').count()) === 0);
+  check('Done appears only after arrival is confirmed', (await page.locator('#live [data-testid="arrival-bubble"]').getAttribute('data-arrival-state')) === 'landed'
+    && (await page.locator('#live [data-calm-action="done"]').count()) === 1
+    && (await page.locator('#live [data-calm-action="skip"]').count()) === 0);
+  await page.click('#live [data-calm-action="undo-arrival"]');
+  check('Not here yet returns to the final approach without advancing', (await finalApproach.getAttribute('data-arrival-state')) === 'final-approach'
+    && !(await page.evaluate(() => window.__tripControlTest.state().calmByDay['2026-08-14'].arrivedAt)));
+  await page.click('#live [data-calm-action="parked"]');
   await page.click('#live [data-calm-action="done"]');
   check('Done advances progress and persists the stop state', (await page.locator('#live .trip-progress').innerText()).includes('2/'));
   await openPlanningDrawer(page);
@@ -235,6 +272,104 @@ function check(name, ok, detail) {
     && !waitPivotState.some((stop) => stop.id === 'd1-lunch')
     && waitPivotState.some((stop) => stop.id === 'd1-hotel' && stop.hotel));
   await flowContext.close();
+
+  // Exercise the richest arrival record at the narrowest supported phone size.
+  // The hotel itself is fixed; this state only advances earlier checkpoints so
+  // the existing D1 booking is the next destination.
+  const hotelArrivalSession = await openIsolatedStatePage(v3State('2026-08-14', {
+    stops: {
+      'd1-depart': 'done',
+      'd1-fuel': 'done',
+      'd1-big-apple': 'skipped',
+      'd1-odessa': 'done',
+      'd1-lunch': 'done',
+      'd1-prehistoric-world': 'skipped'
+    },
+    calmByDay: { '2026-08-14': { phase: 'driving', stopId: 'd1-hotel' } }
+  }), { label: 'D1 hotel arrival', viewport: { width: 320, height: 568 } });
+  const hotelPage = hotelArrivalSession.page;
+  check('fixed D1 hotel is the single next hotel anchor', await hotelPage.evaluate(() => {
+    const hotels = window.__tripControlTest.dayStops('2026-08-14').filter((stop) => stop.id === 'd1-hotel' && stop.hotel);
+    return hotels.length === 1 && (window.__tripControlTest.state().stops['d1-hotel'] || 'pending') === 'pending';
+  }));
+  await hotelArrivalSession.context.setOffline(true);
+  await hotelPage.click('#live [data-calm-action="near"]');
+  const hotelArrival = hotelPage.locator('#live [data-testid="arrival-bubble"]');
+  const hotelArrivalText = await hotelArrival.innerText();
+  check('hotel arrival uses honest venue wording and the saved address', (await hotelArrival.getAttribute('data-arrival-mode')) === 'venue'
+    && /Booked hotel · fixed/i.test(hotelArrivalText)
+    && /Arrival target/i.test(hotelArrivalText)
+    && hotelArrivalText.includes('1050 de la Gauchetiere West, Montreal, QC H3B 4C9')
+    && hotelArrivalText.includes('this is tonight’s fixed stay')
+    && hotelArrivalText.includes('Check in using the saved booking confirmation')
+    && !hotelArrivalText.includes('Cuisine / order'));
+  check('fixed hotel arrival keeps offline essentials visible', await hotelArrival.locator('.arrival-target').isVisible()
+    && await hotelArrival.locator('a').filter({ hasText: 'Open directions' }).isVisible()
+    && await hotelArrival.locator('[data-arrival-copy]').isVisible()
+    && await hotelArrival.locator('.offline-arrival-note').isVisible()
+    && await hotelArrival.locator('.arrival-entrance-note').isVisible()
+    && (await hotelArrival.locator('.arrival-entrance-note').innerText()).includes('Stationnement / Self-Parking'));
+  check('hotel arrival has no skip or hotel-change path', (await hotelArrival.locator('[data-calm-action="skip"]').count()) === 0
+    && !/change hotel|hotel alternative/i.test(hotelArrivalText));
+  check('narrow-screen hotel arrival heading is focused and visible', await hotelPage.evaluate(() => {
+    const heading = document.getElementById('calmContextHeading');
+    const card = heading && heading.closest('.calm-context');
+    const actions = card && card.querySelector('.arrival-target-actions');
+    const confirm = card && card.querySelector('[data-calm-action="parked"]');
+    if (!heading || !card || !actions || !confirm || document.activeElement !== heading) return false;
+    const headingBox = heading.getBoundingClientRect();
+    const cardBox = card.getBoundingClientRect();
+    const actionsBox = actions.getBoundingClientRect();
+    const confirmBox = confirm.getBoundingClientRect();
+    return headingBox.bottom > 0 && headingBox.top < window.innerHeight
+      && cardBox.top >= 0 && cardBox.top < 40
+      && actionsBox.bottom > 0 && actionsBox.top < window.innerHeight
+      && confirmBox.bottom > 0 && confirmBox.top < window.innerHeight;
+  }));
+  const hotelDetails = hotelArrival.locator('.arrival-details');
+  check('saved entrance views start collapsed while the entrance note stays visible', !(await hotelDetails.evaluate((element) => element.open)));
+  await hotelDetails.locator('summary').click();
+  check('only the saved D1 entrance views are exposed', await hotelDetails.locator('a').filter({ hasText: 'Street View of entrance' }).isVisible()
+    && await hotelDetails.locator('a').filter({ hasText: 'Satellite view of entrance' }).isVisible());
+  check('expanded hotel arrival fits 320px and keeps touch targets usable', await hotelPage.evaluate(() => {
+    const card = document.querySelector('[data-testid="arrival-bubble"]');
+    const controls = [...card.querySelectorAll('button, a.button, summary')];
+    return document.documentElement.scrollWidth <= window.innerWidth
+      && card.scrollWidth <= card.clientWidth
+      && controls.every((control) => control.getBoundingClientRect().height >= 44);
+  }));
+  await hotelPage.click('#live [data-calm-action="parked"]');
+  check('hotel completion waits for an explicit check-in confirmation', (await hotelPage.locator('#live [data-calm-action="done"]').innerText()) === 'Checked in · room secured');
+  await hotelPage.click('#live [data-calm-action="undo-arrival"]');
+  check('arrival confirmations cannot mutate the booked hotel or flexible choices', await hotelPage.evaluate(() => {
+    const state = window.__tripControlTest.state();
+    const hotels = window.__tripControlTest.dayStops('2026-08-14').filter((stop) => stop.id === 'd1-hotel' && stop.hotel);
+    return hotels.length === 1
+      && (state.stops['d1-hotel'] || 'pending') === 'pending'
+      && Object.keys(state.routeChoices).length === 0
+      && Object.keys(state.mealChoices).length === 0;
+  }));
+  await hotelArrivalSession.context.close();
+
+  const onSiteQuickSession = await openIsolatedStatePage(v3State('2026-08-16', {
+    stops: {
+      'd3-depart': 'done',
+      'd3-kamouraska': 'done',
+      'd3-lunch': 'done',
+      'd3-edmundston': 'done',
+      'd3-hartland': 'done',
+      'd3-hotel': 'done'
+    },
+    mealChoices: { '2026-08-16': 'quick' }
+  }), { label: 'D3 on-site quick meal' });
+  check('an on-site quick replacement never creates a fake driving leg', (await onSiteQuickSession.page.locator('#live .next-stop h3').innerText()).includes('Drift Pool + Patio')
+    && (await onSiteQuickSession.page.locator('#live [data-calm-action="start-stop"]').count()) === 1
+    && (await onSiteQuickSession.page.locator('#live [data-calm-action="start-leg"]').count()) === 0);
+  await onSiteQuickSession.page.click('#live [data-calm-action="start-stop"]');
+  check('on-site arrival mode suppresses duplicate directions and parking claims', (await onSiteQuickSession.page.locator('#live [data-testid="arrival-bubble"]').getAttribute('data-arrival-mode')) === 'on-site'
+    && (await onSiteQuickSession.page.locator('#live .arrival-target a').count()) === 0
+    && (await onSiteQuickSession.page.locator('#live [data-calm-action="done"]').count()) === 1);
+  await onSiteQuickSession.context.close();
 
   // The real post-trip view is read-only. Freeze the browser one day after the
   // trip so this remains covered even when the test suite runs before departure.
