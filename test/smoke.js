@@ -47,17 +47,64 @@ function check(name, ok, detail) {
     executablePath: process.env.SMOKE_CHROMIUM_PATH || undefined
   });
   const errors = [];
+
+  function v3State(activeDate, overrides = {}) {
+    return Object.assign({
+      version: 3,
+      activeDate,
+      modes: {},
+      stops: {},
+      tasks: {},
+      routeChoices: {},
+      mealChoices: {},
+      calmByDay: {},
+      offlineReadiness: {},
+      offlineMode: false
+    }, overrides);
+  }
+
+  async function openIsolatedStatePage(state, options = {}) {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await context.addInitScript(({ seed, fixedDate }) => {
+      if (fixedDate) {
+        const NativeDate = Date;
+        class FixedDate extends NativeDate {
+          constructor(...args) { super(...(args.length ? args : [fixedDate])); }
+          static now() { return new NativeDate(fixedDate).getTime(); }
+        }
+        FixedDate.parse = NativeDate.parse;
+        FixedDate.UTC = NativeDate.UTC;
+        globalThis.Date = FixedDate;
+      }
+      localStorage.setItem('pei-foodie-road-trip/state/v3', JSON.stringify(seed));
+      localStorage.removeItem('pei-foodie-road-trip/state/v2');
+    }, { seed: state, fixedDate: options.fixedDate || '' });
+    const isolatedPage = await context.newPage();
+    const label = options.label || 'isolated';
+    isolatedPage.on('pageerror', (e) => errors.push(label + ' pageerror: ' + e.message));
+    isolatedPage.on('console', (m) => { if (m.type() === 'error') errors.push(label + ' console: ' + m.text()); });
+    await isolatedPage.goto(base + '/index.html#' + (options.section || 'live'), { waitUntil: 'networkidle' });
+    return { context, page: isolatedPage };
+  }
+
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
 
   await page.goto(base + '/index.html', { waitUntil: 'networkidle' });
 
+  async function openPlanningDrawer(targetPage) {
+    const drawer = targetPage.locator('#live .planning-drawer');
+    if (!(await drawer.evaluate((element) => element.open))) await drawer.locator('summary').click();
+  }
+
   check('trip data JSON parses', await page.evaluate(() => {
     try { return JSON.parse(document.getElementById('trip-data').textContent).days.length === 8; } catch (e) { return false; }
   }));
   check('trip-control app booted', await page.evaluate(() => window.__tripControlBooted === true));
-  check('lands on Today', await page.locator('#live').isVisible());
+  const currentPhase = await page.evaluate(() => window.__tripControlTest.phase());
+  const currentPrimaryLabel = currentPhase === 'pretrip' ? 'Ready' : currentPhase === 'complete' ? 'Recap' : 'Today';
+  check('lands on the phase-aware trip home', await page.locator('#live').isVisible() && (await page.locator('#tab-live').innerText()).includes(currentPrimaryLabel));
   check('secondary planning catalogues are lazy on first load', (await page.locator('.countdown-card').count()) === 0 && (await page.locator('#food .sugg-card, #attractions .sugg-card, #hotels .data-card').count()) === 0);
   const headerText = await page.locator('header').innerText();
   const headerBox = await page.locator('header').boundingBox();
@@ -65,20 +112,241 @@ function check(name, ok, detail) {
   check('header is concise and trip-specific', headerText.includes('PEI Road Trip') && headerText.includes('7 hotels booked') && !headerText.includes('family-safe premium-fuel'));
   check('mobile first action appears in the initial viewport', headerBox.height < 180 && nextStopBox.y < 500, 'header=' + Math.round(headerBox.height) + 'px, next=' + Math.round(nextStopBox.y) + 'px');
   check('Today shows all hotels booked and safe', (await page.locator('#live .hotel-safe-banner').innerText()).includes('7/7 hotels booked · safe'));
-  check('Today exposes Done but never allows a required stop to be skipped', (await page.locator('#live [data-live-stop-action="done"]').count()) === 1 && (await page.locator('#live [data-live-stop-action="skip"]').count()) === 0);
-  await page.click('#live [data-live-stop-action="done"]');
-  check('Done advances progress and persists the stop state', (await page.locator('#live .trip-progress').innerText()).includes('1/'));
+  check('calm home exposes the core recovery tools', (await page.locator('#live [data-testid="calm-bank"]').count()) === 1
+    && (await page.locator('#live [data-testid="family-pulse"]').count()) === 1
+    && (await page.locator('#live .success-card').count()) === 1);
+  check('the day-start checkpoint never pretends the family is driving to its origin', (await page.locator('#live [data-calm-action="start-day"]').count()) === 1 && (await page.locator('#live [data-calm-action="skip"]').count()) === 0);
+  await page.click('#live [data-calm-action="start-day"]');
+  check('starting the day advances the origin checkpoint', (await page.locator('#live .trip-progress').innerText()).includes('1/'));
+  check('the first real driving leg now has one safe action and no skip', (await page.locator('#live [data-calm-action="start-leg"]').count()) === 1 && (await page.locator('#live [data-calm-action="skip"]').count()) === 0);
+  await page.click('#live [data-calm-action="start-leg"]');
+  check('starting a leg opens Journey Beads', (await page.locator('#live [data-testid="journey-beads"]').count()) === 1 && (await page.locator('#live').innerText()).includes('No exact countdown'));
+  await page.click('#live [data-calm-action="near"]');
+  check('approaching a stop opens the Arrival Bubble', (await page.locator('#live [data-testid="arrival-bubble"]').count()) === 1 && (await page.locator('#live [data-calm-action="parked"]').count()) === 1);
+  await page.click('#live [data-calm-action="parked"]');
+  check('Done appears only after arrival is confirmed', (await page.locator('#live [data-calm-action="done"]').count()) === 1 && (await page.locator('#live [data-calm-action="skip"]').count()) === 0);
+  await page.click('#live [data-calm-action="done"]');
+  check('Done advances progress and persists the stop state', (await page.locator('#live .trip-progress').innerText()).includes('2/'));
+  await openPlanningDrawer(page);
   await page.selectOption('#liveDay', '2026-08-15');
-  await page.selectOption('#liveMode', 'ahead30');
+  await page.selectOption('#liveMode', 'ahead60');
   check('ahead mode suggests one safe route-side option with named parking', (await page.locator('#live .decision-card').filter({ hasText: 'Trois-Rivieres Harbourfront Park' }).count()) === 1 && (await page.locator('#live').innerText()).includes('Parc portuaire / tourist information visitor parking'));
   await page.click('#live [data-route-choice="trois-rivieres-harbourfront-park"]');
-  check('extra attraction choice is explicit and removable', (await page.locator('#live .decision-card.is-selected').filter({ hasText: 'Chosen extra' }).count()) === 1 && (await page.locator('#live [data-route-choice="clear"]').count()) === 1);
+  const routeChoiceState = await page.evaluate(() => ({
+    stops: window.__tripControlTest.dayStops('2026-08-15'),
+    bank: window.__tripControlTest.calmBank('2026-08-15')
+  }));
+  check('extra attraction choice changes the active route and Calm Bank', routeChoiceState.stops.some((stop) => stop.id.includes('trois-rivieres-harbourfront-park'))
+    && !routeChoiceState.stops.some((stop) => stop.id === 'd2-old-quebec')
+    && routeChoiceState.stops.some((stop) => stop.id === 'd2-hotel' && stop.hotel)
+    && routeChoiceState.bank.minutes === 50);
+  check('extra attraction choice is explicit and removable', (await page.locator('#live .decision-card.is-selected').filter({ hasText: 'active in route' }).count()) === 1 && (await page.locator('#live [data-route-choice="clear"]').count()) === 1);
   await page.click('#live [data-meal-choice="quick"]');
-  check('meal pace switch reveals the quick food and extra experience', (await page.locator('#live [data-meal-choice="quick"]').getAttribute('aria-pressed')) === 'true' && (await page.locator('#live').innerText()).includes('Time unlocked for:'));
+  const mealChoiceState = await page.evaluate(() => ({
+    stops: window.__tripControlTest.dayStops('2026-08-15'),
+    bank: window.__tripControlTest.calmBank('2026-08-15')
+  }));
+  check('meal pace switch replaces the meal and credits conservative time', (await page.locator('#live [data-meal-choice="quick"]').getAttribute('aria-pressed')) === 'true'
+    && (await page.locator('#live').innerText()).includes('Time unlocked for:')
+    && mealChoiceState.stops.some((stop) => stop.id === 'meal-quick-2026-08-15')
+    && !mealChoiceState.stops.some((stop) => stop.id === 'd2-lunch')
+    && mealChoiceState.stops.some((stop) => stop.id === 'd2-hotel' && stop.hotel)
+    && mealChoiceState.bank.minutes === 75);
+  await page.click('#live [data-protect-recovery]');
+  const protectedState = await page.evaluate(() => ({
+    stops: window.__tripControlTest.dayStops('2026-08-15'),
+    state: window.__tripControlTest.state()
+  }));
+  check('Protect recovery removes optional choices but never the booked hotel', !protectedState.state.routeChoices['2026-08-15']
+    && !protectedState.stops.some((stop) => stop.flexSource === 'route')
+    && protectedState.stops.some((stop) => stop.id === 'd2-hotel' && stop.hotel));
+  await page.evaluate(() => {
+    const routeChoice = document.querySelector('#live [data-route-choice="trois-rivieres-harbourfront-park"]');
+    if (routeChoice) routeChoice.click();
+    const pairedExperience = document.querySelector('#live [data-meal-experience="add"]');
+    if (pairedExperience) pairedExperience.click();
+  });
+  const protectedRetryState = await page.evaluate(() => ({
+    stops: window.__tripControlTest.dayStops('2026-08-15'),
+    state: window.__tripControlTest.state()
+  }));
+  check('Protect recovery rejects attempts to re-add optional route and paired experiences', !protectedRetryState.state.routeChoices['2026-08-15']
+    && !protectedRetryState.state.calmByDay['2026-08-15'].mealExperience
+    && !protectedRetryState.stops.some((stop) => stop.flexSource === 'route' || stop.flexSource === 'meal-experience'));
+  await page.click('#live [data-protect-recovery]');
+  await page.click('#live [data-meal-choice="proper"]');
   await page.check('#live [data-offline-ready="maps"]');
   check('offline readiness is actionable on Today', (await page.locator('#live .readiness-card').innerText()).includes('1/4'));
   check('Today displays plan freshness and live recheck timing', (await page.locator('#live .freshness-card').count()) === 1 && (await page.locator('#live .freshness-card').innerText()).includes('plan reviewed'));
   check('Today offers a location-based nearest-stop control', (await page.locator('#live #nearestStopBtn').count()) === 1);
+
+  // Exercise resync and restaurant recovery in a separate phone session so its
+  // deliberate progress changes cannot affect the itinerary-content checks.
+  const flowContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await flowContext.addInitScript(() => {
+    localStorage.setItem('pei-foodie-road-trip/state/v2', JSON.stringify({
+      version: 2, activeDate: '2026-08-14', modes: {}, stops: { 'd1-hotel': 'skipped' }, tasks: {}, routeChoices: {}, mealChoices: {}, offlineReadiness: {}
+    }));
+  });
+  const flowPage = await flowContext.newPage();
+  flowPage.on('pageerror', (e) => errors.push('flow pageerror: ' + e.message));
+  flowPage.on('console', (m) => { if (m.type() === 'error') errors.push('flow console: ' + m.text()); });
+  await flowPage.goto(base + '/index.html#live', { waitUntil: 'networkidle' });
+  check('v2 progress migrates once to the calm-copilot state', await flowPage.evaluate(() => {
+    return Boolean(localStorage.getItem('pei-foodie-road-trip/state/v3'))
+      && !localStorage.getItem('pei-foodie-road-trip/state/v2')
+      && window.__tripControlTest.state().version === 3
+      && window.__tripControlTest.state().stops['d1-hotel'] !== 'skipped';
+  }));
+  await flowPage.click('#live [data-pulse-need="washroom"]');
+  await flowPage.click('#live [data-pulse-apply="washroom"]');
+  const rescueStops = await flowPage.evaluate(() => window.__tripControlTest.dayStops('2026-08-14'));
+  const rescueStop = rescueStops.find((stop) => stop.id.startsWith('rescue-'));
+  check('washroom rescue moves a service stop forward but cannot clone or replace a hotel', rescueStops.some((stop) => stop.id.startsWith('rescue-'))
+    && !rescueStops.some((stop) => stop.id === 'rescue-d1-hotel')
+    && rescueStops.some((stop) => stop.id === 'd1-hotel' && stop.hotel));
+  await flowPage.click('#live [data-calm-action="start-leg"]');
+  await flowPage.click('#live [data-calm-action="near"]');
+  await flowPage.click('#live [data-calm-action="parked"]');
+  await flowPage.click('#live [data-calm-action="done"]');
+  check('finishing a rescue consumes the original stop instead of repeating it later', Boolean(rescueStop) && await flowPage.evaluate((originalId) => {
+    return window.__tripControlTest.state().stops[originalId] === 'done';
+  }, rescueStop.id.replace(/^rescue-/, '')));
+  check('manual resync offers pending stops only', await flowPage.evaluate(() => {
+    const state = window.__tripControlTest.state();
+    const values = [...document.querySelectorAll('#resyncStopSelect option')].map((option) => option.value);
+    return values.length > 0 && values.every((stopId) => (state.stops[stopId] || 'pending') === 'pending');
+  }));
+  await flowPage.click('#live .resync-control > summary');
+  await flowPage.selectOption('#resyncStopSelect', 'd1-lunch');
+  await flowPage.click('#applyResync');
+  check('manual resync resumes from the confirmed stop without touching hotels', (await flowPage.locator('#live .next-stop h3').innerText()).includes('Tata')
+    && !(await flowPage.evaluate(() => window.__tripControlTest.state().stops['d1-hotel'] === 'skipped')));
+  await flowPage.click('#live [data-calm-action="start-leg"]');
+  await flowPage.click('#live [data-calm-action="near"]');
+  await flowPage.click('#live [data-calm-action="parked"]');
+  await flowPage.click('#live [data-calm-action="start-wait"]');
+  await flowPage.click('#live [data-wait-minutes="30"]');
+  check('Wait Pivot recommends the structured quick-meal replacement', (await flowPage.locator('#live [data-testid="wait-pivot"]').innerText()).includes('Switch to Boboli')
+    && (await flowPage.locator('#live [data-testid="wait-pivot"]').innerText()).includes('booked hotel'));
+  await flowPage.click('#live [data-wait-action="quick"]');
+  const waitPivotState = await flowPage.evaluate(() => window.__tripControlTest.dayStops('2026-08-14'));
+  check('using Wait Pivot rewrites Next while preserving the booked hotel anchor', waitPivotState.some((stop) => stop.id === 'meal-quick-2026-08-14')
+    && !waitPivotState.some((stop) => stop.id === 'd1-lunch')
+    && waitPivotState.some((stop) => stop.id === 'd1-hotel' && stop.hotel));
+  await flowContext.close();
+
+  // The real post-trip view is read-only. Freeze the browser one day after the
+  // trip so this remains covered even when the test suite runs before departure.
+  const recapSession = await openIsolatedStatePage(v3State('2026-08-21'), {
+    fixedDate: '2026-08-22T12:00:00-04:00',
+    label: 'recap'
+  });
+  const recapControlSelector = [
+    '[data-calm-action]', '[data-pulse-need]', '[data-pulse-apply]', '[data-protect-recovery]',
+    '[data-route-choice]', '[data-meal-choice]', '[data-meal-experience]', '[data-stop-action]',
+    '#resyncStopSelect', '#liveMode'
+  ].map((selector) => '#live ' + selector).join(', ');
+  check('post-trip recap is read-only with no live driving or planning controls',
+    (await recapSession.page.locator('#live-heading').innerText()) === 'Trip recap'
+      && (await recapSession.page.locator('#live .recap-card').count()) === 1
+      && (await recapSession.page.locator(recapControlSelector).count()) === 0);
+  await recapSession.context.close();
+
+  // A public/redacted handoff may include progress, but never the Calm
+  // Copilot's exact current stop or movement timestamps.
+  const privateCalm = {
+    phase: 'driving',
+    stopId: 'd1-lunch',
+    legStartedAt: '2026-08-14T15:01:02.000Z',
+    arrivedAt: '2026-08-14T16:03:04.000Z'
+  };
+  const redactedSession = await openIsolatedStatePage(v3State('2026-08-14', {
+    stops: { 'd1-depart': 'done', 'd1-fuel': 'done', 'd1-big-apple': 'done', 'd1-odessa': 'done' },
+    calmByDay: { '2026-08-14': privateCalm }
+  }), { section: 'checklist', label: 'redacted export' });
+  await redactedSession.page.click('#checklist .prep-tools > summary');
+  const [redactedDownload] = await Promise.all([
+    redactedSession.page.waitForEvent('download'),
+    redactedSession.page.click('#exportRedacted')
+  ]);
+  const redactedPath = await redactedDownload.path();
+  const redactedPayload = redactedPath ? JSON.parse(fs.readFileSync(redactedPath, 'utf8')) : null;
+  const redactedCalm = redactedPayload && redactedPayload.calmByDay || {};
+  const calmLocationLeak = Object.values(redactedCalm).some((entry) => entry && (
+    entry.stopId || entry.legStartedAt || entry.arrivedAt
+  ));
+  check('redacted export omits Calm Copilot stop IDs and movement timestamps',
+    Boolean(redactedPayload && redactedPayload.redacted) && !calmLocationLeak);
+  await redactedSession.context.close();
+
+  // Exercise all three structured paired-experience behaviors: a new inserted
+  // stop (D1), activation of a gated stop (D6), and merge into an existing
+  // hotel recovery checkpoint (D7). D1/D6/D7 also cover route + quick-meal
+  // composition so neither independent replacement is lost.
+  const d1Session = await openIsolatedStatePage(v3State('2026-08-14', {
+    routeChoices: { '2026-08-14': 'lake-ontario-park' },
+    mealChoices: { '2026-08-14': 'quick' }
+  }), { label: 'D1 resolver' });
+  await d1Session.page.click('#live [data-meal-experience="add"]');
+  const d1Resolved = await d1Session.page.evaluate(() => window.__tripControlTest.dayStops('2026-08-14'));
+  const d1Ids = d1Resolved.map((stop) => stop.id);
+  const d1RouteIndex = d1Ids.indexOf('route-flex-2026-08-14-lake-ontario-park');
+  const d1QuickIndex = d1Ids.indexOf('meal-quick-2026-08-14');
+  const d1ExperienceIndex = d1Ids.indexOf('meal-experience-2026-08-14');
+  check('D1 composes route + quick meal and inserts the paired experience after the meal',
+    d1RouteIndex >= 0 && d1QuickIndex === d1RouteIndex + 1 && d1ExperienceIndex === d1QuickIndex + 1
+      && !d1Ids.includes('d1-lunch') && !d1Ids.includes('d1-big-apple') && !d1Ids.includes('d1-prehistoric-world')
+      && d1Resolved.filter((stop) => stop.id === 'd1-hotel' && stop.hotel).length === 1);
+  await d1Session.context.close();
+
+  const d6ActivationSession = await openIsolatedStatePage(v3State('2026-08-19', {
+    stops: {
+      'd6-morning-ready': 'done', 'd6-fuel': 'done', 'd6-bridge': 'done',
+      'd6-sackville-rest': 'done', 'd6-hopewell': 'done',
+      'meal-quick-2026-08-19': 'done', 'd6-hotel': 'done'
+    },
+    mealChoices: { '2026-08-19': 'quick' }
+  }), { label: 'D6 experience activation' });
+  await d6ActivationSession.page.click('#live [data-meal-experience="add"]');
+  const d6Activated = await d6ActivationSession.page.evaluate(() => window.__tripControlTest.dayStops('2026-08-19'));
+  check('D6 paired experience activates Magnetic Hill instead of creating a duplicate synthetic stop',
+    (await d6ActivationSession.page.locator('#live .next-stop h3').innerText()).includes('Magnetic Hill')
+      && d6Activated.filter((stop) => stop.id === 'd6-magnetic').length === 1
+      && !d6Activated.some((stop) => stop.id === 'meal-experience-2026-08-19'));
+  await d6ActivationSession.context.close();
+
+  const d6CompositionSession = await openIsolatedStatePage(v3State('2026-08-19', {
+    routeChoices: { '2026-08-19': 'albert-county-museum-rb-bennett-centre' },
+    mealChoices: { '2026-08-19': 'quick' }
+  }), { label: 'D6 resolver' });
+  const d6Resolved = await d6CompositionSession.page.evaluate(() => window.__tripControlTest.dayStops('2026-08-19'));
+  const d6Ids = d6Resolved.map((stop) => stop.id);
+  const d6QuickIndex = d6Ids.indexOf('meal-quick-2026-08-19');
+  const d6RouteIndex = d6Ids.indexOf('route-flex-2026-08-19-albert-county-museum-rb-bennett-centre');
+  check('D6 composes route + quick meal without restoring replaced lunch or Magnetic Hill',
+    d6QuickIndex >= 0 && d6RouteIndex === d6QuickIndex + 1
+      && !d6Ids.includes('d6-lunch') && !d6Ids.includes('d6-magnetic')
+      && d6Resolved.filter((stop) => stop.id === 'd6-hotel' && stop.hotel).length === 1);
+  await d6CompositionSession.context.close();
+
+  const d7Session = await openIsolatedStatePage(v3State('2026-08-20', {
+    routeChoices: { '2026-08-20': 'republique-provincial-park-playground-riverside-trail' },
+    mealChoices: { '2026-08-20': 'quick' }
+  }), { label: 'D7 resolver' });
+  await d7Session.page.click('#live [data-meal-experience="add"]');
+  const d7Resolved = await d7Session.page.evaluate(() => window.__tripControlTest.dayStops('2026-08-20'));
+  const d7Ids = d7Resolved.map((stop) => stop.id);
+  const d7QuickIndex = d7Ids.indexOf('meal-quick-2026-08-20');
+  const d7RouteIndex = d7Ids.indexOf('route-flex-2026-08-20-republique-provincial-park-playground-riverside-trail');
+  const d7Hotel = d7Resolved.find((stop) => stop.id === 'd7-hotel');
+  check('D7 composes route + quick meal and merges recovery into the single booked hotel checkpoint',
+    d7QuickIndex >= 0 && d7RouteIndex === d7QuickIndex + 1
+      && !d7Ids.includes('d7-edmundston') && !d7Ids.includes('d7-hartland')
+      && !d7Ids.includes('meal-experience-2026-08-20')
+      && d7Resolved.filter((stop) => stop.id === 'd7-hotel' && stop.hotel).length === 1
+      && d7Hotel && d7Hotel.pairedExperience === true);
+  await d7Session.context.close();
 
   const tabs = ['live', 'daybyday', 'checklist', 'offline'];
   for (const tab of tabs) {
@@ -89,7 +357,7 @@ function check(name, ok, detail) {
     check('tab ' + tab + ' visible, no overflow', visible && overflow <= 0, 'overflow=' + overflow + 'px');
   }
   const navLabels = await page.locator('#nav [role=tab]').allTextContents();
-  check('primary navigation is reduced to four clear tabs', navLabels.length === 4 && ['Today', 'Plan', 'Prep', 'Safety'].every((label) => navLabels.some((text) => text.includes(label))));
+  check('primary navigation is reduced to four clear tabs', navLabels.length === 4 && [currentPrimaryLabel, 'Plan', 'Prep', 'Safety'].every((label) => navLabels.some((text) => text.includes(label))));
   check('secondary catalogues stay out of primary navigation', ['overview', 'food', 'attractions', 'hotels', 'sanity', 'fuel', 'sources'].every((id) => !navLabels.some((text) => text.toLowerCase().includes(id))) && (await page.locator('#nav #themeToggle').count()) === 0);
   check('tablist uses roving keyboard focus', (await page.locator('#nav [role=tab][tabindex="0"]').count()) === 1 && (await page.locator('#nav [role=tab][tabindex="-1"]').count()) === 3);
 
@@ -203,6 +471,7 @@ function check(name, ok, detail) {
   check('on-time mode restores the optional movement stops without the rejected attraction', onTimeAug14Text.includes('The Big Apple visitor parking') && onTimeAug14Text.includes('Prehistoric World') && !onTimeAug14Text.includes('Upper Canada Village'));
   await page.click('#nav [data-section=live]');
   check('plan state stays synchronized between day and live views', (await page.locator('#liveMode').inputValue()) === 'on-time');
+  await openPlanningDrawer(page);
   await page.selectOption('#liveMode', 'preview');
   check('live schedule selector retains focus after rerender', await page.evaluate(() => document.activeElement && document.activeElement.id === 'liveMode'));
 
@@ -288,6 +557,7 @@ function check(name, ok, detail) {
   // The Today day selector is the same commit path, so it has to move the Plan
   // tab's list and its route map filter too.
   await page.click('#nav [data-section=live]');
+  await openPlanningDrawer(page);
   await page.selectOption('#liveDay', '2026-08-17');
   await page.click('#nav [data-section=daybyday]');
   check('the Today day selector moves the Plan list and route map together', (await page.locator('#daySelectV2').inputValue()) === '2026-08-17' && (await page.locator('#tripMapDay').inputValue()) === '2026-08-17');
@@ -304,6 +574,7 @@ function check(name, ok, detail) {
   await page.click('#nav [data-section=live]');
   await page.setViewportSize({ width: 844, height: 390 });
   await page.waitForTimeout(200);
+  await openPlanningDrawer(page);
   await page.selectOption('#liveDay', '2026-08-18');
   await page.click('#nav [data-section=daybyday]');
   await page.waitForTimeout(1200);

@@ -382,5 +382,77 @@ window.TripData.routeOptionsByDay = function (helpers) {
       }]
     }
   };
+  // Operational metadata for the calm-copilot route resolver. Display copy
+  // remains above; these fields are deliberately numeric and stop-id based so
+  // a chosen idea can alter Next, directions, progress and the route without
+  // parsing prose at decision time. Costs use the conservative high end of the
+  // visit plus detour range.
+  var optionEffects = {
+    '2026-08-14': {
+      'lake-ontario-park': { before: 'd1-lunch', replace: ['d1-big-apple', 'd1-prehistoric-world'], cost: 75 },
+      'fort-henry-national-historic-site': { before: 'd1-lunch', replace: ['d1-big-apple', 'd1-prehistoric-world'], cost: 120 },
+      'kingston-penitentiary-tour': { before: 'd1-lunch', replace: ['d1-big-apple', 'd1-prehistoric-world'], cost: 120 },
+      'brockville-railway-tunnel': { after: 'd1-lunch', replace: ['d1-big-apple', 'd1-prehistoric-world'], cost: 50 },
+      'mount-royal-kondiaronk-belvedere': { after: 'd1-hotel', replace: ['d1-big-apple', 'd1-prehistoric-world'], cost: 60 }
+    },
+    '2026-08-15': {
+      'trois-rivieres-harbourfront-park': { before: 'd2-falls', replace: ['d2-old-quebec'], cost: 60 },
+      'plains-of-abraham-battlefields-park': { after: 'd2-hotel', replace: ['d2-old-quebec'], cost: 60 },
+      'basilica-of-sainte-anne-de-beaupre': { before: 'd2-hotel', replace: ['d2-old-quebec'], cost: 85 },
+      'quebec-bridges-riverside-viewpoint-anse-au-foulon': { after: 'd2-hotel', replace: ['d2-old-quebec'], cost: 45 }
+    },
+    '2026-08-16': {
+      'new-brunswick-botanical-garden': { after: 'd3-edmundston', replace: ['d3-hartland'], cost: 75 },
+      'parc-des-chutes-de-riviere-du-loup': { after: 'd3-lunch', replace: ['d3-hartland'], cost: 45 },
+      'worlds-largest-axe': { after: 'd3-edmundston', replace: ['d3-hartland'], cost: 30 },
+      'new-brunswick-military-history-museum': { before: 'd3-hotel', replace: ['d3-hartland'], cost: 80 }
+    },
+    '2026-08-17': {
+      'bore-park-tidal-bore-viewpoint': { before: 'd4-lunch', replace: ['d4-magnetic'], cost: 60 },
+      'magnetic-hill-zoo': { before: 'd4-lunch', replace: ['d4-magnetic', 'd4-cape'], cost: 135 },
+      'giant-lobster-shediac': { before: 'd4-cape', replace: ['d4-magnetic'], cost: 30 },
+      'port-borden-range-rear-lighthouse': { before: 'd4-hotel', replace: ['d4-magnetic'], cost: 15 },
+      'victoria-seaport-lighthouse-museum': { before: 'd4-hotel', replace: ['d4-magnetic'], cost: 65 },
+      'prince-edward-battery-victoria-park': { after: 'd4-hotel', replace: ['d4-magnetic'], cost: 45 },
+      'peakes-wharf-confederation-landing-charlottetown': { before: 'd4-return', replace: ['d4-magnetic'], cost: 60 }
+    },
+    '2026-08-18': {
+      'gardens-of-hope-butterfly-house': { before: 'd5-hotel', replace: ['d5-beach'], cost: 70 },
+      'cavendish-boardwalk': { before: 'd5-hotel', replace: ['d5-beach'], cost: 45 },
+      'avonlea-village': { before: 'd5-hotel', replace: ['d5-beach'], cost: 60 },
+      'cavendish-dunelands-trail-pei-national-park': { before: 'd5-hotel', replace: ['d5-beach'], cost: 45 }
+    },
+    '2026-08-19': {
+      'albert-county-museum-rb-bennett-centre': { after: 'd6-lunch', replace: ['d6-magnetic'], cost: 60 },
+      'steeves-house-museum': { after: 'd6-lunch', replace: ['d6-magnetic'], cost: 40 },
+      'cape-enrage': { after: 'd6-lunch', replace: ['d6-magnetic'], cost: 130 }
+    },
+    '2026-08-20': {
+      'republique-provincial-park-playground-riverside-trail': { after: 'd7-edmundston', replace: ['d7-hartland'], cost: 35 },
+      'kings-landing-historical-settlement': { before: 'd7-edmundston', replace: ['d7-hartland'], cost: 180 }
+    },
+    '2026-08-21': {
+      'fromagerie-lemaire': { before: 'd8-chambly', replace: [], cost: 30 },
+      'thousand-islands-parkway-lookout': { before: 'd8-big-apple', replace: ['d8-big-apple'], cost: 50 },
+      'brockville-waterfront-blockhouse-island': { before: 'd8-big-apple', replace: ['d8-big-apple'], cost: 45 }
+    }
+  };
+  var optionId = function (value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[\u2018\u2019']/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  };
+  Object.keys(routeOptionsByDay).forEach(function (dayId) {
+    (routeOptionsByDay[dayId].options || []).forEach(function (option) {
+      option.id = optionId(option.name);
+      var meta = optionEffects[dayId] && optionEffects[dayId][option.id];
+      if (!meta) throw new Error('Missing route effect metadata for ' + dayId + ' / ' + option.id);
+      option.effect = {
+        insertBeforeStopId: meta.before || '',
+        insertAfterStopId: meta.after || '',
+        replaceStopIds: meta.replace || []
+      };
+      option.timing = { bankDeltaMin: -Math.abs(meta.cost), totalImpactMin: Math.abs(meta.cost) };
+    });
+  });
   return routeOptionsByDay;
 };

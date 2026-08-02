@@ -1,7 +1,9 @@
 (function () {
   'use strict';
 
-  var STORE_KEY = 'pei-foodie-road-trip/state/v2';
+  var STORE_KEY = 'pei-foodie-road-trip/state/v3';
+  var LEGACY_STORE_KEY = 'pei-foodie-road-trip/state/v2';
+  var BOOKED_HOTEL_STOP_IDS = new Set(['d1-hotel', 'd2-hotel', 'd3-hotel', 'd4-hotel', 'd5-hotel', 'd6-hotel', 'd7-hotel']);
   var rawData = JSON.parse(document.getElementById('trip-data').textContent);
   var buildErrors = [];
   var appStatus = null;
@@ -160,6 +162,7 @@
     stop.attractionQuality = details.attractionQuality || attractionQualityForStop(stop.kind, stop.title);
     stop.conditional = Boolean(details.conditional);
     stop.choiceGated = Boolean(details.choiceGated);
+    stop.replaceable = Boolean(details.replaceable);
     stop.routeEligible = details.routeEligible !== false;
     stop.coords = details.coords || STOP_COORDS[stop.id] || null;
     stop.rating = details.rating || STOP_RATINGS[stop.id] || null;
@@ -598,7 +601,7 @@
 
     if (ahead) {
       var options = (routeOptionsByDay[day.id] && routeOptionsByDay[day.id].options) || [];
-      var adds = options.slice(0, ahead >= 60 ? 2 : 1);
+      var adds = options.filter(function (option) { return optionCostMinutes(option) <= ahead; }).slice(0, 1);
       var addHtml = adds.length
         ? '<p><strong>Best ' + (adds.length > 1 ? 'adds' : 'add') + ' for this margin:</strong></p><ul class="scenario-list">' +
           adds.map(function (option) {
@@ -866,17 +869,19 @@
   function defaultDate() {
     var dates = operationalPlan.days.map(function (day) { return day.id; });
     var today = localIsoDate();
-    return dates.find(function (date) { return date >= today; }) || dates[0];
+    return dates.find(function (date) { return date >= today; }) || dates[dates.length - 1];
   }
 
   function emptyState() {
-    return { version: 2, activeDate: defaultDate(), modes: {}, stops: {}, tasks: {}, routeChoices: {}, mealChoices: {}, offlineReadiness: {}, offlineMode: false };
+    return { version: 3, activeDate: defaultDate(), modes: {}, stops: {}, tasks: {}, routeChoices: {}, mealChoices: {}, calmByDay: {}, offlineReadiness: {}, offlineMode: false };
   }
 
   function readState() {
     try {
-      var parsed = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
-      if (!parsed || parsed.version !== 2) return emptyState();
+      var currentRaw = localStorage.getItem(STORE_KEY);
+      var legacyRaw = localStorage.getItem(LEGACY_STORE_KEY);
+      var parsed = JSON.parse(currentRaw || legacyRaw || 'null');
+      if (!parsed || [2, 3].indexOf(parsed.version) === -1) return emptyState();
       var base = emptyState();
       base.activeDate = operationalPlan.days.some(function (day) { return day.id === parsed.activeDate; }) ? parsed.activeDate : base.activeDate;
       base.modes = parsed.modes && typeof parsed.modes === 'object' ? parsed.modes : {};
@@ -884,8 +889,18 @@
       base.tasks = parsed.tasks && typeof parsed.tasks === 'object' ? parsed.tasks : {};
       base.routeChoices = parsed.routeChoices && typeof parsed.routeChoices === 'object' ? parsed.routeChoices : {};
       base.mealChoices = parsed.mealChoices && typeof parsed.mealChoices === 'object' ? parsed.mealChoices : {};
+      base.calmByDay = parsed.calmByDay && typeof parsed.calmByDay === 'object' ? parsed.calmByDay : {};
       base.offlineReadiness = parsed.offlineReadiness && typeof parsed.offlineReadiness === 'object' ? parsed.offlineReadiness : {};
       base.offlineMode = Boolean(parsed.offlineMode);
+      operationalPlan.days.forEach(function (day) {
+        day.stops.forEach(function (stop) {
+          if (isHotelStop(stop) && base.stops[stop.id] === 'skipped') delete base.stops[stop.id];
+        });
+      });
+      if (!currentRaw && legacyRaw) {
+        localStorage.setItem(STORE_KEY, JSON.stringify(base));
+        localStorage.removeItem(LEGACY_STORE_KEY);
+      }
       return base;
     } catch (error) {
       return emptyState();
@@ -924,6 +939,7 @@
   function persist() {
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify(tripState));
+      localStorage.removeItem(LEGACY_STORE_KEY);
       setStatus('Saved privately in this browser.');
     } catch (error) {
       setStatus('This browser could not save private progress. Use an export before closing the page.');
@@ -984,26 +1000,327 @@
     return mode === 'ahead60' ? 60 : mode === 'ahead30' ? 30 : 0;
   }
 
+  function persistSilently() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(tripState));
+      localStorage.removeItem(LEGACY_STORE_KEY);
+    } catch (error) {}
+  }
+
+  var CALM_BANK_BASE = {
+    '2026-08-14': 45, '2026-08-15': 50, '2026-08-16': 25, '2026-08-17': 45,
+    '2026-08-18': 60, '2026-08-19': 35, '2026-08-20': 30, '2026-08-21': 25
+  };
+
+  function durationRange(value) {
+    var text = String(value || '').replace(/[\u2013\u2014]/g, '-');
+    var minuteRange = /(\d{1,3})\s*-\s*(\d{1,3})\s*min/i.exec(text);
+    if (minuteRange) return { min: Number(minuteRange[1]), max: Number(minuteRange[2]) };
+    var hourRange = /(\d+(?:\.\d+)?)\s*h(?:\s*(\d{1,2}))?\s*-\s*(\d+(?:\.\d+)?)\s*h(?:\s*(\d{1,2}))?/i.exec(text);
+    if (hourRange) {
+      return {
+        min: Math.round(Number(hourRange[1]) * 60 + Number(hourRange[2] || 0)),
+        max: Math.round(Number(hourRange[3]) * 60 + Number(hourRange[4] || 0))
+      };
+    }
+    var singleHour = /(\d+(?:\.\d+)?)\s*h(?:\s*(\d{1,2}))?/i.exec(text);
+    if (singleHour) {
+      var hourMinutes = Math.round(Number(singleHour[1]) * 60 + Number(singleHour[2] || 0));
+      return { min: hourMinutes, max: hourMinutes };
+    }
+    var singleMinute = /(\d{1,3})\s*min/i.exec(text);
+    if (singleMinute) return { min: Number(singleMinute[1]), max: Number(singleMinute[1]) };
+    return { min: 0, max: 0 };
+  }
+
+  function optionCostMinutes(option) {
+    if (option && option.timing && Number(option.timing.totalImpactMin) >= 0) return Number(option.timing.totalImpactMin);
+    var visit = durationRange(option && option.visit);
+    var detour = durationRange(option && option.routeImpact);
+    return Math.max(0, visit.max + detour.max);
+  }
+
+  function mealSavedMinutes(option) {
+    if (option && option.timing && Number(option.timing.savedMin) >= 0) return Number(option.timing.savedMin);
+    return durationRange(option && option.saved).min;
+  }
+
+  function calmDayState(day) {
+    var input = tripState.calmByDay && tripState.calmByDay[day.id];
+    input = input && typeof input === 'object' ? input : {};
+    var allowedPhases = ['ready', 'driving', 'arriving', 'at-stop', 'waiting'];
+    return {
+      phase: allowedPhases.indexOf(input.phase) !== -1 ? input.phase : 'ready',
+      stopId: typeof input.stopId === 'string' ? input.stopId : '',
+      legStartedAt: typeof input.legStartedAt === 'string' ? input.legStartedAt : '',
+      arrivedAt: typeof input.arrivedAt === 'string' ? input.arrivedAt : '',
+      beadIndex: Math.max(0, Math.min(3, Number(input.beadIndex) || 0)),
+      kidView: Boolean(input.kidView),
+      pulseNeed: ['late', 'hungry', 'tired', 'rain', 'washroom'].indexOf(input.pulseNeed) !== -1 ? input.pulseNeed : '',
+      pulseApplied: Boolean(input.pulseApplied),
+      protectRecovery: Boolean(input.protectRecovery),
+      rescueStopId: typeof input.rescueStopId === 'string' ? input.rescueStopId : '',
+      waitStopId: typeof input.waitStopId === 'string' ? input.waitStopId : '',
+      waitMinutes: [0, 15, 30, 45, 60].indexOf(Number(input.waitMinutes)) !== -1 ? Number(input.waitMinutes) : 0,
+      waitAction: ['stay', 'quick'].indexOf(input.waitAction) !== -1 ? input.waitAction : '',
+      mealExperience: Boolean(input.mealExperience)
+    };
+  }
+
+  function saveCalmDayState(day, patch) {
+    var next = calmDayState(day);
+    Object.keys(patch || {}).forEach(function (key) { next[key] = patch[key]; });
+    tripState.calmByDay[day.id] = next;
+    persist();
+    return next;
+  }
+
+  function selectedMealFlex(day) {
+    var plan = mealFlexByDay[day.id];
+    return plan && plan.options && plan.options[0] || null;
+  }
+
+  function sameRouteAsQuickMeal(day, routeChoice, mealOption) {
+    if (!routeChoice || !mealOption || tripState.mealChoices[day.id] !== 'quick') return false;
+    var routeName = normalize(routeChoice.name);
+    var mealName = normalize(mealOption.foodName);
+    return Boolean(routeName && mealName && (routeName.indexOf(mealName) !== -1 || mealName.indexOf(routeName) !== -1));
+  }
+
+  function makeQuickMealStop(day, option) {
+    var effect = option.effect || {};
+    var replacedId = (effect.replaceStopIds || [])[0];
+    var source = stopById(day, replacedId);
+    var stop = buildStop({
+      id: 'meal-quick-' + day.id,
+      dayId: day.id,
+      time: option.foodTime || (source ? source.time : 'Flexible'),
+      zone: source ? source.zone : '',
+      title: 'Quick ' + String(option.meal || 'meal').replace(/ shortcut/i, '').toLowerCase() + ': ' + option.foodName,
+      locationName: option.foodName,
+      kind: source ? source.kind : 'Quick meal',
+      priority: 'required',
+      address: option.foodAddress,
+      city: option.foodCity || (source ? source.city : ''),
+      leg: option.foodLeg || (source ? source.leg : ''),
+      timeBudget: option.window,
+      notes: option.order + ' ' + (option.saved || ''),
+      food: option.order,
+      kidPlan: 'Keep the stop simple, use the washroom, and bank the saved time unless everyone wants the paired experience.',
+      mapUrl: option.foodMap,
+      sourceUrl: option.foodSource
+    }, source);
+    stop.selectedFlex = true;
+    stop.flexSource = 'meal';
+    stop.replacesStopId = replacedId;
+    return stop;
+  }
+
+  function makeRouteChoiceStop(day, option) {
+    var stop = buildStop({
+      id: 'route-flex-' + day.id + '-' + routeOptionId(option),
+      dayId: day.id,
+      time: 'Flexible choice',
+      title: option.name,
+      locationName: option.name,
+      kind: 'Chosen flexible stop',
+      priority: 'optional',
+      address: option.parking,
+      parkingName: option.parking,
+      parkingAddress: option.parking,
+      city: '',
+      leg: option.routePoint,
+      timeBudget: option.visit,
+      notes: option.why + ' Go only if: ' + option.gate,
+      food: 'Keep the planned meals and hotel arrival protected.',
+      kidPlan: option.why,
+      mapUrl: option.map,
+      sourceUrl: option.source,
+      coords: option.coords
+    }, null);
+    stop.selectedFlex = true;
+    stop.flexSource = 'route';
+    return stop;
+  }
+
+  function makeMealExperienceStop(day, option) {
+    var experienceEffect = option.experienceEffect || {};
+    var impact = Math.max(0, Number(experienceEffect.totalImpactMin) || 0);
+    var stop = buildStop({
+      id: 'meal-experience-' + day.id,
+      dayId: day.id,
+      time: 'Flexible with saved meal time',
+      title: option.experience,
+      locationName: option.experience,
+      kind: 'Chosen saved-time experience',
+      priority: 'optional',
+      address: option.parking,
+      parkingName: option.parking,
+      parkingAddress: option.parking,
+      timeBudget: impact ? impact + ' min' : 'Short reset',
+      notes: option.experienceDetail,
+      food: 'Meal handled by ' + option.foodName + '.',
+      kidPlan: option.experienceDetail,
+      mapUrl: option.experienceMap,
+      sourceUrl: option.experienceSource
+    }, null);
+    stop.selectedFlex = true;
+    stop.flexSource = 'meal-experience';
+    return stop;
+  }
+
+  function applyMealExperience(stops, day, option) {
+    var effect = option.experienceEffect || {};
+    var targetId = effect.activateStopId || effect.mergeWithStopId || '';
+    var targetIndex = targetId ? stops.findIndex(function (stop) { return stop.id === targetId; }) : -1;
+    if (targetIndex !== -1 && effect.mergeWithStopId) {
+      // A paired on-site experience may share a booked hotel checkpoint, but it
+      // never changes that checkpoint's identity, priority, or route behavior.
+      stops[targetIndex] = Object.assign({}, stops[targetIndex], {
+        pairedExperience: true,
+        notes: [stops[targetIndex].notes, option.experienceDetail].filter(Boolean).join(' ')
+      });
+      return stops;
+    }
+    if (targetIndex !== -1 && effect.activateStopId) {
+      stops[targetIndex] = Object.assign({}, stops[targetIndex], {
+        choiceGated: false,
+        conditional: false,
+        routeEligible: effect.routeEligible !== false,
+        selectedFlex: true,
+        flexSource: 'meal-experience',
+        notes: [stops[targetIndex].notes, option.experienceDetail].filter(Boolean).join(' ')
+      });
+      return stops;
+    }
+    return applyStopEffect(stops, makeMealExperienceStop(day, option), {
+      insertAfterStopId: effect.insertAfterStopId || 'meal-quick-' + day.id,
+      insertBeforeStopId: effect.insertBeforeStopId || '',
+      replaceStopIds: []
+    });
+  }
+
+  function applyStopEffect(stops, stop, effect) {
+    var replaceIds = ((effect && effect.replaceStopIds) || []).filter(function (id) {
+      var target = stops.find(function (item) { return item.id === id; });
+      var mealReplacement = stop && stop.flexSource === 'meal';
+      return !target || (!isHotelStop(target) && (mealReplacement || target.priority !== 'required' || target.replaceable));
+    });
+    var originalIndex = -1;
+    replaceIds.forEach(function (id) {
+      var index = stops.findIndex(function (item) { return item.id === id; });
+      if (index !== -1 && (originalIndex === -1 || index < originalIndex)) originalIndex = index;
+    });
+    var remaining = stops.filter(function (item) { return replaceIds.indexOf(item.id) === -1; });
+    var insertAt = -1;
+    var anchorIndex = function (id) {
+      return remaining.findIndex(function (item) { return item.id === id || item.replacesStopId === id; });
+    };
+    if (effect && effect.insertBeforeStopId) insertAt = anchorIndex(effect.insertBeforeStopId);
+    if (effect && effect.insertAfterStopId) {
+      var afterIndex = anchorIndex(effect.insertAfterStopId);
+      if (afterIndex !== -1) insertAt = afterIndex + 1;
+    }
+    if (insertAt === -1 && originalIndex !== -1) insertAt = Math.min(originalIndex, remaining.length);
+    if (insertAt === -1) insertAt = Math.max(0, remaining.length - 1);
+    remaining.splice(insertAt, 0, stop);
+    return remaining;
+  }
+
+  function effectiveStops(day) {
+    var stops = day.stops.map(function (stop) { return Object.assign({}, stop); });
+    var calm = calmDayState(day);
+    var mealOption = selectedMealFlex(day);
+    if (tripState.mealChoices[day.id] === 'quick' && mealOption) {
+      stops = applyStopEffect(stops, makeQuickMealStop(day, mealOption), mealOption.effect || {});
+    }
+    var routePlan = routeOptionsByDay[day.id];
+    var routeChoice = selectedRouteOption(day);
+    var sameAsQuickMeal = sameRouteAsQuickMeal(day, routeChoice, mealOption);
+    if (routePlan && routeChoice && !sameAsQuickMeal && !calm.protectRecovery) {
+      stops = applyStopEffect(stops, makeRouteChoiceStop(day, routeChoice), routeChoice.effect || {});
+    }
+    if (calm.mealExperience && mealOption && tripState.mealChoices[day.id] === 'quick' && !calm.protectRecovery) {
+      stops = applyMealExperience(stops, day, mealOption);
+    }
+    // Rain on the PEI day activates the curated indoor branch and replaces the
+    // beach. Other rain/tired recoveries remove only pending optional stops;
+    // booked hotels and all required anchors are never eligible.
+    if (calm.pulseApplied && calm.pulseNeed === 'rain' && day.id === '2026-08-18') {
+      var rainStop = stopById(day, 'd5-rain');
+      if (rainStop) {
+        rainStop = Object.assign({}, rainStop, { choiceGated: false, selectedFlex: true, flexSource: 'rescue' });
+        stops = applyStopEffect(stops, rainStop, { insertBeforeStopId: 'd5-hotel', replaceStopIds: ['d5-beach', 'd5-rain'] });
+      }
+    }
+    if (calm.pulseApplied && calm.pulseNeed === 'washroom' && calm.rescueStopId) {
+      var resetIndex = stops.findIndex(function (stop) { return stop.id === calm.rescueStopId; });
+      if (resetIndex !== -1 && !isHotelStop(stops[resetIndex])) {
+        var reset = Object.assign({}, stops[resetIndex], { id: 'rescue-' + stops[resetIndex].id, title: 'Reset now: ' + stops[resetIndex].title, selectedFlex: true, flexSource: 'rescue' });
+        reset.replacesStopId = stops[resetIndex].id;
+        stops.splice(resetIndex, 1);
+        var firstPendingIndex = stops.findIndex(function (stop) { return stopStatus(stop.id) === 'pending' && !stop.choiceGated; });
+        stops.splice(firstPendingIndex === -1 ? stops.length : firstPendingIndex, 0, reset);
+      }
+    }
+    if (calm.protectRecovery) {
+      stops = stops.filter(function (stop) {
+        return !(stop.priority === 'optional' && stopStatus(stop.id) === 'pending' && stop.flexSource !== 'rescue');
+      });
+    }
+    return stops.map(function (stop, index) { stop.order = index + 1; return stop; });
+  }
+
+  function calmBank(day) {
+    var base = CALM_BANK_BASE[day.id] || 30;
+    var delta = aheadMinutes(day) - modeMinutes(day);
+    var calm = calmDayState(day);
+    var routeChoice = selectedRouteOption(day);
+    var mealOption = selectedMealFlex(day);
+    if (routeChoice && !calm.protectRecovery && !sameRouteAsQuickMeal(day, routeChoice, mealOption)) {
+      delta += routeChoice.timing ? Number(routeChoice.timing.bankDeltaMin) || 0 : -optionCostMinutes(routeChoice);
+    }
+    if (tripState.mealChoices[day.id] === 'quick' && mealOption) delta += mealSavedMinutes(mealOption);
+    if (calm.mealExperience && mealOption && !calm.protectRecovery) {
+      delta -= Math.max(0, Number(mealOption.experienceEffect && mealOption.experienceEffect.totalImpactMin) || 0);
+    }
+    if (calm.phase === 'waiting' && calm.waitAction !== 'quick') delta -= calm.waitMinutes;
+    var raw = base + delta;
+    return { base: base, delta: delta, raw: raw, minutes: Math.max(0, raw), tight: raw < 15 };
+  }
+
   function hiddenInMode(day, stop) {
     var minutes = modeMinutes(day);
-    return Boolean(stop.skipAt && minutes >= stop.skipAt);
+    return Boolean(!stop.selectedFlex && stop.skipAt && minutes >= stop.skipAt);
   }
 
   function stopStatus(stopId) {
     return tripState.stops[stopId] || 'pending';
   }
 
+  function canSkipStop(stop) {
+    return Boolean(stop && !isHotelStop(stop) && !stop.selectedFlex && !stop.flexSource);
+  }
+
+  function setStopStatus(day, stopId, status) {
+    var stop = effectiveStops(day).find(function (item) { return item.id === stopId; }) || stopById(day, stopId);
+    if (status === 'skipped' && !canSkipStop(stop)) {
+      setStatus(isHotelStop(stop) ? 'Booked hotel anchors stay fixed and cannot be skipped.' : 'Use Remove choice for a selected flexible stop.');
+      return false;
+    }
+    tripState.stops[stopId] = status;
+    return true;
+  }
+
   function visibleStops(day) {
-    return day.stops.filter(function (stop) {
+    return effectiveStops(day).filter(function (stop) {
       return stopStatus(stop.id) !== 'skipped' && !hiddenInMode(day, stop);
     });
   }
 
   function nextStop(day) {
     var list = visibleStops(day).filter(function (stop) { return !stop.choiceGated; });
-    return list.find(function (stop) {
-      return stopStatus(stop.id) === 'pending' && (stop.priority === 'required' || stop.priority === 'conditional');
-    }) || list.find(function (stop) { return stopStatus(stop.id) === 'pending'; }) || null;
+    return list.find(function (stop) { return stopStatus(stop.id) === 'pending'; }) || null;
   }
 
   function routeStops(stops) {
@@ -1116,8 +1433,9 @@
   }
 
   function buildNavigation() {
+    var phase = tripPhase();
     var tabs = [
-      ['live', 'Today'],
+      ['live', phase === 'pretrip' ? 'Ready' : phase === 'complete' ? 'Recap' : 'Today'],
       ['daybyday', 'Plan'],
       ['checklist', 'Prep'],
       ['offline', 'Safety']
@@ -1402,7 +1720,7 @@
           address: option.parking || '', city: '', mapUrl: option.map || '',
           category: 'attraction', optional: true, routeEligible: false, isIdea: true,
           note: option.why || '', gate: option.gate || '', routePoint: option.routePoint || '',
-          source: option.source || '', coords: option.coords
+          source: option.source || '', coords: option.coords, choiceId: routeOptionId(option)
         };
         var days = {};
         days[dayId] = true;
@@ -1461,7 +1779,7 @@
       // numbered scheduled stops.
       return L.divIcon({
         className: 'trip-pin-wrap',
-        html: '<span class="trip-pin is-idea" style="--pin:' + cat.color + '">★</span>',
+        html: '<span class="trip-pin is-idea' + (loc.isSelected ? ' is-selected' : '') + '" style="--pin:' + cat.color + '">' + (loc.isSelected ? '✓' : '★') + '</span>',
         iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -12]
       });
     }
@@ -1486,7 +1804,7 @@
         '<li class="trip-pop-stop">',
         '<span class="trip-pop-dot" style="background:', cat.color, '"></span>',
         '<div class="trip-pop-body">',
-        '<p class="trip-pop-title">', escapeHtml(s.title), s.optional ? ' <span class="trip-pop-flag">' + (s.isIdea ? 'Idea' : 'Optional') + '</span>' : '', '</p>',
+        '<p class="trip-pop-title">', escapeHtml(s.title), s.optional ? ' <span class="trip-pop-flag">' + (loc.isSelected ? 'Chosen' : s.isIdea ? 'Idea' : 'Optional') + '</span>' : '', '</p>',
         '<p class="trip-pop-meta">Day ', String(s.day ? s.day.index : '?'), ' · ', escapeHtml(cat.label), ' · ', escapeHtml(s.time || 'Flexible'), s.zone ? ' ' + escapeHtml(s.zone) : '', '</p>',
         s.isIdea && s.routePoint ? '<p class="trip-pop-meta">' + escapeHtml(s.routePoint) + '</p>' : '',
         s.isIdea && s.note ? '<p class="trip-pop-note">' + escapeHtml(s.note) + '</p>' : '',
@@ -1508,13 +1826,14 @@
   // segment. Optionally clipped to a single day.
   function tripRouteLatLngs(filterDay) {
     var pts = [];
-    if (!sharedMapModel) return pts;
-    sharedMapModel.ordered.forEach(function (info) {
-      if (!info.routeEligible) return;
-      if (filterDay !== 'all' && info.dayId !== filterDay) return;
-      var last = pts[pts.length - 1];
-      if (last && last[0] === info.coords[0] && last[1] === info.coords[1]) return;
-      pts.push(info.coords);
+    operationalPlan.days.forEach(function (day) {
+      if (filterDay !== 'all' && day.id !== filterDay) return;
+      visibleStops(day).forEach(function (stop) {
+        if (stop.routeEligible === false || stop.conditional || !stop.coords) return;
+        var last = pts[pts.length - 1];
+        if (last && last[0] === stop.coords[0] && last[1] === stop.coords[1]) return;
+        pts.push(stop.coords);
+      });
     });
     return pts;
   }
@@ -1562,6 +1881,13 @@
     state.markerLayer.clearLayers();
     state.markers.forEach(function (entry) {
       var loc = entry.loc;
+      if (loc.isIdea) {
+        loc.isSelected = loc.stops.some(function (stop) {
+          return stop.choiceId && tripState.routeChoices[stop.dayId] === stop.choiceId;
+        });
+        entry.marker.setIcon(tripMarkerIcon(loc));
+        entry.marker.setPopupContent(tripPopupHtml(loc));
+      }
       var dayOk = filters.day === 'all' || loc.days[filters.day];
       var typeOk = filters.type === 'all' || loc.stops.some(function (s) { return s.category === filters.type; });
       var optionalOk = loc.isIdea ? filters.ideas : (filters.optional || !loc.allOptional);
@@ -1811,6 +2137,7 @@
   function renderPlanViews() {
     renderDayContent();
     renderLive();
+    if (tripMap.built) refreshMap(tripMap, false);
   }
 
   // The single way to select a day: update state, persist, re-render both plan
@@ -1930,7 +2257,8 @@
         renderPlanViews();
       }
       if (button.dataset.stopAction === 'skip') {
-        tripState.stops[stopId] = stopStatus(stopId) === 'skipped' ? 'pending' : 'skipped';
+        var skipDay = dayById(uiFilters.dayId);
+        if (!setStopStatus(skipDay, stopId, stopStatus(stopId) === 'skipped' ? 'pending' : 'skipped')) return;
         persist();
         renderPlanViews();
       }
@@ -1983,7 +2311,7 @@
       renderPractical(stop),
       '<p class="small"><strong>Food / washroom:</strong> ', escapeHtml(stop.food || '—'), '<br><strong>Kid plan:</strong> ', escapeHtml(stop.kidPlan || '—'), '</p>',
       '<div class="stop-details-actions">', externalLink(stop.sourceUrl, 'Source', 'button subtle'),
-      '<button type="button" class="button subtle" data-stop-action="skip" data-stop-id="', escapeHtml(stop.id), '" aria-pressed="', currentStatus === 'skipped' ? 'true' : 'false', '">Skip stop</button>',
+      canSkipStop(stop) ? '<button type="button" class="button subtle" data-stop-action="skip" data-stop-id="' + escapeHtml(stop.id) + '" aria-pressed="' + (currentStatus === 'skipped' ? 'true' : 'false') + '">Skip stop</button>' : '',
       arrivalAddress ? '<button type="button" class="copy-address" data-stop-action="copy" data-address="' + escapeHtml(arrivalAddress) + '">Copy address</button>' : '',
       '</div>'
     ].join('');
@@ -2725,6 +3053,13 @@
     return '<p class="wake-row"><label><input type="checkbox" id="wakeLockToggle"' + (wakeLockWanted ? ' checked' : '') + '> Keep the screen awake (navigator/passenger phone)</label></p>';
   }
 
+  function tripPhase(isoDate) {
+    var today = isoDate || localIsoDate();
+    var first = operationalPlan.days[0].id;
+    var last = operationalPlan.days[operationalPlan.days.length - 1].id;
+    return today < first ? 'pretrip' : today > last ? 'complete' : 'trip';
+  }
+
   function renderTodayBanner(day) {
     var today = localIsoDate();
     if (day.id === today || !operationalPlan.days.some(function (item) { return item.id === today; })) return '';
@@ -2744,22 +3079,21 @@
   function renderHotelSafeBanner(day) {
     var hotel = hotelForNight(day.id);
     var tonight = hotel ? hotel['Recommended hotel'] : 'Trip hotel nights complete';
-    return '<div class="hotel-safe-banner"><div><strong>7/7 hotels booked · safe</strong><span>Tonight: ' + escapeHtml(tonight) + '</span></div><span class="tag category-ok">No hotel action needed</span></div>';
+    return '<div class="hotel-safe-banner"><div><strong>7/7 hotels booked · safe · fixed anchors</strong><span>Tonight: ' + escapeHtml(tonight) + '</span></div><span class="tag category-ok">Hotels stay unchanged</span></div>';
   }
 
   function routeOptionId(option) {
-    return slug(option && option.name || 'option');
+    return option && option.id || slug(option && option.name || 'option');
   }
 
   function optionMinimumMinutes(option) {
-    var match = String(option && option.visit || '').match(/\d+/);
-    return match ? Number(match[0]) : 999;
+    return optionCostMinutes(option);
   }
 
   function recommendedRouteOption(day, minutes) {
     var plan = routeOptionsByDay[day.id];
     if (!plan || !minutes || day.id === '2026-08-21') return null;
-    return plan.options.find(function (option) { return optionMinimumMinutes(option) <= minutes; }) || null;
+    return plan.options.find(function (option) { return optionCostMinutes(option) <= minutes; }) || null;
   }
 
   function selectedRouteOption(day) {
@@ -2769,6 +3103,13 @@
   }
 
   function renderTodayRouteOption(day) {
+    var calm = calmDayState(day);
+    if (calm.phase !== 'ready') {
+      return '<details class="decision-card planning-paused"><summary><strong>Route choices paused while this step is active</strong></summary><p class="small muted">Finish or resume the current stop before changing optional route ideas.</p></details>';
+    }
+    if (calm.protectRecovery) {
+      return '<article class="decision-card is-protected"><div class="decision-head"><div><span class="tag category-ok">Recovery protected</span><h3>Extra route stops are paused</h3><p class="muted">The active route keeps only the core plan, safety resets, meals, and the seven fixed hotel anchors.</p></div></div></article>';
+    }
     var minutes = aheadMinutes(day);
     var selected = selectedRouteOption(day);
     var choice = tripState.routeChoices[day.id] || '';
@@ -2777,7 +3118,7 @@
     var option = selected || recommendedRouteOption(day, minutes);
     if (!option) return '<article class="decision-card"><div class="decision-head"><div><span class="tag">Extra time</span><h3>Keep the buffer</h3><p>No safe optional attraction fits this margin. Use it for a calmer meal or hotel recovery.</p></div></div></article>';
     return [
-      '<article class="decision-card', selected ? ' is-selected' : '', '"><div class="decision-head"><div><span class="tag">', selected ? 'Chosen extra' : 'Safe suggestion', '</span><h3>', escapeHtml(option.name), '</h3><p>', escapeHtml(option.why), '</p></div><strong>', escapeHtml(option.visit), '</strong></div>',
+      '<article class="decision-card', selected ? ' is-selected' : '', '"><div class="decision-head"><div><span class="tag">', selected ? 'Chosen · active in route' : 'Safe suggestion', '</span><h3>', escapeHtml(option.name), '</h3><p>', escapeHtml(option.why), '</p></div><strong>−', optionCostMinutes(option), ' min</strong></div>',
       '<p class="small"><strong>Where it fits:</strong> ', escapeHtml(option.routePoint), '<br><strong>Go only if:</strong> ', escapeHtml(option.gate), '<br><strong>Closest parking:</strong> ', escapeHtml(option.parking), '</p>',
       '<div class="decision-actions">', externalLink(option.map, 'Parking map', 'button'), externalLink(option.source, 'Official info', 'button subtle'), selected ? '<button type="button" class="button subtle" data-route-choice="clear">Remove choice</button>' : '<button type="button" class="button primary" data-route-choice="' + escapeHtml(routeOptionId(option)) + '">Use this option</button><button type="button" class="button subtle" data-route-choice="dismissed">Not today</button>', '</div></article>'
     ].join('');
@@ -2788,10 +3129,14 @@
     if (!plan || !plan.options || !plan.options.length) return '';
     var option = plan.options[0];
     var choice = tripState.mealChoices[day.id] === 'quick' ? 'quick' : 'proper';
+    var calm = calmDayState(day);
+    if (calm.phase !== 'ready') {
+      return '<details class="decision-card planning-paused"><summary><strong>Meal pace is locked for this active step</strong></summary><p class="small muted">Use the restaurant Wait Pivot if a queue changes the plan, or finish this step before switching meals.</p></details>';
+    }
     return [
       '<article class="decision-card', choice === 'quick' ? ' is-selected' : '', '"><div class="decision-head"><div><span class="tag category-food">Meal pace</span><h3>', choice === 'proper' ? 'Proper meals stay in Plan A' : escapeHtml(option.meal + ': ' + option.foodName), '</h3><p>', choice === 'proper' ? 'Hotel breakfast plus the planned proper lunch and dinner remain selected.' : escapeHtml(option.order + ' · ' + option.window + '. ' + option.saved), '</p></div></div>',
       '<div class="meal-choice-buttons" role="group" aria-label="Meal pace"><button type="button" class="button subtle" data-meal-choice="proper" aria-pressed="', choice === 'proper', '">Plan A meals</button><button type="button" class="button subtle" data-meal-choice="quick" aria-pressed="', choice === 'quick', '">Use quick option</button></div>',
-      choice === 'quick' ? '<p class="small"><strong>Time unlocked for:</strong> ' + escapeHtml(option.experience) + '<br><strong>Closest parking:</strong> ' + escapeHtml(option.parking) + '</p><div class="decision-actions">' + externalLink(option.foodMap, 'Food map', 'button') + externalLink(option.experienceMap, 'Extra stop map', 'button subtle') + '</div>' : '',
+      choice === 'quick' ? '<p class="small"><strong>' + (calm.protectRecovery ? 'Saved time banked for recovery.' : 'Time unlocked for:') + '</strong>' + (calm.protectRecovery ? '' : ' ' + escapeHtml(option.experience) + '<br><strong>Closest parking:</strong> ' + escapeHtml(option.parking)) + '</p><div class="decision-actions">' + externalLink(option.foodMap, 'Food map', 'button') + (!calm.protectRecovery ? '<button type="button" class="button subtle" data-meal-experience="' + (calm.mealExperience ? 'remove' : 'add') + '">' + (calm.mealExperience ? 'Bank the time instead' : 'Add paired experience') + '</button>' : '') + '</div>' : '',
       '</article>'
     ].join('');
   }
@@ -2805,9 +3150,11 @@
 
   function renderOfflineReadiness() {
     var done = offlineReadinessItems.filter(function (item) { return tripState.offlineReadiness[item.id]; }).length;
-    return '<article class="readiness-card"><h3>Offline ready · ' + done + '/' + offlineReadinessItems.length + '</h3><p class="small muted">Finish before departure; progress stays on this device.</p><div class="readiness-grid">' + offlineReadinessItems.map(function (item) {
+    var items = '<div class="readiness-grid">' + offlineReadinessItems.map(function (item) {
       return '<label class="readiness-item"><input type="checkbox" data-offline-ready="' + escapeHtml(item.id) + '"' + (tripState.offlineReadiness[item.id] ? ' checked' : '') + '> <span>' + escapeHtml(item.label) + '</span></label>';
-    }).join('') + '</div></article>';
+    }).join('') + '</div>';
+    if (done === offlineReadinessItems.length) return '<details class="readiness-card is-complete"><summary><strong>Offline ready ✓</strong> · all ' + done + ' essentials saved</summary>' + items + '</details>';
+    return '<article class="readiness-card"><h3>Offline ready · ' + done + '/' + offlineReadinessItems.length + '</h3><p class="small muted">Finish before departure; progress stays on this device.</p>' + items + '</article>';
   }
 
   function renderExpenseCard() {
@@ -2908,6 +3255,7 @@
   // distance math and is never stored or transmitted.
   function findNearestStop(day) {
     var status = document.getElementById('nearestStopStatus');
+    var select = document.getElementById('resyncStopSelect');
     if (!navigator.geolocation) {
       if (status) status.textContent = 'Location is not available on this device.';
       return;
@@ -2915,7 +3263,9 @@
     if (status) status.textContent = 'Getting your location…';
     navigator.geolocation.getCurrentPosition(function (position) {
       var here = [position.coords.latitude, position.coords.longitude];
-      var candidates = visibleStops(day).filter(function (stop) { return stop.coords && !stop.choiceGated; });
+      var candidates = visibleStops(day).filter(function (stop) {
+        return stop.coords && !stop.choiceGated && stopStatus(stop.id) === 'pending';
+      });
       if (!candidates.length) {
         if (status) status.textContent = 'No mapped stops today to compare against.';
         return;
@@ -2926,10 +3276,11 @@
         if (km < bestKm) { bestKm = km; best = stop; }
       });
       var distance = bestKm < 1 ? Math.round(bestKm * 1000) + ' m' : bestKm.toFixed(bestKm < 10 ? 1 : 0) + ' km';
+      if (select) select.value = best.id;
       if (status) {
         status.innerHTML = 'Nearest stop: <strong>' + escapeHtml(best.title) + '</strong> · about '
-          + escapeHtml(distance) + ' away · ' + escapeHtml(best.time) + ' '
-          + externalLink(routeUrl([best]), 'Navigate', 'button subtle');
+          + escapeHtml(distance) + ' away · ' + escapeHtml(best.time)
+          + '. Confirm it below before changing progress.';
       }
       setStatus('Nearest stop: ' + best.title + ', about ' + distance + ' away.');
     }, function (error) {
@@ -2941,8 +3292,246 @@
     }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
   }
 
+  function resyncToStop(day, stopId) {
+    var stops = effectiveStops(day).filter(function (stop) { return !stop.choiceGated; });
+    var targetIndex = stops.findIndex(function (stop) { return stop.id === stopId; });
+    if (targetIndex === -1 || stopStatus(stops[targetIndex].id) !== 'pending') return false;
+    stops.slice(0, targetIndex).forEach(function (stop) {
+      if (stopStatus(stop.id) !== 'pending') return;
+      tripState.stops[stop.id] = stop.priority === 'optional' && canSkipStop(stop) ? 'skipped' : 'done';
+      if (stop.flexSource === 'rescue' && stop.replacesStopId) tripState.stops[stop.replacesStopId] = 'done';
+    });
+    tripState.calmByDay[day.id] = { phase: 'ready', stopId: stopId };
+    persist();
+    return true;
+  }
+
+  function isMealStop(stop) {
+    return /breakfast|brunch|lunch|dinner|restaurant|bistro|cafe|café|food hall|suppers|dining/i.test([stop && stop.kind, stop && stop.title].join(' '));
+  }
+
+  function isHotelStop(stop) {
+    return Boolean(stop && BOOKED_HOTEL_STOP_IDS.has(stop.id));
+  }
+
+  function isInPlaceCheckpoint(stop) {
+    if (!stop || isHotelStop(stop) || stop.flexSource === 'rescue') return false;
+    return /^d\d+-(depart|checkout|morning-ready|breakfast-stop)$/.test(stop.id || '');
+  }
+
+  function isOnSiteStop(stop) {
+    if (!stop || isHotelStop(stop) || stop.flexSource === 'rescue' || isInPlaceCheckpoint(stop)) return false;
+    return stop.routeEligible === false
+      && durationRange(stop.leg).max === 0
+      && !/\d+(?:\.\d+)?\s*km/i.test(stop.leg || '')
+      && (/on-site|inside|at the hotel|same property/i.test(stop.leg || '') || /on-site/i.test(stop.kind || ''));
+  }
+
+  function journeyBeads(stop) {
+    var drive = durationRange(stop && stop.leg).max;
+    var destination = stop && (stop.locationName || stop.title) || 'the next stop';
+    if (drive && drive <= 35) return ['Settle in', 'Look for the arrival signs', 'Arrive at ' + destination];
+    if (drive && drive <= 90) return ['Settle in', 'Halfway stretch', 'Look for the destination', 'Arrive at ' + destination];
+    return ['Settle in', 'Snack and comfort check', 'Movement-break moment', 'Arrive at ' + destination];
+  }
+
+  function liveCalmState(day, next) {
+    var calm = calmDayState(day);
+    if (!next) {
+      if (calm.stopId || calm.legStartedAt || calm.arrivedAt || calm.waitStopId) {
+        calm = Object.assign(calm, {
+          phase: 'ready', stopId: '', legStartedAt: '', arrivedAt: '', beadIndex: 0,
+          waitStopId: '', waitMinutes: 0, waitAction: ''
+        });
+        tripState.calmByDay[day.id] = calm;
+        persistSilently();
+      }
+      return Object.assign({}, calm, { phase: 'complete', stopId: '' });
+    }
+    if (calm.stopId && calm.stopId !== next.id) {
+      calm = Object.assign(calm, {
+        phase: 'ready', stopId: next.id, legStartedAt: '', arrivedAt: '', beadIndex: 0,
+        waitStopId: '', waitMinutes: 0, waitAction: ''
+      });
+      tripState.calmByDay[day.id] = calm;
+      persistSilently();
+      return calm;
+    }
+    if (!calm.stopId) {
+      calm.stopId = next.id;
+      tripState.calmByDay[day.id] = calm;
+      persistSilently();
+    }
+    return calm;
+  }
+
+  function renderJourneyBeads(day, stop, calm) {
+    var beads = journeyBeads(stop);
+    var index = Math.min(calm.beadIndex, beads.length - 1);
+    var paused = Boolean(calm.pulseNeed && !calm.pulseApplied);
+    return [
+      '<article class="quick-card journey-card calm-context" data-testid="journey-beads"><div class="calm-card-head"><div><span class="tag">Road moments</span><h3 tabindex="-1" id="calmContextHeading">', calm.kidView ? 'Kid view: just a few moments' : 'No exact countdown—just the next moments', '</h3></div><strong>', index + 1, '/', beads.length, '</strong></div>',
+      '<div class="bead-progress" role="progressbar" aria-label="Road moment ', index + 1, ' of ', beads.length, '" aria-valuemin="1" aria-valuemax="', beads.length, '" aria-valuenow="', index + 1, '"><span style="width:', Math.round(((index + 1) / beads.length) * 100), '%"></span></div>',
+      '<ol class="journey-beads', calm.kidView ? ' kid-view' : '', '">', beads.map(function (bead, beadIndex) {
+        return '<li' + (beadIndex === index ? ' aria-current="step" class="is-current"' : beadIndex < index ? ' class="is-done"' : '') + '><span>' + (beadIndex + 1) + '</span>' + escapeHtml(bead) + '</li>';
+      }).join(''), '</ol>',
+      paused ? '<p class="small calm-paused">Road moments paused while you choose a family reset.</p>' : '',
+      '<div class="decision-actions"><button type="button" class="button primary" data-calm-action="next-bead"', paused || index >= beads.length - 1 ? ' disabled' : '', '>Next road moment</button><button type="button" class="button subtle" data-calm-action="kid-view" aria-pressed="', calm.kidView, '">', calm.kidView ? 'Standard view' : 'Show kid view', '</button></div></article>'
+    ].join('');
+  }
+
+  function arrivalFirstStep(stop) {
+    var practical = practicalForStop(stop);
+    if (practical) {
+      var keys = Object.keys(practical);
+      if (keys.length) return keys[0] + ': ' + practical[keys[0]];
+    }
+    if (/washroom/i.test(stop.food || '')) return stop.food;
+    if (isHotelStop(stop)) return 'Park first, then check in with the booked reservation details kept offline.';
+    return 'Park first, then use the verified stop details below.';
+  }
+
+  function renderArrivalBubble(day, stop, calm) {
+    var arrivalName = stop.parkingName || stop.locationName || stop.title;
+    var arrivalAddress = stop.parkingAddress || stop.address;
+    var parked = calm.phase === 'at-stop';
+    return [
+      '<article class="decision-card arrival-bubble calm-context is-selected" data-testid="arrival-bubble"><div class="calm-card-head"><div><span class="tag category-hotel">', parked ? 'Landed' : 'Arrival in view', '</span><h3 tabindex="-1" id="calmContextHeading">Land smoothly at ', escapeHtml(stop.locationName || stop.title), '</h3></div></div>',
+      '<ol class="arrival-steps"><li><strong>Park</strong><span>', escapeHtml(arrivalName), arrivalAddress ? ' · ' + escapeHtml(arrivalAddress) : '', '</span></li>',
+      '<li><strong>First</strong><span>', escapeHtml(arrivalFirstStep(stop)), '</span></li>',
+      '<li><strong>Then</strong><span>', escapeHtml(stop.kidPlan || stop.food || 'Take a breath and open the stop details when ready.'), '</span></li></ol>',
+      isHotelStop(stop) ? '<p class="hotel-lock-note"><strong>Booked hotel anchor:</strong> this stay is fixed and will not be swapped by flexible planning.</p>' : '',
+      stop.parkingEntrance ? renderParkingEntrance(stop.parkingEntrance) : '',
+      '<details class="arrival-details"><summary>Entrance and stop details</summary><p>', escapeHtml(stop.notes), '</p>', stop.reservation ? '<p><strong>Reservation:</strong> ' + escapeHtml(stop.reservation) + '</p>' : '', '</details>',
+      '<div class="decision-actions">', externalLink(stop.mapUrl, 'Parking directions', 'button'),
+      parked ? '<button type="button" class="button primary" data-calm-action="done">Done here</button>' : '<button type="button" class="button primary" data-calm-action="parked">We’re parked</button>',
+      parked && isMealStop(stop) ? '<button type="button" class="button subtle" data-calm-action="start-wait">Restaurant wait?</button>' : '',
+      parked ? '<button type="button" class="button subtle" data-calm-action="undo-arrival">Not here yet</button>' : '', '</div></article>'
+    ].join('');
+  }
+
+  function waitPivot(day, stop, minutes) {
+    var mealOption = selectedMealFlex(day);
+    var replaces = mealOption && mealOption.effect && mealOption.effect.replaceStopIds || [];
+    if (mealOption && replaces.indexOf(stop.id) !== -1 && minutes >= Number(mealOption.triggerWaitMin || 25)) {
+      return { kind: 'quick', title: 'Switch to ' + mealOption.foodName, detail: 'This replaces ' + stop.title + ', avoids the quoted wait, and keeps every booked hotel and required anchor unchanged.' };
+    }
+    return { kind: 'stay', title: minutes >= 45 ? 'Wait here and make it the recovery block' : 'Stay, rest, and keep the table', detail: 'Use the wait for washrooms, water and quiet time. Do not add a detour just to fill the clock.' };
+  }
+
+  function renderWaitPivot(day, stop, calm) {
+    var pivot = calm.waitMinutes ? waitPivot(day, stop, calm.waitMinutes) : null;
+    return [
+      '<article class="decision-card wait-pivot calm-context" data-testid="wait-pivot"><span class="tag category-food">Restaurant wait</span><h3 tabindex="-1" id="calmContextHeading">How long is the wait?</h3>',
+      '<fieldset class="choice-chips"><legend class="sr-only">Quoted restaurant wait</legend>', [15, 30, 45, 60].map(function (minutes) {
+        return '<button type="button" class="choice-chip" data-wait-minutes="' + minutes + '" aria-pressed="' + (calm.waitMinutes === minutes) + '">' + (minutes === 60 ? '60+ min' : minutes + ' min') + '</button>';
+      }).join(''), '</fieldset>',
+      pivot ? '<div class="pivot-result" role="status"><span class="route-label">Best move</span><h4>' + escapeHtml(pivot.title) + '</h4><p>' + escapeHtml(pivot.detail) + '</p></div>' : '<p class="small muted">Choose the quoted wait. The app will recommend one calm move.</p>',
+      '<div class="decision-actions">', pivot ? '<button type="button" class="button primary" data-wait-action="' + pivot.kind + '">Use this plan</button>' : '', '<button type="button" class="button subtle" data-calm-action="meal-started">Meal has started</button></div></article>'
+    ].join('');
+  }
+
+  function rescueRecommendation(day, need) {
+    var pending = effectiveStops(day).filter(function (stop) { return stopStatus(stop.id) === 'pending' && !stop.choiceGated; });
+    if (need === 'late') return { title: 'Recover 30 minutes', detail: day.contingency, action: 'Apply recovery' };
+    if (need === 'hungry') {
+      var meal = selectedMealFlex(day);
+      var nextFood = pending.find(isMealStop);
+      return meal ? { title: 'Use ' + meal.foodName, detail: meal.order + ' ' + meal.saved + '. All booked hotels remain fixed.', action: 'Use quick meal' }
+        : { title: nextFood ? 'Head toward ' + nextFood.title : 'Use packed food now', detail: nextFood ? nextFood.food : 'Keep the next required stop and avoid an unplanned detour.', action: '' };
+    }
+    if (need === 'tired') return { title: 'Protect hotel recovery', detail: 'Remove pending optional stops and keep the booked hotel, meals and safety breaks unchanged.', action: 'Protect recovery' };
+    if (need === 'rain') return { title: day.id === '2026-08-18' ? 'Use the curated indoor PEI branch' : 'Use the rain plan', detail: day.rainPlan + ' Booked hotels stay unchanged.', action: 'Apply rain plan' };
+    if (need === 'washroom') {
+      var reset = pending.find(function (stop) {
+        return !isHotelStop(stop) && /washroom|service|mall|fuel|restaurant/i.test([stop.kind, stop.food, stop.title].join(' '));
+      });
+      return { title: reset ? 'Use ' + reset.title : 'Use the next safe service stop', detail: reset ? (reset.food || reset.notes) : 'Stop safely at the next signed service area.', action: reset ? 'Make this the next reset' : '', stop: reset };
+    }
+    return null;
+  }
+
+  function renderFamilyPulse(day, calm) {
+    var labels = { late: 'Running late', hungry: 'Hungry', tired: 'Low energy', rain: 'Rain', washroom: 'Need washroom' };
+    var recommendation = rescueRecommendation(day, calm.pulseNeed);
+    return [
+      '<article class="decision-card family-pulse" data-testid="family-pulse"><div class="calm-card-head"><div><span class="tag">Family pulse</span><h3>How’s everyone?</h3></div></div>',
+      '<fieldset class="choice-chips"><legend class="sr-only">Choose what the family needs</legend>', Object.keys(labels).map(function (need) {
+        return '<button type="button" class="choice-chip" data-pulse-need="' + need + '" aria-pressed="' + (calm.pulseNeed === need) + '">' + labels[need] + '</button>';
+      }).join(''), '</fieldset>',
+      recommendation ? '<div class="pulse-result" role="status"><span class="route-label">Best reset now</span><h4>' + escapeHtml(recommendation.title) + '</h4><p>' + escapeHtml(recommendation.detail) + '</p><div class="decision-actions">' + (recommendation.action ? '<button type="button" class="button primary" data-pulse-apply="' + escapeHtml(calm.pulseNeed) + '">' + escapeHtml(recommendation.action) + '</button>' : '') + (recommendation.stop ? externalLink(recommendation.stop.mapUrl, 'Directions', 'button subtle') : '') + '<button type="button" class="button subtle" data-pulse-clear>Keep current plan</button></div></div>' : '<p class="small muted">Pick one need and get one conservative recommendation.</p>',
+      '<p class="small passenger-note">Passenger use only while the car is moving.</p></article>'
+    ].join('');
+  }
+
+  function renderCalmBank(day) {
+    var bank = calmBank(day);
+    var route = selectedRouteOption(day);
+    var meal = selectedMealFlex(day);
+    var calm = calmDayState(day);
+    var breakdown = ['Base plan cushion ' + bank.base + ' min'];
+    if (aheadMinutes(day)) breakdown.push('Ahead +' + aheadMinutes(day));
+    if (modeMinutes(day)) breakdown.push('Delay -' + modeMinutes(day));
+    if (route && !calm.protectRecovery && !sameRouteAsQuickMeal(day, route, meal)) breakdown.push(route.name + ' ' + (route.timing.bankDeltaMin || -optionCostMinutes(route)) + ' min');
+    if (tripState.mealChoices[day.id] === 'quick' && meal) breakdown.push(meal.foodName + ' +' + mealSavedMinutes(meal) + ' min');
+    if (calm.mealExperience && meal && !calm.protectRecovery) {
+      var experienceImpact = Number(meal.experienceEffect && meal.experienceEffect.totalImpactMin) || 0;
+      breakdown.push(meal.experience + (experienceImpact ? ' -' + experienceImpact + ' min' : ' · no added drive'));
+    }
+    if (calm.phase === 'waiting' && calm.waitAction !== 'quick' && calm.waitMinutes) breakdown.push('Quoted wait -' + calm.waitMinutes + ' min');
+    return '<article class="calm-bank' + (bank.tight ? ' is-tight' : '') + '" data-testid="calm-bank"><div><span class="route-label">Calm Bank · before live traffic</span><h3>' + bank.minutes + ' relaxed minutes</h3><p>' + (bank.raw < 0 ? 'The current choices exceed the planned cushion. Use a recovery action before adding anything.' : bank.tight ? 'Cushion is tight—bank it for the booked hotel and recovery.' : 'Available for an optional stop, a slower meal, or simply arriving rested.') + '</p></div><details><summary>How this is calculated</summary><ul>' + breakdown.map(function (item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('') + '</ul><p class="small">Live traffic, weather and queues can reduce this. The booked hotel target always wins.</p></details></article>';
+  }
+
+  function renderNoRegrets(day, calm) {
+    var hotel = hotelForNight(day.id);
+    var destination = hotel ? hotel['Recommended hotel'] : 'home safely';
+    return '<article class="success-card"><span class="tag category-ok">No-regrets day</span><h3>Today is a win if…</h3><p><strong>' + escapeHtml(day.mainActivity) + '</strong>, then arrive rested at <strong>' + escapeHtml(destination) + '</strong>. Everything else is a bonus.</p><button type="button" class="button subtle" data-protect-recovery aria-pressed="' + calm.protectRecovery + '">' + (calm.protectRecovery ? 'Recovery protected · undo' : 'Protect recovery time') + '</button></article>';
+  }
+
+  function renderPhaseBrief(day, next, phase) {
+    if (phase === 'pretrip') {
+      var days = Math.max(0, daysBetween(localIsoDate(), operationalPlan.days[0].id));
+      var openTasks = checklistTasks.filter(function (item) { return !taskState(item.id).done; }).sort(function (a, b) { return String(a.dueDate).localeCompare(String(b.dueDate)); });
+      return '<article class="phase-card"><span class="tag">Before departure</span><h3>' + days + ' days until the road trip</h3><p>' + (openTasks[0] ? '<strong>Next prep:</strong> ' + escapeHtml(openTasks[0].title) : 'Prep is complete. Keep the offline pack on both phones.') + '</p><p class="small">All seven hotels are already booked and stay fixed.</p></article>';
+    }
+    if (phase === 'complete') return '<article class="phase-card is-complete"><span class="tag category-ok">Trip complete</span><h3>You made it home</h3><p>The itinerary is now a recap. Hotel bookings and private progress remain on this device.</p></article>';
+    if (!next) {
+      var index = operationalPlan.days.findIndex(function (item) { return item.id === day.id; });
+      var tomorrow = operationalPlan.days[index + 1];
+      return '<article class="phase-card is-complete"><span class="tag category-ok">Tonight’s reset</span><h3>You made it. Tomorrow can wait.</h3><p>' + (tomorrow ? 'Next departure: ' + escapeHtml(tomorrow.departTarget) + '. Charge phones, stage bags and confirm breakfast—nothing else is required tonight.' : 'The road trip is complete. Rest first.') + '</p></article>';
+    }
+    return '';
+  }
+
+  function renderTripRecap(section) {
+    var total = 0;
+    var completed = 0;
+    operationalPlan.days.forEach(function (day) {
+      effectiveStops(day).filter(function (stop) { return !stop.choiceGated; }).forEach(function (stop) {
+        total += 1;
+        if (stopStatus(stop.id) === 'done') completed += 1;
+      });
+    });
+    var pct = total ? Math.round((completed / total) * 100) : 0;
+    section.innerHTML = [
+      '<h2 id="live-heading" class="section-heading">Trip recap</h2>',
+      '<p class="section-intro">The road trip is complete. Keep the memories; the logistics can rest.</p>',
+      '<article class="phase-card is-complete recap-card"><span class="tag category-ok">Home safely</span><h3>Eight days · seven fixed hotel stays</h3><p>You protected the booked route anchors while keeping meals and optional stops flexible.</p>',
+      '<div class="trip-progress"><strong>', completed, '/', total, ' active checkpoints recorded complete</strong><div class="progress-meter" aria-label="', completed, ' of ', total, ' active checkpoints complete"><span style="width:', pct, '%"></span></div></div>',
+      '<div class="decision-actions"><button type="button" class="button primary" id="recapPlan">Review the trip plan</button><button type="button" class="button subtle" id="recapPrep">Review prep notes</button></div></article>',
+      renderHotelSafeBanner(operationalPlan.days[operationalPlan.days.length - 1])
+    ].join('');
+    document.getElementById('recapPlan').addEventListener('click', function () { activateSection('daybyday', true); });
+    document.getElementById('recapPrep').addEventListener('click', function () { activateSection('checklist', true); });
+  }
+
   function renderLive() {
     var section = document.getElementById('live');
+    var phase = tripPhase();
+    if (phase === 'complete') {
+      renderTripRecap(section);
+      return;
+    }
     var day = dayById(tripState.activeDate);
     var mode = tripState.modes[day.id] || 'preview';
     var stops = visibleStops(day).filter(function (stop) { return !stop.choiceGated; });
@@ -2952,43 +3541,64 @@
     var nextRoute = next ? routeUrl(prior && prior.id !== next.id ? [prior, next] : [next]) : '';
     var progress = stops.length ? Math.round((completed / stops.length) * 100) : 0;
     var modeName = scheduleModeLabel(mode);
+    var calm = liveCalmState(day, next);
     var tonightTarget = (hotelPlanRules[day.id] && hotelPlanRules[day.id].arrival) || 'confirm arrival';
     var tideDetails = day.id === operationalPlan.tidePlan.date ? '<div class="mode-note safe"><strong>Hopewell:</strong> Low tide 11:52 AM. Target entrance 10:15–10:30 and stairs by 10:45; staff control actual floor access.<div class="action-bar">' + externalLink(operationalPlan.tidePlan.sourceUrl, 'Tide table', 'button subtle') + externalLink(operationalPlan.tidePlan.chsUrl, 'CHS prediction', 'button subtle') + '</div></div>' : '';
+    var heading = phase === 'pretrip' ? 'Get ready' : phase === 'complete' ? 'Trip recap' : 'Today';
+    var intro = phase === 'pretrip' ? 'Finish the essentials, then preview one calm step at a time.' : phase === 'complete' ? 'The road trip is complete.' : 'One next step. Everything else can wait.';
+    var inPlaceCheckpoint = isInPlaceCheckpoint(next);
+    var onSiteStop = isOnSiteStop(next);
+    var heroLabel = calm.phase === 'driving' ? 'On the way' : calm.phase === 'arriving' ? 'Arriving at' : calm.phase === 'at-stop' ? 'At stop' : calm.phase === 'waiting' ? 'Waiting' : phase === 'pretrip' ? 'Preview' : 'Ready';
+    var context = next && calm.phase === 'driving' ? renderJourneyBeads(day, next, calm)
+      : next && (calm.phase === 'arriving' || calm.phase === 'at-stop') ? renderArrivalBubble(day, next, calm)
+        : next && calm.phase === 'waiting' ? renderWaitPivot(day, next, calm) : '';
+    var heroActions = '';
+    if (next && calm.phase === 'ready' && inPlaceCheckpoint) heroActions = '<button type="button" class="button primary" data-calm-action="start-day">Ready · continue</button>';
+    else if (next && calm.phase === 'ready' && onSiteStop) heroActions = '<button type="button" class="button primary" data-calm-action="start-stop">Start this stop</button>';
+    else if (next && calm.phase === 'ready') heroActions = externalLink(nextRoute, 'Directions', 'button') + '<button type="button" class="button primary" data-calm-action="start-leg">Start this leg</button>';
+    else if (next && calm.phase === 'driving') heroActions = externalLink(nextRoute, 'Directions', 'button') + '<button type="button" class="button primary" data-calm-action="near">We’re close</button>';
+    else if (next) heroActions = externalLink(nextRoute, 'Directions', 'button');
     section.innerHTML = [
-      '<h2 id="live-heading" class="section-heading">Today</h2>',
-      '<p class="section-intro">Your next action, route, and progress.</p>',
+      '<h2 id="live-heading" class="section-heading">', heading, '</h2>',
+      '<p class="section-intro">', intro, '</p>',
       renderTodayBanner(day),
-      renderHotelSafeBanner(day),
+      renderPhaseBrief(day, next, phase),
       '<div class="trip-control-grid">',
-      '<article class="next-stop"><p class="route-label">', escapeHtml(modeName), ' · <span class="risk-chip ', riskClass(day.risk), '">', escapeHtml(day.risk), ' risk</span></p>',
+      '<article class="next-stop" data-testid="calm-hero"><p class="route-label">', escapeHtml(heroLabel), ' · ', escapeHtml(modeName), ' · <span class="risk-chip ', riskClass(day.risk), '">', escapeHtml(day.risk), ' risk</span></p>',
       next ? '<h3>' + escapeHtml(next.title) + '</h3><p class="muted next-time">' + escapeHtml(next.time) + (next.zone ? ' ' + escapeHtml(next.zone) : '') + ' · ' + escapeHtml(next.city) + '</p>' : '<h3>Day complete</h3><p class="muted">All active stops are complete.</p>',
       '<p class="small"><strong>Hotel arrival target:</strong> ', escapeHtml(tonightTarget), '</p>',
       renderTodayNowLine(day),
-      '<div class="action-bar">', next ? externalLink(nextRoute, 'Navigate', 'button') : '', dayRouteLinks(day, 'button secondary'), '</div>',
-      '<div class="today-action-row"><button type="button" class="button subtle" id="nearestStopBtn">Find nearest stop</button></div>',
-      '<p id="nearestStopStatus" class="small muted" role="status" aria-live="polite"></p>',
-      next ? '<div class="today-action-row"><button type="button" class="button primary" data-live-stop-action="done">Done</button>' + (next.priority !== 'required' ? '<button type="button" class="button subtle" data-live-stop-action="skip">Skip this optional stop</button>' : '') + '</div>' : '',
+      '<div class="action-bar">', heroActions, '</div>',
+      next && canSkipStop(next) && next.priority !== 'required' && calm.phase !== 'at-stop' && calm.phase !== 'waiting' ? '<div class="today-action-row"><button type="button" class="button subtle" data-calm-action="skip">Skip this optional stop</button><button type="button" class="button subtle" data-protect-recovery>Bank the time</button></div>' : '',
       '<div class="trip-progress"><strong>', completed, '/', stops.length, ' active stops complete</strong><div class="progress-meter" aria-label="' + completed + ' of ' + stops.length + ' active stops complete"><span style="width:' + progress + '%"></span></div></div>',
       next ? '<details class="next-details"><summary>What to know</summary><p>' + escapeHtml(next.notes) + '</p></details>' : '',
+      next ? '<details class="next-details"><summary>Full-day directions</summary><div class="action-bar">' + dayRouteLinks(day, 'button secondary') + '</div></details>' : '',
+      next ? '<details class="resync-control"><summary>We are somewhere else</summary><label for="resyncStopSelect">Resume from<select id="resyncStopSelect">' + stops.filter(function (stop) { return stopStatus(stop.id) === 'pending'; }).map(function (stop) { return '<option value="' + escapeHtml(stop.id) + '">' + escapeHtml(stop.time + ' · ' + stop.title) + '</option>'; }).join('') + '</select></label><div class="decision-actions"><button type="button" class="button subtle" id="nearestStopBtn">Find nearest stop</button><button type="button" class="button subtle" id="applyResync">Resume here</button></div><p id="nearestStopStatus" class="small muted" role="status" aria-live="polite">Confirming a stop marks earlier required stops done and earlier optional stops skipped.</p></details>' : '',
       renderWakeLockControl(),
       '</article>',
       '</div>',
-      '<div class="control-grid primary-controls today-controls" aria-label="Trip control settings">',
-      '<label for="liveDay">Day<select id="liveDay">', operationalPlan.days.map(function (item) { return '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(dayOptionLabel(item)) + '</option>'; }).join(''), '</select></label>',
-      '<label for="liveMode">Schedule<select id="liveMode"><option value="preview">Planning</option><option value="on-time">On schedule</option><option value="ahead30">30 min ahead</option><option value="ahead60">60+ min ahead</option><option value="late30">30+ min late</option><option value="late60">60+ min late</option></select></label>',
-      '</div>',
-      renderDayRouteMap(day, visibleStops(day), 'Today’s route'),
+      context,
+      renderFamilyPulse(day, calm),
+      '<div class="calm-summary-grid">', renderCalmBank(day), renderNoRegrets(day, calm), '</div>',
+      renderHotelSafeBanner(day),
+      tideDetails,
       renderTodayRouteOption(day),
       renderTodayMealChoice(day),
+      '<details class="planning-drawer"><summary>Change day or schedule</summary><div class="control-grid primary-controls today-controls" aria-label="Trip control settings">',
+      '<label for="liveDay">Day<select id="liveDay">', operationalPlan.days.map(function (item) { return '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(dayOptionLabel(item)) + '</option>'; }).join(''), '</select></label>',
+      '<label for="liveMode">Schedule<select id="liveMode"><option value="preview">Planning</option><option value="on-time">On schedule</option><option value="ahead30">30 min ahead</option><option value="ahead60">60+ min ahead</option><option value="late30">30+ min late</option><option value="late60">60+ min late</option></select></label>',
+      '</div></details>',
+      '<details class="today-route-drawer"><summary>See the whole day · ', stops.length, ' active stops</summary>', renderDayRouteMap(day, visibleStops(day), 'Today’s route'), '</details>',
       renderFreshnessCard(day),
       renderOfflineReadiness(),
       '<details class="quick-card compact-guidance"><summary><strong>If plans change</strong></summary><p><strong>If delayed:</strong> ', escapeHtml(day.contingency), '</p><p><strong>Safety fallback:</strong> ', escapeHtml(day.emergency), '</p><div class="action-bar"><button type="button" class="button subtle" id="openDayPlan">Open full plan</button>', dayWeatherLink(day.id), '</div></details>',
-      tideDetails,
     ].join('');
     document.getElementById('liveDay').value = day.id;
     document.getElementById('liveMode').value = mode;
     document.getElementById('liveDay').addEventListener('change', function (event) {
       applyItineraryDay(event.target.value);
+      var dayDrawer = document.querySelector('#live .planning-drawer');
+      if (dayDrawer) dayDrawer.open = true;
       var nextDaySelect = document.getElementById('liveDay');
       if (nextDaySelect) nextDaySelect.focus();
     });
@@ -2996,18 +3606,125 @@
       tripState.modes[day.id] = event.target.value;
       persist();
       renderPlanViews();
+      var modeDrawer = document.querySelector('#live .planning-drawer');
+      if (modeDrawer) modeDrawer.open = true;
       var nextModeSelect = document.getElementById('liveMode');
       if (nextModeSelect) nextModeSelect.focus();
     });
     var nearestButton = document.getElementById('nearestStopBtn');
     if (nearestButton) nearestButton.addEventListener('click', function () { findNearestStop(day); });
-    section.querySelectorAll('[data-live-stop-action]').forEach(function (button) {
+    var applyResync = document.getElementById('applyResync');
+    if (applyResync) applyResync.addEventListener('click', function () {
+      var select = document.getElementById('resyncStopSelect');
+      if (select && resyncToStop(day, select.value)) {
+        renderPlanViews();
+        setStatus('Trip resumed from the selected stop. Booked hotels remain unchanged.');
+      }
+    });
+    section.querySelectorAll('[data-calm-action]').forEach(function (button) {
       button.addEventListener('click', function () {
         if (!next) return;
-        var action = button.dataset.liveStopAction;
-        if (action === 'skip' && next.priority === 'required') return;
-        tripState.stops[next.id] = action === 'skip' ? 'skipped' : 'done';
+        var action = button.dataset.calmAction;
+        var patch = { stopId: next.id };
+        if (action === 'start-day') {
+          tripState.stops[next.id] = 'done';
+          tripState.calmByDay[day.id] = { phase: 'ready', protectRecovery: calm.protectRecovery };
+          persist();
+          renderPlanViews();
+          return;
+        } else if (action === 'start-stop') patch = { phase: 'at-stop', stopId: next.id, arrivedAt: new Date().toISOString(), legStartedAt: '' };
+        else if (action === 'start-leg') patch = { phase: 'driving', stopId: next.id, legStartedAt: new Date().toISOString(), beadIndex: 0 };
+        else if (action === 'near') patch.phase = 'arriving';
+        else if (action === 'parked') {
+          patch.phase = 'at-stop';
+          patch.arrivedAt = new Date().toISOString();
+          if (day.id === localIsoDate()) {
+            var planned = clockMinutes(next.time);
+            var now = new Date();
+            if (planned != null) {
+              var drift = now.getHours() * 60 + now.getMinutes() - planned;
+              tripState.modes[day.id] = drift >= 60 ? 'late60' : drift >= 30 ? 'late30' : drift <= -60 ? 'ahead60' : drift <= -30 ? 'ahead30' : 'on-time';
+            }
+          }
+        } else if (action === 'undo-arrival') patch = { phase: 'arriving', stopId: next.id, arrivedAt: '' };
+        else if (action === 'start-wait') patch = { phase: 'waiting', stopId: next.id, waitStopId: next.id, waitMinutes: 0, waitAction: '' };
+        else if (action === 'meal-started') patch = { phase: 'at-stop', stopId: next.id, waitMinutes: 0, waitAction: '' };
+        else if (action === 'next-bead') patch.beadIndex = calm.beadIndex + 1;
+        else if (action === 'kid-view') patch.kidView = !calm.kidView;
+        else if (action === 'skip' && next.priority !== 'required') {
+          if (!setStopStatus(day, next.id, 'skipped')) return;
+          tripState.calmByDay[day.id] = { phase: 'ready' };
+          persist();
+          renderPlanViews();
+          return;
+        } else if (action === 'done') {
+          tripState.stops[next.id] = 'done';
+          if (next.flexSource === 'rescue' && next.replacesStopId) tripState.stops[next.replacesStopId] = 'done';
+          tripState.calmByDay[day.id] = { phase: 'ready', protectRecovery: calm.protectRecovery };
+          persist();
+          renderPlanViews();
+          return;
+        }
+        saveCalmDayState(day, patch);
+        renderPlanViews();
+        var contextHeading = document.getElementById('calmContextHeading');
+        if (contextHeading) contextHeading.focus({ preventScroll: true });
+      });
+    });
+    section.querySelectorAll('[data-wait-minutes]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        saveCalmDayState(day, { waitMinutes: Number(button.dataset.waitMinutes), waitAction: '' });
+        renderLive();
+      });
+    });
+    section.querySelectorAll('[data-wait-action]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var action = button.dataset.waitAction;
+        if (action === 'quick') {
+          tripState.mealChoices[day.id] = 'quick';
+          tripState.calmByDay[day.id] = { phase: 'ready', waitAction: 'quick' };
+        } else {
+          saveCalmDayState(day, { waitAction: 'stay' });
+        }
         persist();
+        renderPlanViews();
+      });
+    });
+    section.querySelectorAll('[data-pulse-need]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var need = button.dataset.pulseNeed;
+        saveCalmDayState(day, { pulseNeed: calm.pulseNeed === need ? '' : need, pulseApplied: false, rescueStopId: '' });
+        renderLive();
+      });
+    });
+    section.querySelectorAll('[data-pulse-apply]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var need = button.dataset.pulseApply;
+        var recommendation = rescueRecommendation(day, need);
+        var pulsePatch = { pulseNeed: need, pulseApplied: true };
+        if (need === 'late') { tripState.modes[day.id] = 'late30'; pulsePatch.protectRecovery = true; }
+        if (need === 'hungry' && selectedMealFlex(day)) tripState.mealChoices[day.id] = 'quick';
+        if (need === 'tired' || need === 'rain') pulsePatch.protectRecovery = true;
+        if (need === 'washroom' && recommendation && recommendation.stop) pulsePatch.rescueStopId = recommendation.stop.id;
+        if (pulsePatch.protectRecovery) {
+          delete tripState.routeChoices[day.id];
+          pulsePatch.mealExperience = false;
+        }
+        saveCalmDayState(day, pulsePatch);
+        renderPlanViews();
+      });
+    });
+    section.querySelectorAll('[data-pulse-clear]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        saveCalmDayState(day, { pulseNeed: '', pulseApplied: false, rescueStopId: '' });
+        renderLive();
+      });
+    });
+    section.querySelectorAll('[data-protect-recovery]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var protect = !calm.protectRecovery;
+        if (protect) delete tripState.routeChoices[day.id];
+        saveCalmDayState(day, { protectRecovery: protect, mealExperience: protect ? false : calm.mealExperience });
         renderPlanViews();
       });
     });
@@ -3020,7 +3737,7 @@
           persist();
           renderPlanViews();
         } else if (action === 'skip') {
-          tripState.stops[stopId] = stopStatus(stopId) === 'skipped' ? 'pending' : 'skipped';
+          if (!setStopStatus(day, stopId, stopStatus(stopId) === 'skipped' ? 'pending' : 'skipped')) return;
           persist();
           renderPlanViews();
         } else if (action === 'copy') {
@@ -3030,18 +3747,42 @@
     });
     section.querySelectorAll('[data-route-choice]').forEach(function (button) {
       button.addEventListener('click', function () {
+        var currentCalm = calmDayState(day);
+        if (currentCalm.protectRecovery || currentCalm.phase !== 'ready') {
+          setStatus('Finish the active step or unprotect recovery before adding a route stop.');
+          return;
+        }
         var choice = button.dataset.routeChoice;
         if (choice === 'clear' || choice === 'show') delete tripState.routeChoices[day.id];
         else tripState.routeChoices[day.id] = choice;
         persist();
-        renderLive();
+        renderPlanViews();
       });
     });
     section.querySelectorAll('[data-meal-choice]').forEach(function (button) {
       button.addEventListener('click', function () {
+        if (calmDayState(day).phase !== 'ready') {
+          setStatus('Finish the active step before changing the meal pace.');
+          return;
+        }
         tripState.mealChoices[day.id] = button.dataset.mealChoice === 'quick' ? 'quick' : 'proper';
+        if (tripState.mealChoices[day.id] === 'quick' && sameRouteAsQuickMeal(day, selectedRouteOption(day), selectedMealFlex(day))) {
+          delete tripState.routeChoices[day.id];
+        }
+        if (tripState.mealChoices[day.id] === 'proper') saveCalmDayState(day, { mealExperience: false });
         persist();
-        renderLive();
+        renderPlanViews();
+      });
+    });
+    section.querySelectorAll('[data-meal-experience]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var currentCalm = calmDayState(day);
+        if (currentCalm.protectRecovery || currentCalm.phase !== 'ready') {
+          setStatus('Paired experiences stay paused while recovery is protected or a step is active.');
+          return;
+        }
+        saveCalmDayState(day, { mealExperience: button.dataset.mealExperience === 'add' });
+        renderPlanViews();
       });
     });
     section.querySelectorAll('[data-offline-ready]').forEach(function (input) {
@@ -3238,8 +3979,26 @@
       var current = taskState(item.id);
       taskData[item.id] = redacted ? { done: current.done, status: current.status, checkedAt: current.checkedAt } : current;
     });
+    var calmData = tripState.calmByDay;
+    if (redacted) {
+      calmData = {};
+      Object.keys(tripState.calmByDay || {}).forEach(function (dayId) {
+        var calm = calmDayState(dayById(dayId));
+        calmData[dayId] = {
+          phase: calm.phase,
+          beadIndex: calm.beadIndex,
+          kidView: calm.kidView,
+          pulseNeed: calm.pulseNeed,
+          pulseApplied: calm.pulseApplied,
+          protectRecovery: calm.protectRecovery,
+          waitMinutes: calm.waitMinutes,
+          waitAction: calm.waitAction,
+          mealExperience: calm.mealExperience
+        };
+      });
+    }
     return {
-      version: 2,
+      version: 3,
       exportedAt: new Date().toISOString(),
       redacted: Boolean(redacted),
       activeDate: tripState.activeDate,
@@ -3248,6 +4007,7 @@
       tasks: taskData,
       routeChoices: tripState.routeChoices,
       mealChoices: tripState.mealChoices,
+      calmByDay: calmData,
       offlineReadiness: tripState.offlineReadiness,
       picks: pickState.items,
       packing: packingState.items,
@@ -3256,9 +4016,27 @@
   }
 
   function applyImportedState(imported) {
-    if (!imported || imported.version !== 2 || typeof imported !== 'object') throw new Error('Unsupported export');
+    if (!imported || [2, 3].indexOf(imported.version) === -1 || typeof imported !== 'object') throw new Error('Unsupported export');
     var validDays = new Set(operationalPlan.days.map(function (day) { return day.id; }));
     var validStops = new Set(operationalPlan.days.flatMap(function (day) { return day.stops.map(function (stop) { return stop.id; }); }));
+    var validStopById = {};
+    operationalPlan.days.forEach(function (day) {
+      day.stops.forEach(function (stop) { validStopById[stop.id] = stop; });
+    });
+    var validSyntheticStops = new Set();
+    operationalPlan.days.forEach(function (day) {
+      var routePlan = routeOptionsByDay[day.id];
+      (routePlan && routePlan.options || []).forEach(function (option) {
+        validSyntheticStops.add('route-flex-' + day.id + '-' + routeOptionId(option));
+      });
+      if (mealFlexByDay[day.id]) {
+        validSyntheticStops.add('meal-quick-' + day.id);
+        validSyntheticStops.add('meal-experience-' + day.id);
+      }
+      day.stops.forEach(function (stop) {
+        if (!isHotelStop(stop)) validSyntheticStops.add('rescue-' + stop.id);
+      });
+    });
     var validTasks = new Set(checklistTasks.map(function (item) { return item.id; }));
     if (validDays.has(imported.activeDate)) tripState.activeDate = imported.activeDate;
     if (imported.modes && typeof imported.modes === 'object') {
@@ -3268,7 +4046,9 @@
     }
     if (imported.stops && typeof imported.stops === 'object') {
       Object.keys(imported.stops).forEach(function (key) {
-        if (validStops.has(key) && ['pending', 'done', 'skipped'].indexOf(imported.stops[key]) !== -1) tripState.stops[key] = imported.stops[key];
+        var importedStatus = imported.stops[key];
+        if (importedStatus === 'skipped' && validStopById[key] && isHotelStop(validStopById[key])) return;
+        if ((validStops.has(key) || validSyntheticStops.has(key)) && ['pending', 'done', 'skipped'].indexOf(importedStatus) !== -1) tripState.stops[key] = importedStatus;
       });
     }
     if (imported.tasks && typeof imported.tasks === 'object') {
@@ -3295,6 +4075,13 @@
     if (imported.mealChoices && typeof imported.mealChoices === 'object') {
       Object.keys(imported.mealChoices).forEach(function (key) {
         if (validDays.has(key) && ['proper', 'quick'].indexOf(imported.mealChoices[key]) !== -1) tripState.mealChoices[key] = imported.mealChoices[key];
+      });
+    }
+    if (imported.calmByDay && typeof imported.calmByDay === 'object') {
+      Object.keys(imported.calmByDay).forEach(function (key) {
+        if (!validDays.has(key) || !imported.calmByDay[key] || typeof imported.calmByDay[key] !== 'object') return;
+        tripState.calmByDay[key] = imported.calmByDay[key];
+        tripState.calmByDay[key] = calmDayState(dayById(key));
       });
     }
     if (imported.offlineReadiness && typeof imported.offlineReadiness === 'object') {
@@ -3339,13 +4126,14 @@
 
   function buildSyncCode() {
     var payload = JSON.stringify(serializableState(false));
-    return 'PEITRIP2:' + btoa(unescape(encodeURIComponent(payload)));
+    return 'PEITRIP3:' + btoa(unescape(encodeURIComponent(payload)));
   }
 
   function applySyncCode(code) {
     var raw = String(code || '').trim();
-    if (raw.indexOf('PEITRIP2:') !== 0) throw new Error('Not a sync code');
-    var json = decodeURIComponent(escape(atob(raw.slice('PEITRIP2:'.length))));
+    var prefix = raw.indexOf('PEITRIP3:') === 0 ? 'PEITRIP3:' : raw.indexOf('PEITRIP2:') === 0 ? 'PEITRIP2:' : '';
+    if (!prefix) throw new Error('Not a sync code');
+    var json = decodeURIComponent(escape(atob(raw.slice(prefix.length))));
     applyImportedState(JSON.parse(json));
   }
 
@@ -3637,7 +4425,7 @@
       '<details class="safety-details"><summary>Roads, weather, bridge & tides</summary><div class="reference-links">', roadLinks.concat(weatherLinks).map(function (link) { return '<a class="road-link" href="' + escapeHtml(safeExternalUrl(link.url)) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">' + escapeHtml(link.title) + '<span>' + escapeHtml(link.detail) + '</span></a>'; }).join(''), '</div><p class="small" style="padding:0 13px 13px"><strong>Stop rule:</strong> Severe-weather warnings cancel coastal walks; bridge advisories pause crossings; Hopewell staff control ocean-floor access.</p></details>',
       '<article class="card"><h3>Save for offline use</h3><p class="small">Download the page before leaving Wi-Fi. Live checks still need a connection.</p><div class="action-bar"><button type="button" class="button primary" id="downloadHtmlPack">Save offline copy</button><button type="button" class="button subtle" id="downloadTextPack">Emergency text</button><button type="button" class="button subtle" id="printTrip">Print all stops</button></div></article>',
       '<article class="card"><h3>Offline route map &amp; photos</h3><p class="small">Save the map tiles along the whole route plus the food and attraction photos so they show with no signal. Do this on Wi-Fi before you leave; it downloads once and updates as you browse the map online.</p><div class="action-bar"><button type="button" class="button primary" id="saveOfflineAssets">Save map + photos</button><button type="button" class="button subtle" id="clearOfflineAssets">Clear saved</button></div><p id="offlineAssetsStatus" class="small muted" role="status" aria-live="polite"></p></article>',
-      '<details class="safety-details"><summary>Advanced · sync between phones</summary><div style="padding:0 13px 13px"><p class="small">Sync codes include private notes. Share only between your own phones.</p><div class="action-bar"><button type="button" class="button primary" id="copySyncCode">Copy sync code</button></div><label class="field-label" for="syncCodeInput">Paste code<textarea id="syncCodeInput" rows="3" placeholder="PEITRIP2:…"></textarea></label><div class="action-bar"><button type="button" class="button subtle" id="applySyncCode">Apply code</button></div><div id="syncStatus" class="status-line" role="status" aria-live="polite"></div></div></details>',
+      '<details class="safety-details"><summary>Advanced · sync between phones</summary><div style="padding:0 13px 13px"><p class="small">Sync codes include private notes. Share only between your own phones.</p><div class="action-bar"><button type="button" class="button primary" id="copySyncCode">Copy sync code</button></div><label class="field-label" for="syncCodeInput">Paste code<textarea id="syncCodeInput" rows="3" placeholder="PEITRIP3:…"></textarea></label><div class="action-bar"><button type="button" class="button subtle" id="applySyncCode">Apply code</button></div><div id="syncStatus" class="status-line" role="status" aria-live="polite"></div></div></details>',
       '<p class="compact-privacy">Private plan · progress is saved on this device.</p>'
     ].join('');
     section.querySelectorAll('[data-offline-ready]').forEach(function (input) {
@@ -3789,6 +4577,31 @@
     });
     registerOfflineSupport();
     if (planValidationErrors.length) setStatus('The operational plan has ' + planValidationErrors.length + ' validation warning' + (planValidationErrors.length === 1 ? '' : 's') + '. Review the sources section before travel.');
+    window.__tripControlTest = {
+      phase: tripPhase,
+      durationRange: durationRange,
+      defaultDate: defaultDate,
+      dayStops: function (dayId) {
+        return effectiveStops(dayById(dayId)).map(function (stop) {
+          return {
+            id: stop.id,
+            title: stop.title,
+            priority: stop.priority,
+            flexSource: stop.flexSource || '',
+            replacesStopId: stop.replacesStopId || '',
+            choiceGated: Boolean(stop.choiceGated),
+            routeEligible: stop.routeEligible !== false,
+            city: stop.city || '',
+            leg: stop.leg || '',
+            pairedExperience: Boolean(stop.pairedExperience),
+            hotel: isHotelStop(stop)
+          };
+        });
+      },
+      calmBank: function (dayId) { return Object.assign({}, calmBank(dayById(dayId))); },
+      state: function () { return JSON.parse(JSON.stringify(tripState)); },
+      serializable: function (redacted) { return JSON.parse(JSON.stringify(serializableState(Boolean(redacted)))); }
+    };
     window.__tripControlBooted = true;
   }
 

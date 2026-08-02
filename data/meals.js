@@ -200,5 +200,86 @@ window.TripData.mealFlexByDay = function (helpers) {
       }]
     }
   };
+  // Structured replacement metadata shared by Today, the route resolver and
+  // wait-time pivots. Credits intentionally use the low end of the stated
+  // savings so the Calm Bank stays conservative.
+  var mealEffects = {
+    '2026-08-14': {
+      replace: ['d1-lunch'], credit: 20,
+      foodCity: 'Brockville, ON',
+      foodLeg: 'About 105 km / 1 h 05-1 h 15 from ONroute Odessa; about 210 km / 2 h 15 to Montreal before city traffic',
+      foodTime: '11:40-12:15',
+      experienceEffect: { insertAfterStopId: 'meal-quick-2026-08-14', totalImpactMin: 30 }
+    },
+    '2026-08-15': {
+      replace: ['d2-lunch'], credit: 25,
+      foodCity: 'Quebec City, QC',
+      foodLeg: 'Inside Parc de la Chute-Montmorency after the falls visit; before Hotel Cofortel',
+      foodTime: '12:45-13:20',
+      experienceEffect: { activateStopId: 'd2-old-quebec', totalImpactMin: 35 }
+    },
+    '2026-08-16': {
+      replace: ['d3-stmr-dinner'], credit: 20,
+      foodCity: 'Fredericton, NB',
+      foodLeg: 'On site at Delta Hotels Fredericton, immediately after check-in',
+      foodTime: '18:45-19:30',
+      experienceEffect: { mergeWithStopId: 'd3-hotel', totalImpactMin: 0 }
+    },
+    '2026-08-17': {
+      replace: ['d4-dinner'], credit: 45,
+      foodCity: 'Charlottetown, PE',
+      foodLeg: 'About 10-15 min from Hampton; replaces the rural New Glasgow dinner drive',
+      foodTime: '16:50-17:35',
+      experienceEffect: { insertAfterStopId: 'meal-quick-2026-08-17', totalImpactMin: 40 }
+    },
+    '2026-08-18': {
+      replace: ['d5-lunch'], credit: 35,
+      foodCity: 'Cavendish, PE',
+      foodLeg: 'About 5 min from Green Gables, on site at Avonlea Village; before the Cavendish afternoon',
+      foodTime: '11:30-12:10',
+      experienceEffect: { insertAfterStopId: 'meal-quick-2026-08-18', totalImpactMin: 40 }
+    },
+    '2026-08-19': {
+      replace: ['d6-lunch'], credit: 20,
+      foodCity: 'Hopewell Cape, NB',
+      foodLeg: 'On site at Hopewell Rocks after the ocean-floor walk',
+      foodTime: '13:30-14:05',
+      experienceEffect: { activateStopId: 'd6-magnetic', totalImpactMin: 40 }
+    },
+    '2026-08-20': {
+      replace: ['d7-edmundston'], credit: 20,
+      foodCity: 'Edmundston, NB',
+      foodLeg: 'About 150 km / 1 h 35 from Hartland; before the Quebec-bound driving block',
+      foodTime: '12:15-12:50',
+      experienceEffect: { mergeWithStopId: 'd7-hotel', totalImpactMin: 0 }
+    },
+    '2026-08-21': {
+      replace: ['d8-restaurant-lunch'], before: 'd8-chambly', credit: 35,
+      foodCity: 'Saint-Cyrille-de-Wendover, QC',
+      foodLeg: 'About 145 km / 1 h 25 from DoubleTree; about 105 km / 1 h 10 to Fort Chambly',
+      foodTime: 'About 09:15',
+      experienceEffect: { activateStopId: 'd8-big-apple', totalImpactMin: 25 }
+    }
+  };
+  var optionId = function (value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[\u2018\u2019']/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  };
+  Object.keys(mealFlexByDay).forEach(function (dayId) {
+    var meta = mealEffects[dayId];
+    (mealFlexByDay[dayId].options || []).forEach(function (option) {
+      option.id = optionId(option.foodName);
+      option.effect = {
+        insertBeforeStopId: meta.before || '',
+        replaceStopIds: meta.replace.slice()
+      };
+      option.timing = { bankDeltaMin: meta.credit, savedMin: meta.credit };
+      option.foodCity = meta.foodCity;
+      option.foodLeg = meta.foodLeg;
+      if (meta.foodTime) option.foodTime = meta.foodTime;
+      option.experienceEffect = Object.assign({}, meta.experienceEffect);
+      option.triggerWaitMin = 25;
+    });
+  });
   return mealFlexByDay;
 };

@@ -12,7 +12,7 @@ Live public site: https://henrymaplehonda.github.io/pei-foodie-road-trip/
 
 - `index.html` — page shell, styles, and the source itinerary as `#trip-data` JSON. Every source stop and foodie record carries a stable `id`; the plan joins on those ids, so renaming a stop is safe but changing an `id` is not
 - `data/` — the trip content itself, split out of `app.js` so the plan can be edited without reading application code: `plan.js` (the eight days), `plan-b.js` (rated alternates), `route-options.js`, `meals.js`, `practical.js` (tickets, per-stop notes, fuel) and `places.js` (coordinates and rating snapshots). Plain scripts that publish onto `window.TripData` and must load before `app.js`; the ones that build URLs or stops take those helpers as an argument so they stay free of application logic
-- `app.js` — interactive itinerary renderer, live trip controls, consolidated route map, checklist, and offline pack
+- `app.js` — interactive itinerary renderer, Calm Copilot controls, effective-route resolver, consolidated route map, checklist, and offline pack
 - `vendor/leaflet/` — locally hosted Leaflet 1.9.4 (map library) so the map needs no CDN. Map tiles come from OpenStreetMap (licensed, with attribution); the service worker caches every tile you view, and the **Safety** tab's "Save map + photos" button pre-fetches the whole route corridor so the map still draws with no signal
 - `test/` — `smoke.js` (headless browser end-to-end), `unit.js` (fast pure-function tests), `validate-trip.js` (trip-data integrity check), and `trip-utils.js` (shared helpers)
 - `manifest.webmanifest`, `sw.js`, `icon.svg` — optional hosted PWA/offline-cache support
@@ -22,7 +22,7 @@ Live public site: https://henrymaplehonda.github.io/pei-foodie-road-trip/
 
 The primary app has four focused views:
 
-- **Today** — next stop, navigation, Done/Skip controls, trip progress, schedule status, meal pace, freshness checks, and one safe extra-attraction suggestion when ahead. On the real trip day it also shows the current clock time and the stop you are at by the schedule, and a **Find nearest stop** button uses the phone's location (in-page only, never stored or sent) to point you at the closest mapped stop.
+- **Ready / Today / Recap** — the first tab changes with the trip phase. Before departure it highlights the next prep task; on trip days it becomes a one-step Calm Copilot with a conservative **Calm Bank**, Journey Beads while driving, an Arrival Bubble for parking and first actions, restaurant **Wait Pivot**, Family Pulse recovery choices, and confirmed-stop resync. After the trip it becomes a recap. Phone location is used only on-device when **Find nearest stop** is pressed and is never stored or sent.
 - **Plan** — a consolidated interactive route map of the whole Vaughan → PEI → Vaughan trip (every stop in driving order, numbered for required and hollow for optional, plus ★ route-side "idea" pins you can swap in on any day, with day/type/optional/ideas/route filters and a legend), above a hotel-anchored daily timeline with recognizable destination names, parking-target navigation, one clear breakfast/lunch/dinner plan, collapsed along-the-way options, recovery blocks, ahead suggestions, and late-mode cutoffs.
 - **Prep** — all seven booked-safe hotels, unfinished reservations and verification tasks, offline readiness, calls, and packing.
 - **Safety** — emergency numbers, the 91-AKI fuel rule, road and weather links, an offline map + photo pack (pre-fetch the route-corridor tiles and food/attraction photos for no-signal use), other offline exports, and a one-tap **Print all stops** sheet: a paper/PDF stop-by-stop reference for every day plus a final safety-essentials page (emergency and 24/7 lines, all hotel front desks, restaurant reservation numbers, and the planned 91-AKI fuel stops) that works with no internet.
@@ -32,6 +32,9 @@ The larger food, attraction, hotel, and overview catalogues stay out of the prim
 ## Trip tools
 
 - Schedule controls stay synchronized between **Today** and **Plan**, including 30/60-minute ahead and late modes.
+- Route and meal choices are operational: a selection changes Next, progress, directions, and map order; replacements use stable stop IDs and conservative time debits/credits instead of parsing display copy.
+- **Protect recovery time** removes only pending optional stops. Every booked hotel remains an immutable route anchor, and validation fails if any flexible choice tries to replace one.
+- Saved trip state uses schema v3; existing v2 browser state and phone sync codes migrate forward without losing progress.
 - The booked-hotel summary keeps all seven safe stays, check-in/out times, rooms, addresses, cancellation details, and official links available without false booking alarms.
 - Proper meals remain Plan A; the meal-pace switch can select one quick-food alternative and shows the extra experience it unlocks.
 - Today and Prep share a four-item offline-readiness checklist, and each trip day shows when its live weather/road/service recheck is due.
@@ -47,7 +50,7 @@ The larger food, attraction, hotel, and overview catalogues stay out of the prim
 
 ## Before traveling
 
-All seven hotel nights are booked and safe. Keep the private confirmations available offline and at check-in. On August 18, an early bag drop at Canadas Best Value Inn or a same-day post-checkout hold at Hampton is an optional convenience, not a booking requirement.
+All seven hotel nights are booked and safe. They are fixed anchors: the app never swaps, cancels, reschedules, or recommends a replacement hotel. Keep the private confirmations available offline and at check-in. On August 18, an early bag drop at Canadas Best Value Inn or a same-day post-checkout hold at Hampton is an optional convenience, not a booking requirement.
 
 The active route uses the directional plazas that match travel: ONroute Odessa eastbound on August 14 and ONroute Mallorytown North westbound on August 21. August 14 uses a proper seated lunch at Tata’s in Brockville. The requested Kamouraska Quai Miller visit is a required August 16 waterfront stop before the proper Rivière-du-Loup lunch, and its route link targets named public parking on Avenue LeBlanc. The August 18 lunch uses Blue Mussel Café's new 5033 Rustico Road location and treats its live waitlist as a same-service tool only. Charlottetown is hosting Old Home Week August 14–22, so the Slaymaker dinner includes extra downtown parking time and Victoria Row is no longer part of Plan A.
 
