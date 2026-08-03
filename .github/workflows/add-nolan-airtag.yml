@@ -1,0 +1,43 @@
+name: Add Nolan AirTag checklist item
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/add-nolan-airtag.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update-checklist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add AirTag to Nolan's packing checklist
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("app.js")
+          source = path.read_text(encoding="utf-8")
+          old = "{ name: 'Kid comfort (6-year-old)', items: ['Booster limits, expiry, recalls & belt fit checked; secure it when empty', 'Car snacks restocked daily'"
+          new = "{ name: 'Kid comfort (6-year-old)', items: ['Booster limits, expiry, recalls & belt fit checked; secure it when empty', 'Apple AirTag for Nolan — fresh battery, paired in Find My, and tested before departure', 'Car snacks restocked daily'"
+
+          if source.count(old) != 1:
+              raise SystemExit(f"Expected exactly one checklist insertion point; found {source.count(old)}")
+
+          path.write_text(source.replace(old, new, 1), encoding="utf-8")
+
+      - name: Commit checklist update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js
+          git diff --cached --check
+          git commit -m "Add Nolan AirTag to road trip checklist"
+          git push
