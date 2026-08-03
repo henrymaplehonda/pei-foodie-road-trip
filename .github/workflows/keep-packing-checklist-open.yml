@@ -1,0 +1,61 @@
+name: Keep packing checklist open
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/keep-packing-checklist-open.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-checklist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Preserve packing checklist open state
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("app.js")
+          source = path.read_text(encoding="utf-8")
+          old = """    if (target.dataset.packingId) {
+      if (target.checked) packingState.items[target.dataset.packingId] = true;
+      else delete packingState.items[target.dataset.packingId];
+      persistPacking();
+      renderChecklist();
+      return;
+    }
+"""
+          new = """    if (target.dataset.packingId) {
+      var packingDetails = target.closest('details.packing-summary');
+      var keepPackingOpen = Boolean(packingDetails && packingDetails.open);
+      if (target.checked) packingState.items[target.dataset.packingId] = true;
+      else delete packingState.items[target.dataset.packingId];
+      persistPacking();
+      renderChecklist();
+      var refreshedPackingDetails = document.querySelector('#checklist details.packing-summary');
+      if (refreshedPackingDetails) refreshedPackingDetails.open = keepPackingOpen;
+      return;
+    }
+"""
+
+          if source.count(old) != 1:
+              raise SystemExit(f"Expected exactly one packing handler; found {source.count(old)}")
+
+          path.write_text(source.replace(old, new, 1), encoding="utf-8")
+
+      - name: Commit checklist fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js
+          git diff --cached --check
+          git commit -m "Keep packing checklist open while checking items"
+          git push
