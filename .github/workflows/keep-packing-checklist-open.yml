@@ -23,26 +23,30 @@ jobs:
 
           path = Path("app.js")
           source = path.read_text(encoding="utf-8")
-          old = """    if (target.dataset.packingId) {
-      if (target.checked) packingState.items[target.dataset.packingId] = true;
-      else delete packingState.items[target.dataset.packingId];
-      persistPacking();
-      renderChecklist();
-      return;
-    }
-"""
-          new = """    if (target.dataset.packingId) {
-      var packingDetails = target.closest('details.packing-summary');
-      var keepPackingOpen = Boolean(packingDetails && packingDetails.open);
-      if (target.checked) packingState.items[target.dataset.packingId] = true;
-      else delete packingState.items[target.dataset.packingId];
-      persistPacking();
-      renderChecklist();
-      var refreshedPackingDetails = document.querySelector('#checklist details.packing-summary');
-      if (refreshedPackingDetails) refreshedPackingDetails.open = keepPackingOpen;
-      return;
-    }
-"""
+          old = "\n".join([
+              "    if (target.dataset.packingId) {",
+              "      if (target.checked) packingState.items[target.dataset.packingId] = true;",
+              "      else delete packingState.items[target.dataset.packingId];",
+              "      persistPacking();",
+              "      renderChecklist();",
+              "      return;",
+              "    }",
+              "",
+          ])
+          new = "\n".join([
+              "    if (target.dataset.packingId) {",
+              "      var packingDetails = target.closest('details.packing-summary');",
+              "      var keepPackingOpen = Boolean(packingDetails && packingDetails.open);",
+              "      if (target.checked) packingState.items[target.dataset.packingId] = true;",
+              "      else delete packingState.items[target.dataset.packingId];",
+              "      persistPacking();",
+              "      renderChecklist();",
+              "      var refreshedPackingDetails = document.querySelector('#checklist details.packing-summary');",
+              "      if (refreshedPackingDetails) refreshedPackingDetails.open = keepPackingOpen;",
+              "      return;",
+              "    }",
+              "",
+          ])
 
           if source.count(old) != 1:
               raise SystemExit(f"Expected exactly one packing handler; found {source.count(old)}")
