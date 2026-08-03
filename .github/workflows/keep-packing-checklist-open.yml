@@ -2,9 +2,7 @@ name: Keep packing checklist open
 
 on:
   push:
-    branches: [main]
-    paths:
-      - .github/workflows/keep-packing-checklist-open.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -59,5 +57,3 @@ jobs:
           git diff --cached --check
           git commit -m "Keep packing checklist open while checking items"
           git push
-
-# Updating this file triggers the one-time patch above.
