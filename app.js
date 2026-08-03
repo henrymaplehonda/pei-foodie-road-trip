@@ -4449,10 +4449,14 @@
       return;
     }
     if (target.dataset.packingId) {
+      var packingDetails = target.closest('details.packing-summary');
+      var keepPackingOpen = Boolean(packingDetails && packingDetails.open);
       if (target.checked) packingState.items[target.dataset.packingId] = true;
       else delete packingState.items[target.dataset.packingId];
       persistPacking();
       renderChecklist();
+      var refreshedPackingDetails = document.querySelector('#checklist details.packing-summary');
+      if (refreshedPackingDetails) refreshedPackingDetails.open = keepPackingOpen;
       return;
     }
     if (!target.dataset.taskId) return;
