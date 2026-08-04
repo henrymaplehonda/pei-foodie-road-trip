@@ -2,11 +2,11 @@ window.PEI_FIREBASE_SYNC = {
   enabled: false,
   tripId: 'pei-2026',
   firebaseConfig: {
-    apiKey: 'PASTE_API_KEY',
-    authDomain: 'PASTE_PROJECT_ID.firebaseapp.com',
-    projectId: 'PASTE_PROJECT_ID',
-    storageBucket: 'PASTE_PROJECT_ID.firebasestorage.app',
-    messagingSenderId: 'PASTE_MESSAGING_SENDER_ID',
-    appId: 'PASTE_APP_ID'
+    apiKey: 'AIzaSyDbyTn8lWXUEiNq_x_Zzq56lIi0YSmKA5w',
+    authDomain: 'pei-road-trip-sync.firebaseapp.com',
+    projectId: 'pei-road-trip-sync',
+    storageBucket: 'pei-road-trip-sync.firebasestorage.app',
+    messagingSenderId: '319172064576',
+    appId: '1:319172064576:web:5a6237a144c30c5f16b6a5'
   }
 };
