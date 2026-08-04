@@ -1,0 +1,46 @@
+name: Enable Firebase sync scripts
+
+on:
+  push:
+    branches:
+      - agent/firebase-checklist-sync
+    paths:
+      - .github/workflows/enable-firebase-sync.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/firebase-checklist-sync
+      - name: Insert Firebase loader before app.js
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          marker = '<script id="trip-control-script" src="app.js"></script>'
+          insertion = '<script src="firebase-config.js"></script>\n<script src="firebase-sync-loader.js"></script>\n'
+
+          if 'firebase-sync-loader.js' not in text:
+              if marker not in text:
+                  raise SystemExit('Could not find the app.js script marker in index.html')
+              text = text.replace(marker, insertion + marker, 1)
+              path.write_text(text, encoding='utf-8')
+          PY
+      - name: Commit patched index
+        run: |
+          if git diff --quiet; then
+            echo "index.html already patched"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Wire Firebase checklist sync [skip ci]"
+          git push
