@@ -75,12 +75,16 @@ function localSnapshot() {
 }
 
 function legacyRemoteSnapshot(data) {
+  // The first Firebase version stored only state and picks. During the
+  // one-time upgrade, keep this device's newer packing, expenses, and theme
+  // values instead of treating their absence as an instruction to delete them.
+  const local = localSnapshot();
   return {
-    state: data.state == null ? null : JSON.stringify(data.state),
-    picks: data.picks == null ? null : JSON.stringify(data.picks),
-    packing: null,
-    expenses: null,
-    theme: null
+    state: data.state == null ? local.state : JSON.stringify(data.state),
+    picks: data.picks == null ? local.picks : JSON.stringify(data.picks),
+    packing: local.packing,
+    expenses: local.expenses,
+    theme: local.theme
   };
 }
 
@@ -253,7 +257,13 @@ async function connectTrip() {
       await pushLocalSnapshot('first-device-seed');
     } else {
       const data = initial.data() || {};
+      const legacyDocument = !(data.appData && typeof data.appData === 'object');
       const changed = applyRemoteSnapshot(remoteSnapshot(data));
+      if (legacyDocument) {
+        // Upgrade the checklist-only document after merging it with this
+        // device's packing, expenses, and theme.
+        await pushLocalSnapshot('migrate-full-app-data');
+      }
       if (changed) {
         setStatus('Downloaded the shared trip. Refreshing…', 'ok');
         setTimeout(() => location.reload(), 250);
