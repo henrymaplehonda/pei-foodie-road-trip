@@ -1,9 +1,16 @@
 (function () {
   'use strict';
 
+  // Every user-editable value stored by the trip app. Keeping the raw browser
+  // values means cloud sync covers itinerary progress, choices, packing,
+  // expenses, saved picks, and the selected theme without coupling Firebase to
+  // app.js's internal data shapes.
   var TRACKED_KEYS = new Set([
     'pei-foodie-road-trip/state/v3',
-    'pei-foodie-road-trip/picks/v1'
+    'pei-foodie-road-trip/picks/v1',
+    'pei-foodie-road-trip/packing/v1',
+    'pei-foodie-road-trip/expenses/v1',
+    'pei-foodie-road-trip/theme'
   ]);
   var nativeSetItem = Storage.prototype.setItem;
   var nativeRemoveItem = Storage.prototype.removeItem;
