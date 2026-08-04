@@ -1,5 +1,5 @@
 window.PEI_FIREBASE_SYNC = {
-  enabled: false,
+  enabled: true,
   tripId: 'pei-2026',
   firebaseConfig: {
     apiKey: 'AIzaSyDbyTn8lWXUEiNq_x_Zzq56lIi0YSmKA5w',
