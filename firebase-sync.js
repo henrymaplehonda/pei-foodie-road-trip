@@ -21,9 +21,14 @@ import {
 
 const settings = window.PEI_FIREBASE_SYNC || {};
 const storageBridge = window.PeiFirebaseSyncStorage;
-const STATE_KEY = 'pei-foodie-road-trip/state/v3';
-const PICKS_KEY = 'pei-foodie-road-trip/picks/v1';
 const CLIENT_KEY = 'pei-foodie-road-trip/firebase-client/v1';
+const STORAGE_FIELDS = {
+  state: 'pei-foodie-road-trip/state/v3',
+  picks: 'pei-foodie-road-trip/picks/v1',
+  packing: 'pei-foodie-road-trip/packing/v1',
+  expenses: 'pei-foodie-road-trip/expenses/v1',
+  theme: 'pei-foodie-road-trip/theme'
+};
 const isConfigured = Boolean(
   settings.enabled &&
   settings.tripId &&
@@ -41,6 +46,7 @@ let pushTimer = null;
 let applyingRemote = false;
 let firstRemoteLoad = true;
 let panel = null;
+let titleText = null;
 let statusText = null;
 let accountText = null;
 let signInButton = null;
@@ -60,29 +66,37 @@ function randomClientId() {
 
 const clientId = randomClientId();
 
-function parseStoredJson(key) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  } catch (error) {
-    return null;
-  }
+function localSnapshot() {
+  const snapshot = {};
+  Object.entries(STORAGE_FIELDS).forEach(([field, key]) => {
+    snapshot[field] = localStorage.getItem(key);
+  });
+  return snapshot;
 }
 
-function localSnapshot() {
+function legacyRemoteSnapshot(data) {
   return {
-    state: parseStoredJson(STATE_KEY),
-    picks: parseStoredJson(PICKS_KEY)
+    state: data.state == null ? null : JSON.stringify(data.state),
+    picks: data.picks == null ? null : JSON.stringify(data.picks),
+    packing: null,
+    expenses: null,
+    theme: null
   };
 }
 
-function stableStringify(value) {
-  try { return JSON.stringify(value == null ? null : value); } catch (error) { return 'null'; }
+function remoteSnapshot(data) {
+  if (data && data.appData && typeof data.appData === 'object') {
+    const snapshot = {};
+    Object.keys(STORAGE_FIELDS).forEach(field => {
+      snapshot[field] = typeof data.appData[field] === 'string' ? data.appData[field] : null;
+    });
+    return snapshot;
+  }
+  return legacyRemoteSnapshot(data || {});
 }
 
 function snapshotsEqual(a, b) {
-  return stableStringify(a && a.state) === stableStringify(b && b.state) &&
-    stableStringify(a && a.picks) === stableStringify(b && b.picks);
+  return Object.keys(STORAGE_FIELDS).every(field => (a && a[field] || null) === (b && b[field] || null));
 }
 
 function setStatus(message, kind = '') {
@@ -96,32 +110,41 @@ function setAccount(user) {
   accountText.textContent = user ? user.email || user.displayName || 'Signed in' : 'Not signed in';
 }
 
-function updateButtons(user) {
-  if (signInButton) signInButton.hidden = Boolean(user);
-  if (signOutButton) signOutButton.hidden = !user;
+function updatePresentation(user) {
+  if (!panel) return;
+  panel.classList.toggle('is-signed-in', Boolean(user));
+  panel.classList.toggle('needs-sign-in', !user);
+  titleText.textContent = user ? 'Trip cloud sync' : 'Sign in to sync your whole trip';
+  signInButton.hidden = Boolean(user);
+  signOutButton.hidden = !user;
 }
 
 function mountPanel() {
   if (panel) return;
   const style = document.createElement('style');
   style.textContent = `
-    .firebase-sync-panel{border:1px solid var(--line,#ddd);border-left:5px solid var(--accent2,#0b6b72);background:var(--panel,#fff);border-radius:16px;padding:14px 16px;margin:0 0 16px;box-shadow:0 8px 24px -18px rgba(0,0,0,.35)}
-    .firebase-sync-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-    .firebase-sync-title{font-weight:800;margin:0}.firebase-sync-status{margin:3px 0 0;font-size:13px;color:var(--muted,#666)}
-    .firebase-sync-status[data-kind="ok"]{color:var(--ok,#1f8f6e)}.firebase-sync-status[data-kind="warn"]{color:var(--warn,#b5721f)}.firebase-sync-status[data-kind="error"]{color:#b42318}
-    .firebase-sync-account{font-size:12px;color:var(--muted,#666);margin-top:3px}
-    .firebase-sync-actions{display:flex;gap:8px;flex-wrap:wrap}.firebase-sync-actions button{border:1px solid var(--line,#ddd);background:#fff;border-radius:12px;padding:8px 11px;font-weight:700;cursor:pointer}
-    .firebase-sync-actions button.primary{background:var(--accent2,#0b6b72);border-color:var(--accent2,#0b6b72);color:#fff}
+    .firebase-sync-panel{position:fixed;top:max(12px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:1000;width:min(720px,calc(100% - 24px));border:1px solid rgba(255,255,255,.22);border-left:5px solid #4fd1d9;background:rgba(18,31,39,.96);color:#fff;border-radius:18px;padding:14px 16px;box-shadow:0 18px 52px -18px rgba(0,0,0,.72);backdrop-filter:blur(14px) saturate(1.25)}
+    .firebase-sync-panel.is-signed-in{top:auto;bottom:calc(12px + env(safe-area-inset-bottom));left:auto;right:12px;transform:none;width:auto;max-width:min(460px,calc(100% - 24px));padding:10px 12px;border-left-width:3px;opacity:.94}
+    .firebase-sync-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}.firebase-sync-copy{min-width:0;flex:1}
+    .firebase-sync-title{font-weight:850;margin:0;font-size:16px;line-height:1.25}.firebase-sync-status{margin:4px 0 0;font-size:13px;color:#d5e3e8;line-height:1.35}
+    .firebase-sync-status[data-kind="ok"]{color:#86efc1}.firebase-sync-status[data-kind="warn"]{color:#ffd28a}.firebase-sync-status[data-kind="error"]{color:#ff9b91}
+    .firebase-sync-account{font-size:12px;color:#aebfc7;margin:3px 0 0;overflow-wrap:anywhere}
+    .firebase-sync-actions{display:flex;gap:8px;flex-wrap:wrap}.firebase-sync-actions button{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.08);color:#fff;border-radius:12px;padding:9px 12px;font-weight:800;cursor:pointer;white-space:nowrap}
+    .firebase-sync-actions button.primary{background:#55cbd2;border-color:#55cbd2;color:#102128}.firebase-sync-actions button:disabled{opacity:.55;cursor:not-allowed}
+    @media(max-width:560px){.firebase-sync-panel{top:max(8px,env(safe-area-inset-top));width:calc(100% - 16px);padding:12px}.firebase-sync-actions,.firebase-sync-actions button{width:100%}.firebase-sync-panel.is-signed-in{right:8px;bottom:calc(8px + env(safe-area-inset-bottom));width:calc(100% - 16px)}}
+    @media(prefers-reduced-motion:no-preference){.firebase-sync-panel{animation:firebaseSyncIn .28s cubic-bezier(.16,1,.3,1)}@keyframes firebaseSyncIn{from{opacity:0;transform:translate(-50%,-12px)}to{opacity:1;transform:translate(-50%,0)}}.firebase-sync-panel.is-signed-in{animation:none}}
   `;
   document.head.appendChild(style);
 
-  panel = document.createElement('div');
-  panel.className = 'firebase-sync-panel';
+  panel = document.createElement('aside');
+  panel.className = 'firebase-sync-panel needs-sign-in';
+  panel.setAttribute('role', 'status');
+  panel.setAttribute('aria-live', 'polite');
   panel.innerHTML = `
     <div class="firebase-sync-row">
-      <div>
-        <p class="firebase-sync-title">Cloud checklist sync</p>
-        <p class="firebase-sync-status" data-kind="warn">Checking setup…</p>
+      <div class="firebase-sync-copy">
+        <p class="firebase-sync-title">Sign in to sync your whole trip</p>
+        <p class="firebase-sync-status" data-kind="warn">Your itinerary progress, choices, packing, expenses, picks, and theme are currently saved only on this device.</p>
         <p class="firebase-sync-account">Not signed in</p>
       </div>
       <div class="firebase-sync-actions">
@@ -130,14 +153,12 @@ function mountPanel() {
       </div>
     </div>`;
 
+  titleText = panel.querySelector('.firebase-sync-title');
   statusText = panel.querySelector('.firebase-sync-status');
   accountText = panel.querySelector('.firebase-sync-account');
   signInButton = panel.querySelector('[data-sync-sign-in]');
   signOutButton = panel.querySelector('[data-sync-sign-out]');
-
-  const checklist = document.getElementById('checklist');
-  if (checklist) checklist.insertBefore(panel, checklist.firstChild);
-  else document.querySelector('main')?.insertBefore(panel, document.querySelector('main').firstChild);
+  document.body.prepend(panel);
 
   signInButton.addEventListener('click', handleSignIn);
   signOutButton.addEventListener('click', async () => {
@@ -145,7 +166,7 @@ function mountPanel() {
   });
 
   if (!isConfigured) {
-    setStatus('Firebase is not configured yet. Complete FIREBASE_SETUP.md first.', 'warn');
+    setStatus('Cloud sync needs a valid Firebase Web API key before sign-in can work.', 'error');
     signInButton.disabled = true;
   }
 }
@@ -163,9 +184,12 @@ async function handleSignIn() {
       return;
     }
     if (error && error.code !== 'auth/popup-closed-by-user') {
-      setStatus('Google sign-in failed: ' + (error.message || error.code || 'unknown error'), 'error');
+      const message = error.code === 'auth/api-key-not-valid.-please-pass-a-valid-api-key.'
+        ? 'Firebase rejected the Web API key. Copy it directly from Google Cloud Credentials.'
+        : 'Google sign-in failed: ' + (error.message || error.code || 'unknown error');
+      setStatus(message, 'error');
     } else {
-      setStatus('Sign-in cancelled.', 'warn');
+      setStatus('Sign-in cancelled. Your changes remain only on this device.', 'warn');
     }
   }
 }
@@ -176,10 +200,10 @@ function applyRemoteSnapshot(remote) {
   applyingRemote = true;
   try {
     storageBridge.runSilently(() => {
-      if (remote.state) storageBridge.setSilently(STATE_KEY, JSON.stringify(remote.state));
-      else storageBridge.removeSilently(STATE_KEY);
-      if (remote.picks) storageBridge.setSilently(PICKS_KEY, JSON.stringify(remote.picks));
-      else storageBridge.removeSilently(PICKS_KEY);
+      Object.entries(STORAGE_FIELDS).forEach(([field, key]) => {
+        if (typeof remote[field] === 'string') storageBridge.setSilently(key, remote[field]);
+        else storageBridge.removeSilently(key);
+      });
     });
   } finally {
     applyingRemote = false;
@@ -189,23 +213,22 @@ function applyRemoteSnapshot(remote) {
 
 async function pushLocalSnapshot(reason = 'change') {
   if (!currentUser || !tripRef || applyingRemote || !navigator.onLine) {
-    if (!navigator.onLine) setStatus('Offline — changes are safe here and will sync when connected.', 'warn');
+    if (!navigator.onLine) setStatus('Offline — changes are safe on this device and will sync when connected.', 'warn');
     return;
   }
   const snapshot = localSnapshot();
-  setStatus('Syncing…', '');
+  setStatus('Syncing the whole trip…', '');
   try {
     await setDoc(tripRef, {
-      version: 1,
+      version: 2,
       tripId: settings.tripId,
-      state: snapshot.state,
-      picks: snapshot.picks,
+      appData: snapshot,
       updatedAt: serverTimestamp(),
       updatedByClient: clientId,
       updatedByEmail: currentUser.email || '',
       updateReason: reason
     }, { merge: true });
-    setStatus('Synced across devices.', 'ok');
+    setStatus('Everything is synced across devices.', 'ok');
   } catch (error) {
     console.error('Firebase sync write failed.', error);
     setStatus('Could not sync. Check Firestore rules and your connection.', 'error');
@@ -218,11 +241,11 @@ function schedulePush(reason = 'change') {
   pushTimer = setTimeout(() => pushLocalSnapshot(reason), 450);
 }
 
-async function connectTrip(user) {
+async function connectTrip() {
   if (unsubscribe) unsubscribe();
   unsubscribe = null;
   tripRef = doc(db, 'trips', settings.tripId);
-  setStatus('Loading shared checklist…', '');
+  setStatus('Loading the shared trip…', '');
 
   try {
     const initial = await getDoc(tripRef);
@@ -230,13 +253,13 @@ async function connectTrip(user) {
       await pushLocalSnapshot('first-device-seed');
     } else {
       const data = initial.data() || {};
-      const changed = applyRemoteSnapshot({ state: data.state || null, picks: data.picks || null });
+      const changed = applyRemoteSnapshot(remoteSnapshot(data));
       if (changed) {
-        setStatus('Downloaded the shared checklist. Refreshing…', 'ok');
+        setStatus('Downloaded the shared trip. Refreshing…', 'ok');
         setTimeout(() => location.reload(), 250);
         return;
       }
-      setStatus('Synced across devices.', 'ok');
+      setStatus('Everything is synced across devices.', 'ok');
     }
 
     firstRemoteLoad = false;
@@ -244,10 +267,10 @@ async function connectTrip(user) {
       if (!snapshot.exists()) return;
       const data = snapshot.data() || {};
       if (data.updatedByClient === clientId) {
-        setStatus('Synced across devices.', 'ok');
+        setStatus('Everything is synced across devices.', 'ok');
         return;
       }
-      const changed = applyRemoteSnapshot({ state: data.state || null, picks: data.picks || null });
+      const changed = applyRemoteSnapshot(remoteSnapshot(data));
       if (changed && !firstRemoteLoad) {
         setStatus('Updated from another device. Refreshing…', 'ok');
         setTimeout(() => location.reload(), 300);
@@ -259,7 +282,7 @@ async function connectTrip(user) {
     });
   } catch (error) {
     console.error('Firebase sync connection failed.', error);
-    setStatus('Could not open the shared checklist. Check setup and rules.', 'error');
+    setStatus('Could not open the shared trip. Check Firebase setup and rules.', 'error');
   }
 }
 
@@ -267,12 +290,12 @@ function disconnectTrip() {
   if (unsubscribe) unsubscribe();
   unsubscribe = null;
   tripRef = null;
-  setStatus('Sign in to sync this checklist across devices.', 'warn');
+  setStatus('Your changes are currently saved only on this device. Sign in to sync the entire trip.', 'warn');
 }
 
 window.addEventListener('pei-firebase-local-change', event => {
   if (!event.detail || !storageBridge.trackedKeys.includes(event.detail.key)) return;
-  schedulePush('local-checklist-change');
+  schedulePush('local-app-change');
 });
 
 window.addEventListener('storage', event => {
@@ -280,7 +303,7 @@ window.addEventListener('storage', event => {
 });
 
 window.addEventListener('online', () => schedulePush('back-online'));
-window.addEventListener('offline', () => setStatus('Offline — changes are safe here and will sync when connected.', 'warn'));
+window.addEventListener('offline', () => setStatus('Offline — changes are safe on this device and will sync when connected.', 'warn'));
 
 document.addEventListener('DOMContentLoaded', mountPanel, { once: true });
 if (document.readyState !== 'loading') mountPanel();
@@ -296,12 +319,15 @@ if (isConfigured) {
     onAuthStateChanged(auth, user => {
       currentUser = user;
       setAccount(user);
-      updateButtons(user);
-      if (user) connectTrip(user);
+      updatePresentation(user);
+      if (user) connectTrip();
       else disconnectTrip();
     });
   } catch (error) {
     console.error('Firebase initialization failed.', error);
-    setStatus('Firebase initialization failed. Recheck firebase-config.js.', 'error');
+    const message = error && String(error.code || error.message || '').includes('api-key')
+      ? 'Firebase rejected the Web API key. Copy it directly from Google Cloud Credentials.'
+      : 'Firebase initialization failed. Recheck firebase-config.js.';
+    setStatus(message, 'error');
   }
 }
