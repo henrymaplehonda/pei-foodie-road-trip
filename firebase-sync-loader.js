@@ -60,9 +60,16 @@
     }
   };
 
+  // The signed-in status panel is useful on desktop, but on a phone it covers
+  // trip controls. Keep the sign-in prompt visible while signed out, then remove
+  // the panel completely after authentication succeeds.
+  var mobileSyncStyle = document.createElement('style');
+  mobileSyncStyle.textContent = '@media(max-width:560px){.firebase-sync-panel.is-signed-in{display:none!important}}';
+  document.head.appendChild(mobileSyncStyle);
+
   // Version the module URL so browsers and the service worker cannot keep using
   // an older Firebase configuration or sign-in implementation after deployment.
-  import('./firebase-sync.js?v=20260803-2317').catch(function (error) {
+  import('./firebase-sync.js?v=20260803-2331').catch(function (error) {
     console.error('Firebase sync could not load.', error);
     window.dispatchEvent(new CustomEvent('pei-firebase-sync-error', {
       detail: { message: 'Cloud sync could not load.' }
