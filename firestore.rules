@@ -1,0 +1,23 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isTripMember() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          'hengyanphotography@gmail.com',
+          'renmengfuture@gmail.com'
+        ];
+    }
+
+    match /trips/pei-2026 {
+      allow read, create, update: if isTripMember();
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

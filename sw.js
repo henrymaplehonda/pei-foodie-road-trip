@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pei-foodie-road-trip-v34';
+const CACHE_NAME = 'pei-foodie-road-trip-v35';
 const PHOTO_CACHE = 'pei-foodie-road-trip-photos-v1';
 const TILE_CACHE = 'pei-foodie-road-trip-tiles-v1';
 // Keep the opt-in offline caches bounded so a long trip's browsing can't grow
@@ -14,6 +14,9 @@ const CORE_ASSETS = [
   './',
   './index.html',
   './app.js',
+  './firebase-config.js',
+  './firebase-sync-loader.js',
+  './firebase-sync.js',
   // Trip content. app.js is useless without these, so they are core assets.
   './data/places.js',
   './data/plan.js',
