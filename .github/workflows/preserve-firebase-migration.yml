@@ -1,0 +1,96 @@
+name: Preserve full app data during Firebase migration
+
+on:
+  push:
+    branches:
+      - agent/preserve-full-app-migration
+    paths:
+      - .github/workflows/preserve-firebase-migration.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-migration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/preserve-full-app-migration
+      - name: Preserve local-only fields during legacy migration
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('firebase-sync.js')
+          text = path.read_text(encoding='utf-8')
+
+          old_legacy = """function legacyRemoteSnapshot(data) {
+            return {
+              state: data.state == null ? null : JSON.stringify(data.state),
+              picks: data.picks == null ? null : JSON.stringify(data.picks),
+              packing: null,
+              expenses: null,
+              theme: null
+            };
+          }
+"""
+          new_legacy = """function legacyRemoteSnapshot(data) {
+            // The first Firebase version stored only state and picks. During the
+            // one-time upgrade, keep this device's newer packing, expenses, and
+            // theme values instead of treating their absence in the old document
+            // as an instruction to delete them.
+            const local = localSnapshot();
+            return {
+              state: data.state == null ? local.state : JSON.stringify(data.state),
+              picks: data.picks == null ? local.picks : JSON.stringify(data.picks),
+              packing: local.packing,
+              expenses: local.expenses,
+              theme: local.theme
+            };
+          }
+"""
+
+          old_connect = """      const data = initial.data() || {};
+                const changed = applyRemoteSnapshot(remoteSnapshot(data));
+                if (changed) {
+                  setStatus('Downloaded the shared trip. Refreshing…', 'ok');
+                  setTimeout(() => location.reload(), 250);
+                  return;
+                }
+                setStatus('Everything is synced across devices.', 'ok');
+"""
+          new_connect = """      const data = initial.data() || {};
+                const legacyDocument = !(data.appData && typeof data.appData === 'object');
+                const changed = applyRemoteSnapshot(remoteSnapshot(data));
+                if (legacyDocument) {
+                  // Upgrade the checklist-only document immediately after merging
+                  // it with this device's packing, expenses, and theme.
+                  await pushLocalSnapshot('migrate-full-app-data');
+                }
+                if (changed) {
+                  setStatus('Downloaded the shared trip. Refreshing…', 'ok');
+                  setTimeout(() => location.reload(), 250);
+                  return;
+                }
+                setStatus('Everything is synced across devices.', 'ok');
+"""
+
+          if old_legacy not in text:
+            raise SystemExit('legacyRemoteSnapshot block not found')
+          if old_connect not in text:
+            raise SystemExit('connectTrip migration block not found')
+
+          text = text.replace(old_legacy, new_legacy, 1)
+          text = text.replace(old_connect, new_connect, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Validate JavaScript
+        run: node --check firebase-sync.js
+      - name: Commit migration safeguard
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add firebase-sync.js
+          git commit -m "Preserve full app data during Firebase migration"
+          git push
