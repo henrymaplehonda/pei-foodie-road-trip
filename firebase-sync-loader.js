@@ -69,7 +69,7 @@
 
   // Version the module URL so browsers and the service worker cannot keep using
   // an older Firebase configuration or sign-in implementation after deployment.
-  import('./firebase-sync.js?v=20260803-2331').catch(function (error) {
+  import('./firebase-sync.js?v=20260805-1454').catch(function (error) {
     console.error('Firebase sync could not load.', error);
     window.dispatchEvent(new CustomEvent('pei-firebase-sync-error', {
       detail: { message: 'Cloud sync could not load.' }
