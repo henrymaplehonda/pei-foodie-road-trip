@@ -51,6 +51,7 @@ let statusText = null;
 let accountText = null;
 let signInButton = null;
 let signOutButton = null;
+let hideTimer = null;
 
 function randomClientId() {
   try {
@@ -116,11 +117,19 @@ function setAccount(user) {
 
 function updatePresentation(user) {
   if (!panel) return;
+  clearTimeout(hideTimer);
+  panel.classList.remove('is-dismissed');
   panel.classList.toggle('is-signed-in', Boolean(user));
   panel.classList.toggle('needs-sign-in', !user);
   titleText.textContent = user ? 'Trip cloud sync' : 'Sign in to sync your whole trip';
   signInButton.hidden = Boolean(user);
   signOutButton.hidden = !user;
+  if (user) {
+    // On desktop the confirmation cell would otherwise sit in the corner for
+    // the rest of the session; tuck it away once it's had time to be read.
+    // Mobile already removes it immediately via firebase-sync-loader.js.
+    hideTimer = setTimeout(() => panel.classList.add('is-dismissed'), 10000);
+  }
 }
 
 function mountPanel() {
@@ -129,6 +138,7 @@ function mountPanel() {
   style.textContent = `
     .firebase-sync-panel{position:fixed;top:max(12px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:1000;width:min(720px,calc(100% - 24px));border:1px solid rgba(255,255,255,.22);border-left:5px solid #4fd1d9;background:rgba(18,31,39,.96);color:#fff;border-radius:18px;padding:14px 16px;box-shadow:0 18px 52px -18px rgba(0,0,0,.72);backdrop-filter:blur(14px) saturate(1.25)}
     .firebase-sync-panel.is-signed-in{top:auto;bottom:calc(12px + env(safe-area-inset-bottom));left:auto;right:12px;transform:none;width:auto;max-width:min(460px,calc(100% - 24px));padding:10px 12px;border-left-width:3px;opacity:.94}
+    .firebase-sync-panel.is-dismissed{opacity:0;visibility:hidden;pointer-events:none}
     .firebase-sync-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}.firebase-sync-copy{min-width:0;flex:1}
     .firebase-sync-title{font-weight:850;margin:0;font-size:16px;line-height:1.25}.firebase-sync-status{margin:4px 0 0;font-size:13px;color:#d5e3e8;line-height:1.35}
     .firebase-sync-status[data-kind="ok"]{color:#86efc1}.firebase-sync-status[data-kind="warn"]{color:#ffd28a}.firebase-sync-status[data-kind="error"]{color:#ff9b91}
@@ -136,7 +146,7 @@ function mountPanel() {
     .firebase-sync-actions{display:flex;gap:8px;flex-wrap:wrap}.firebase-sync-actions button{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.08);color:#fff;border-radius:12px;padding:9px 12px;font-weight:800;cursor:pointer;white-space:nowrap}
     .firebase-sync-actions button.primary{background:#55cbd2;border-color:#55cbd2;color:#102128}.firebase-sync-actions button:disabled{opacity:.55;cursor:not-allowed}
     @media(max-width:560px){.firebase-sync-panel{top:max(8px,env(safe-area-inset-top));width:calc(100% - 16px);padding:12px}.firebase-sync-actions,.firebase-sync-actions button{width:100%}.firebase-sync-panel.is-signed-in{right:8px;bottom:calc(8px + env(safe-area-inset-bottom));width:calc(100% - 16px)}}
-    @media(prefers-reduced-motion:no-preference){.firebase-sync-panel{animation:firebaseSyncIn .28s cubic-bezier(.16,1,.3,1)}@keyframes firebaseSyncIn{from{opacity:0;transform:translate(-50%,-12px)}to{opacity:1;transform:translate(-50%,0)}}.firebase-sync-panel.is-signed-in{animation:none}}
+    @media(prefers-reduced-motion:no-preference){.firebase-sync-panel{animation:firebaseSyncIn .28s cubic-bezier(.16,1,.3,1);transition:opacity .35s ease,visibility .35s ease}@keyframes firebaseSyncIn{from{opacity:0;transform:translate(-50%,-12px)}to{opacity:1;transform:translate(-50%,0)}}.firebase-sync-panel.is-signed-in{animation:none}}
   `;
   document.head.appendChild(style);
 
