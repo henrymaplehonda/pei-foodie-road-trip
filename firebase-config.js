@@ -12,6 +12,26 @@ window.PEI_FIREBASE_SYNC = {
   }
 };
 
+// Montmorency daily access is already purchased. Override the generic
+// pre-purchase guidance before app.js reads it so the attraction card shows a
+// one-tap ticket/account button instead of asking to buy admission again.
+if (window.TripData && typeof window.TripData.ticketGuidance === 'function') {
+  var purchasedMontmorencyBaseGuidance = window.TripData.ticketGuidance;
+  window.TripData.ticketGuidance = function (helpers) {
+    var guidance = purchasedMontmorencyBaseGuidance(helpers);
+    if (guidance && guidance.montmorency) {
+      guidance.montmorency = Object.assign({}, guidance.montmorency, {
+        label: 'Daily access purchased ✓',
+        cta: 'Open tickets',
+        url: 'https://www.sepaq.com/en/account',
+        note: 'Purchased for Saturday, Aug 15, 2026 · C$31.96 total. Open Sépaq to access the booking. Keep the confirmation email and arrival code available on your phone; the code must be presented on arrival.',
+        required: true
+      });
+    }
+    return guidance;
+  };
+}
+
 // The shared Google Maps place on Saturday is a hard itinerary anchor.
 // firebase-sync-loader.js adds the stop after this file runs, so wrap the
 // stop builder here and force that one stop to stay required when it is built.
