@@ -1,6 +1,41 @@
 (function () {
   'use strict';
 
+  // Keep personal itinerary additions separate from the large operational plan
+  // file while still applying them before app.js builds the rendered trip.
+  if (window.TripData && typeof window.TripData.operationalPlan === 'function') {
+    var baseOperationalPlanFactory = window.TripData.operationalPlan;
+    window.TripData.operationalPlan = function (helpers) {
+      var plan = baseOperationalPlanFactory(helpers);
+      var saturday = plan && Array.isArray(plan.days)
+        ? plan.days.find(function (day) { return day.id === '2026-08-15'; })
+        : null;
+
+      if (saturday && !saturday.stops.some(function (stop) { return stop.id === 'd2-shared-map-stop'; })) {
+        var savedMapStop = helpers.customStop({
+          id: 'd2-shared-map-stop',
+          dayId: '2026-08-15',
+          time: 'Saturday · flexible',
+          zone: 'ET',
+          title: 'Saved Google Maps stop',
+          locationName: 'Saved Google Maps stop',
+          kind: 'Saved place / flexible stop',
+          priority: 'optional',
+          routeEligible: false,
+          notes: 'Shared Google Maps place added for Saturday. Tap Map to open the exact saved location; timing stays flexible until you decide where it fits.',
+          mapUrl: 'https://maps.app.goo.gl/mv6AbqsY51aE7aGz7?g_st=ac',
+          sourceUrl: 'https://maps.app.goo.gl/mv6AbqsY51aE7aGz7?g_st=ac'
+        });
+        var dinnerIndex = saturday.stops.findIndex(function (stop) { return stop.id === 'd2-dinner'; });
+        if (dinnerIndex >= 0) saturday.stops.splice(dinnerIndex, 0, savedMapStop);
+        else saturday.stops.push(savedMapStop);
+        saturday.stops.forEach(function (stop, index) { stop.order = index + 1; });
+      }
+
+      return plan;
+    };
+  }
+
   // Every user-editable value stored by the trip app. Keeping the raw browser
   // values means cloud sync covers itinerary progress, choices, packing,
   // expenses, saved picks, and the selected theme without coupling Firebase to
