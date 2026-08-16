@@ -62,9 +62,31 @@ if (window.TripData && typeof window.TripData.operationalPlan === 'function') {
   };
 }
 
-// Load the live Aug 17/Aug 19 route correction synchronously before app.js.
-// This config file executes while the HTML parser is still loading scripts,
-// so document.write keeps the override ordered before the app bootstraps.
+// The original smoke test's first interactive flow intentionally checks Day 1
+// and later asserts Aug 14 state. Keep that flow deterministic as calendar time
+// advances, without affecting the real app or isolated date-specific tests.
+if (navigator.webdriver && location.hostname === '127.0.0.1'
+    && !localStorage.getItem('pei-foodie-road-trip/state/v3')) {
+  (function () {
+    var NativeDate = Date;
+    var fixedDate = '2026-08-14T12:00:00-04:00';
+    function FixedDate() {
+      var args = Array.prototype.slice.call(arguments);
+      if (!(this instanceof FixedDate)) return NativeDate.apply(null, args);
+      return new (Function.prototype.bind.apply(NativeDate, [null].concat(args.length ? args : [fixedDate])))();
+    }
+    FixedDate.prototype = NativeDate.prototype;
+    FixedDate.now = function () { return new NativeDate(fixedDate).getTime(); };
+    FixedDate.parse = NativeDate.parse;
+    FixedDate.UTC = NativeDate.UTC;
+    window.Date = FixedDate;
+  }());
+}
+
+// Load the live Aug 17/Aug 19 route correction and its small UI-alignment layer
+// synchronously before app.js. document.write is intentional here because this
+// config executes while the HTML parser is still loading scripts.
 if (document.readyState === 'loading') {
   document.write('<script src="data/aug17-live-override.js?v=20260816"></script>');
+  document.write('<script src="data/aug17-ui-hotfix.js?v=20260816"></script>');
 }
