@@ -63,8 +63,8 @@ if (window.TripData && typeof window.TripData.operationalPlan === 'function') {
 }
 
 // Load the live Aug 17/Aug 19 route correction synchronously before app.js.
-// document.write is intentional here because this config file executes while
-// the HTML parser is still loading scripts, which keeps the override ordered.
+// This config file executes while the HTML parser is still loading scripts,
+// so document.write keeps the override ordered before the app bootstraps.
 if (document.readyState === 'loading') {
-  document.write('<script src="data/aug17-live-override.js?v=20260816"><\\/script>');
+  document.write('<script src="data/aug17-live-override.js?v=20260816"></script>');
 }
