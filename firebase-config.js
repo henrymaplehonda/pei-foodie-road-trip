@@ -61,3 +61,10 @@ if (window.TripData && typeof window.TripData.operationalPlan === 'function') {
     return mandatorySaturdayBasePlan(helpers);
   };
 }
+
+// Load the live Aug 17/Aug 19 route correction synchronously before app.js.
+// document.write is intentional here because this config file executes while
+// the HTML parser is still loading scripts, which keeps the override ordered.
+if (document.readyState === 'loading') {
+  document.write('<script src="data/aug17-live-override.js?v=20260816"><\\/script>');
+}
