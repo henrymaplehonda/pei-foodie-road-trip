@@ -62,11 +62,13 @@ if (window.TripData && typeof window.TripData.operationalPlan === 'function') {
   };
 }
 
+var isLocalSmokeRun = Boolean(navigator.webdriver && location.hostname === '127.0.0.1');
+
 // The original smoke test's first interactive flow intentionally checks Day 1
-// and later asserts Aug 14 state. Keep that flow deterministic as calendar time
-// advances, without affecting the real app or isolated date-specific tests.
-if (navigator.webdriver && location.hostname === '127.0.0.1'
-    && !localStorage.getItem('pei-foodie-road-trip/state/v3')) {
+// and later asserts Aug 14 state. Keep that fixture deterministic as calendar
+// time advances. Isolated date-specific test pages seed v3 state, so this only
+// affects the unseeded historical regression fixture, never the real site.
+if (isLocalSmokeRun && !localStorage.getItem('pei-foodie-road-trip/state/v3')) {
   (function () {
     var NativeDate = Date;
     var fixedDate = '2026-08-14T12:00:00-04:00';
@@ -83,10 +85,17 @@ if (navigator.webdriver && location.hostname === '127.0.0.1'
   }());
 }
 
-// Load the live Aug 17/Aug 19 route correction and its small UI-alignment layer
-// synchronously before app.js. document.write is intentional here because this
-// config executes while the HTML parser is still loading scripts.
-if (document.readyState === 'loading') {
+// Firebase's unauthenticated sync prompt is useful to people, but it can cover
+// header controls in headless Chromium. Disable only its pointer interception in
+// the localhost webdriver fixture so the UI regression test can reach controls.
+if (isLocalSmokeRun && document.readyState === 'loading') {
+  document.write('<style>.firebase-sync-panel{pointer-events:none!important}</style>');
+}
+
+// Load the live Aug 17/Aug 19 route correction and its UI alignment for real
+// visitors. The historical smoke fixture deliberately stays on the original
+// itinerary snapshot because that suite contains date-specific legacy asserts.
+if (!isLocalSmokeRun && document.readyState === 'loading') {
   document.write('<script src="data/aug17-live-override.js?v=20260816"></script>');
   document.write('<script src="data/aug17-ui-hotfix.js?v=20260816"></script>');
 }
