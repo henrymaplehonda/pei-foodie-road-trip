@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pei-foodie-road-trip-v37';
+const CACHE_NAME = 'pei-foodie-road-trip-v38';
 const PHOTO_CACHE = 'pei-foodie-road-trip-photos-v1';
 const TILE_CACHE = 'pei-foodie-road-trip-tiles-v1';
 // Keep the opt-in offline caches bounded so a long trip's browsing can't grow
