@@ -1,7 +1,6 @@
 // Live itinerary override for Thu, Aug 20, 2026.
-// Follows Henry's shared Google Maps route exactly enough to keep the travel day
-// simple: Moncton -> Lincoln/Waasis -> Edmundston -> Halte de Fraserville ->
-// La Fabrique du Smoked Meat -> DoubleTree Quebec Resort.
+// Follows Henry's shared Google Maps route while enforcing the trip safety rule:
+// no more than 2 hours of continuous driving. Fuel preference is Shell/Esso.
 window.TripData = window.TripData || {};
 
 if (typeof window.TripData.stopPractical === 'function') {
@@ -10,26 +9,38 @@ if (typeof window.TripData.stopPractical === 'function') {
     var practical = aug20PracticalBase(helpers) || {};
 
     practical['d7-lincoln-big-stop'] = {
-      'Why / duration': 'Highway-aligned washroom, coffee and stretch stop near Fredericton without the Regent Mall detour · about 15–20 minutes.',
-      'Family logistics': 'Fuel, washrooms, convenience store and food are all at the same travel-stop complex. Keep the stop short so the Edmundston lunch window stays comfortable.',
-      'Backup': 'If everyone is comfortable and fuel is fine, make this a 10-minute washroom-only stop.'
+      'Why / duration': 'Highway-aligned washroom, coffee and stretch stop near Fredericton · about 10–15 minutes.',
+      'Fuel': 'Break only. Prefer not to buy Irving fuel here. The planned Shell Woodstock stop is the primary fuel stop unless range requires fuel sooner.',
+      'Safety rule': 'Do not exceed 2 hours of continuous driving. Leave this stop alert and reset the driving clock.'
+    };
+
+    practical['d7-woodstock-shell'] = {
+      'Why / duration': 'Safety break plus preferred-brand fuel before the northern New Brunswick leg · about 10–15 minutes.',
+      'Fuel': 'Primary Thursday fuel stop: Shell / Maliseet Fuels II, 1 Mowin Ln. Shell V-Power 91 is listed at this location.',
+      'Safety rule': 'This breaks the old Waasis-to-Edmundston stretch into safe segments. Fill here if useful, then the next leg to Edmundston is under the 2-hour ceiling in normal conditions.'
     };
 
     practical['d7-edmundston-shared'] = {
       'Why / duration': 'The exact Edmundston waypoint from the shared route, centred on 180 Boulevard Hébert · about 45–60 minutes for lunch and a driver reset.',
-      'Family logistics': 'Flameo is at the shared pin; Pizza Delight, Maple Leaf Queen’s Buffet, McDonald’s and Petro-Canada are in the same immediate commercial cluster.',
-      'Fuel': 'Use the nearby Petro-Canada only if the tank/range says it is useful; avoid creating a separate fuel detour.'
+      'Family logistics': 'Flameo is at the shared pin; nearby food choices remain available if the family changes its mind.',
+      'Fuel': 'Petro-Canada is at this cluster, but Shell/Esso is preferred. If you filled at Woodstock, treat Edmundston as lunch/rest only. Use Petro-Canada only if range or safety requires it.'
     };
 
     practical['d7-fraserville'] = {
-      'Why / duration': 'Simple Québec highway rest area for washroom, movement and a quiet reset · about 10–15 minutes.',
-      'Family logistics': 'No meal is required here. Use the washroom, walk for a few minutes and keep moving toward Québec City.',
-      'Backup': 'If the child is sleeping and the driver is fully alert, this can be shortened, but do not skip a needed fatigue break.'
+      'Why / duration': 'Québec highway rest area for washroom, movement and a driver reset · about 10–15 minutes.',
+      'Fuel': 'No fuel planned here. An Esso exists on Boulevard Cartier in Rivière-du-Loup if an unexpected fuel need develops.',
+      'Safety rule': 'Reset the driving clock here before continuing west on A20.'
+    };
+
+    practical['d7-saint-roch-shell'] = {
+      'Why / duration': 'Second short safety break on A20 and preferred-brand fuel backup · about 10–15 minutes.',
+      'Fuel': 'Shell at 483 Route de la Seigneurie, Saint-Roch-des-Aulnaies. Top up here only if useful; otherwise bathroom/stretch and continue.',
+      'Safety rule': 'This prevents the Rivière-du-Loup-to-Québec City portion from becoming one long continuous driving block.'
     };
 
     practical['d7-smoked-meat'] = {
       'Cuisine / order': 'Québec smoked-meat stop at La Fabrique du Smoked Meat · sandwiches, smoked-meat plates and family-friendly comfort food.',
-      'Timing': 'Thursday listing shows service through 20:00. Treat this as the proper dinner before the final short drive to the hotel.',
+      'Timing': 'Treat this as the proper dinner before the final short drive to the hotel.',
       'Family logistics': 'Eat before hotel check-in so the evening ends immediately after unloading. No Old Québec sightseeing stack on this long driving day.'
     };
 
@@ -55,22 +66,22 @@ if (typeof window.TripData.operationalPlan === 'function') {
       plan.days[aug20Index] = makeDay({
         id: '2026-08-20',
         label: 'Thu, Aug 20, 2026',
-        mainActivity: 'Long return-positioning drive: Moncton to Québec City on Henry’s shared Google Maps route',
-        optionalActivity: 'None — protect the driving rhythm, dinner and hotel arrival',
+        mainActivity: 'Long return-positioning drive: Moncton to Québec City with maximum 2-hour driving segments',
+        optionalActivity: 'None — breaks, food, fuel and hotel only',
         downtime: 'After dinner, make the final short drive to DoubleTree, unload and stop for the night',
-        rainPlan: 'The route still works in rain. Keep all breaks short and indoor where possible; add driving buffer instead of sightseeing.',
-        parentWarning: 'This is the heavy driving day. The shared Google Maps route is the source of truth. Do not add Hartland, downtown sightseeing or extra attractions.',
-        routeFocus: 'Best Western Plus Moncton → Lincoln/Waasis Irving Big Stop → 180 Bd Hébert Edmundston → Halte de Fraserville → La Fabrique du Smoked Meat → DoubleTree Quebec Resort',
+        rainPlan: 'Same route. Slow down for conditions and stop earlier if weather or fatigue makes the 2-hour ceiling too aggressive.',
+        parentWarning: 'Hard rule: maximum 2 hours continuous driving. At about 1 h 45 min, begin choosing the next safe stop. No attractions or sightseeing detours.',
+        routeFocus: 'Best Western Plus Moncton → Lincoln/Waasis break → Shell Woodstock → Edmundston lunch → Halte de Fraserville → Shell Saint-Roch-des-Aulnaies → La Fabrique du Smoked Meat → DoubleTree Quebec Resort',
         driveKm: 770,
-        pureDriveTime: 'Long full-day drive; use the shared Google Maps live ETA and traffic as the source of truth',
+        pureDriveTime: 'Long full-day drive; live Google Maps traffic is the source of truth',
         risk: 'Medium-High',
-        lateThresholdMin: 30,
+        lateThresholdMin: 0,
         wakeTime: '05:30–05:45',
         departTarget: '06:45 ADT wheels moving',
-        driverPlan: 'Two-driver day. First adult handles Moncton to the Fredericton-area break; swap there or in Edmundston. Use Halte de Fraserville as the final fatigue check before Québec City.',
-        timeZoneNote: 'Start in Atlantic Time (ADT). Québec is one hour behind on Eastern Time (EDT); the app times switch after Edmundston.',
-        contingency: 'If behind schedule, shorten Lincoln/Waasis and Halte de Fraserville to essential washroom/stretch breaks. Keep the Edmundston lunch/reset and the Québec City dinner stop.',
-        emergency: 'If fatigue becomes the constraint, stop safely even if the schedule slips. Skip dinner dining time only if needed and use takeout; never trade a fatigue break for an arrival target.',
+        driverPlan: 'Two-driver safety pattern. No one drives more than 2 hours continuously. Swap at any break when useful. The fuel preference is Shell or Esso; use another brand only when range or safety makes it necessary.',
+        timeZoneNote: 'Start in Atlantic Time (ADT). Québec is one hour behind on Eastern Time (EDT).',
+        contingency: 'Planned stops are safety anchors. If traffic means any next anchor is more than 2 hours away, use the first safe highway facility before the limit. Never extend a driving segment just to reach a preferred fuel brand.',
+        emergency: 'Fatigue and fuel range beat the schedule and brand preference. Stop safely, switch drivers or rest whenever needed.',
         stops: [
           customStop({
             id: 'd7-depart', dayId: '2026-08-20', time: '06:45', zone: 'ADT',
@@ -78,81 +89,107 @@ if (typeof window.TripData.operationalPlan === 'function') {
             kind: 'Start / hotel', priority: 'required',
             address: '300 Lewisville Rd, Moncton, NB E1A 5Y4', city: 'Moncton, NB',
             timeBudget: '0 min',
-            notes: 'Breakfast, checkout and luggage should be finished before 06:45. Open the shared Google Maps route before leaving and use its live ETA all day.',
+            notes: 'Breakfast, checkout and luggage finished before 06:45. Leave with a healthy fuel level. If fuel is unexpectedly low, use a nearby Shell/Esso before committing to the highway rather than stretching range.',
             food: 'Use the included hotel breakfast if it fits the departure target; otherwise use the packed no-delay backup.',
             kidPlan: 'Washroom before departure and keep water/snacks reachable.',
             mapUrl: mapSearchUrl('Best Western Plus Moncton, 300 Lewisville Rd, Moncton, NB E1A 5Y4'),
             sourceUrl: 'https://maps.app.goo.gl/GCTZ4AECxQ77SkAJA?g_st=ac'
           }),
           customStop({
-            id: 'd7-lincoln-big-stop', dayId: '2026-08-20', time: '08:35–08:55 target', zone: 'ADT',
-            title: 'Lincoln/Waasis Irving Big Stop — washroom + coffee + stretch',
+            id: 'd7-lincoln-big-stop', dayId: '2026-08-20', time: '≈08:35–08:50 target', zone: 'ADT',
+            title: 'Lincoln/Waasis Irving Big Stop — safety break only',
             locationName: 'Irving 24 / Lincoln Big Stop',
-            kind: 'Rest stop / fuel / washroom', priority: 'required',
+            kind: 'Rest stop / washroom / stretch', priority: 'required',
             address: '415 Nevers Rd, Waasis, NB E3B 9E1', city: 'Waasis / Fredericton area, NB',
-            timeBudget: '15-20 min',
-            notes: 'This replaces the old Regent Mall detour and matches the Fredericton-area waypoint in the shared route. Keep it efficient: washroom, coffee, movement and fuel only if useful.',
-            food: 'Big Stop restaurant and convenience-store options are on site, but save the proper meal for Edmundston unless the family needs food now.',
-            kidPlan: 'Quick walk and washroom before the next long leg.',
+            timeBudget: '10-15 min',
+            notes: 'This remains the first on-route safety break. Washroom, coffee and movement. Prefer not to fuel here; Shell Woodstock is the planned fuel stop. If range is low, fuel here anyway rather than taking a risk.',
+            food: 'Coffee/snack only if needed.',
+            kidPlan: 'Quick walk and washroom.',
             mapUrl: mapSearchUrl('Irving 24, 415 Nevers Rd, Waasis, NB E3B 9E1'),
             sourceUrl: 'https://maps.app.goo.gl/GCTZ4AECxQ77SkAJA?g_st=ac'
           }),
           customStop({
-            id: 'd7-edmundston-shared', dayId: '2026-08-20', time: '11:45–12:45 target', zone: 'ADT',
+            id: 'd7-woodstock-shell', dayId: '2026-08-20', time: '≈10:00–10:15 target', zone: 'ADT',
+            title: 'Shell Woodstock — fuel + safety break',
+            locationName: 'Shell / Maliseet Fuels II',
+            kind: 'Preferred fuel / washroom / stretch', priority: 'required',
+            address: '1 Mowin Ln, Woodstock First Nation, NB E7M 0B1', city: 'Woodstock, NB',
+            timeBudget: '10-15 min',
+            notes: 'Primary Thursday fuel stop. Shell is open 24/7 and V-Power 91 is listed. Fill here if useful, use the washroom and reset before the Edmundston leg.',
+            food: 'Snack only if needed; proper lunch remains Edmundston.',
+            kidPlan: 'Short movement break.',
+            mapUrl: mapSearchUrl('Shell Maliseet Fuels II, 1 Mowin Ln, Woodstock First Nation, NB E7M 0B1'),
+            sourceUrl: 'https://www.shell.ca/'
+          }),
+          customStop({
+            id: 'd7-edmundston-shared', dayId: '2026-08-20', time: '≈12:00–13:00 target', zone: 'ADT',
             title: 'Edmundston lunch + driver reset — shared Maps stop',
             locationName: 'Flameo Edmundston / Brunswick commercial cluster',
-            kind: 'Lunch / driver swap / optional fuel', priority: 'required',
+            kind: 'Lunch / driver swap', priority: 'required',
             address: '180 Bd Hébert, Edmundston, NB E3V 2S7', city: 'Edmundston, NB',
             timeBudget: '45-60 min',
-            notes: 'This is the exact Edmundston waypoint from the shared route. Flameo is at the pin; use it as the default lunch. Nearby choices remain available if the family changes its mind. Do a real driver reset here.',
-            food: 'Default: Flameo bowls. Nearby cluster also has Pizza Delight, Maple Leaf Queen’s Buffet and McDonald’s.',
-            kidPlan: 'Sit down, use the washroom and give the child a proper out-of-car break.',
+            notes: 'Proper lunch and full out-of-car reset. If Shell Woodstock was used, do not add a Petro-Canada fill here unless range actually requires it.',
+            food: 'Default: Flameo bowls. Nearby choices are acceptable without creating another detour.',
+            kidPlan: 'Sit down, washroom and proper movement break.',
             mapUrl: mapSearchUrl('Flameo Edmundston, 180 Bd Hébert, Edmundston, NB E3V 2S7'),
             sourceUrl: 'https://maps.app.goo.gl/GCTZ4AECxQ77SkAJA?g_st=ac'
           }),
           customStop({
-            id: 'd7-fraserville', dayId: '2026-08-20', time: '13:30–13:45 target', zone: 'EDT',
-            title: 'Halte de Fraserville — washroom + stretch',
+            id: 'd7-fraserville', dayId: '2026-08-20', time: '≈13:30–14:00 EDT target', zone: 'EDT',
+            title: 'Halte de Fraserville — safety break',
             locationName: 'Halte de Fraserville',
-            kind: 'Highway rest area', priority: 'required',
+            kind: 'Highway rest area / washroom / stretch', priority: 'required',
             address: 'Autoroute 85, Rivière-du-Loup area, QC G5R 0L3', city: 'Rivière-du-Loup, QC',
             timeBudget: '10-15 min',
-            notes: 'Québec time is one hour behind New Brunswick. This exact shared-route stop replaces the old Shell/fuel card. Use the washroom, move for a few minutes and continue.',
+            notes: 'Québec is one hour behind New Brunswick. Washroom, stretch and reset. No fuel planned. If fuel is unexpectedly needed, the Esso on Boulevard Cartier in Rivière-du-Loup is the preferred nearby brand option.',
             food: 'No meal planned here.',
-            kidPlan: 'Short stretch and bathroom reset.',
+            kidPlan: 'Short movement and bathroom reset.',
             mapUrl: mapSearchUrl('Halte de Fraserville, Rivière-du-Loup, QC G5R 0L3'),
             sourceUrl: 'https://maps.app.goo.gl/GCTZ4AECxQ77SkAJA?g_st=ac'
           }),
           customStop({
-            id: 'd7-smoked-meat', dayId: '2026-08-20', time: '17:00–18:00 target', zone: 'EDT',
+            id: 'd7-saint-roch-shell', dayId: '2026-08-20', time: '≈15:00 target', zone: 'EDT',
+            title: 'Shell Saint-Roch-des-Aulnaies — safety break / optional top-up',
+            locationName: 'Shell — Halte de la Seigneurie',
+            kind: 'Preferred fuel / washroom / stretch', priority: 'required',
+            address: '483 Rte de la Seigneurie, Saint-Roch-des-Aulnaies, QC G0R 4E0', city: 'Saint-Roch-des-Aulnaies, QC',
+            timeBudget: '10-15 min',
+            notes: 'Easy A20 travel stop. Use this to split the final Québec leg and top up only if useful. Shell is the preferred brand; do not waste time filling if range is already comfortable.',
+            food: 'Quick snack only if needed.',
+            kidPlan: 'Short stretch before Québec City.',
+            mapUrl: mapSearchUrl('Shell, 483 Rte de la Seigneurie, Saint-Roch-des-Aulnaies, QC G0R 4E0'),
+            sourceUrl: 'https://www.shell.ca/'
+          }),
+          customStop({
+            id: 'd7-smoked-meat', dayId: '2026-08-20', time: '≈16:30–17:30 target', zone: 'EDT',
             title: 'Dinner: La Fabrique du Smoked Meat',
             locationName: 'La Fabrique du Smoked Meat',
             kind: 'Dinner / Québec City food stop', priority: 'required',
             address: '727 Rue Raoul-Jobin, Québec, QC G1N 1S1', city: 'Québec City, QC',
             timeBudget: '45-60 min',
-            notes: 'This is the Québec City waypoint in Henry’s shared route. Eat here before hotel check-in so there is no second outing after unloading. Thursday hours are listed through 20:00.',
+            notes: 'Proper dinner before hotel check-in. No extra Québec City sightseeing.',
             food: 'Smoked-meat sandwich/plate and simple comfort-food choices.',
-            kidPlan: 'Final proper seated break of the day, then only the short hotel leg remains.',
+            kidPlan: 'Final proper seated break; only the short hotel leg remains.',
             mapUrl: mapSearchUrl('La Fabrique du Smoked Meat, 727 Rue Raoul-Jobin, Québec, QC G1N 1S1'),
             sourceUrl: 'https://maps.app.goo.gl/GCTZ4AECxQ77SkAJA?g_st=ac'
           }),
           customStop({
-            id: 'd7-hotel', dayId: '2026-08-20', time: '18:20–19:00 target', zone: 'EDT',
+            id: 'd7-hotel', dayId: '2026-08-20', time: '≈18:00 target', zone: 'EDT',
             title: 'Check in: DoubleTree by Hilton Quebec Resort',
             locationName: 'DoubleTree by Hilton Quebec Resort',
             kind: 'Hotel / end of driving day', priority: 'required',
             address: '7900 Rue du Marigot, Québec, QC G1G 6T8', city: 'Québec City, QC',
-            notes: 'Final destination in the shared route. Register for parking, unload, settle into the suite and end the day. No downtown detour after check-in.',
-            food: 'Dinner is already handled at La Fabrique du Smoked Meat.',
-            kidPlan: 'Straight to room/reset and early bedtime after the long road day.',
+            notes: 'Register for parking, unload and end the day. No downtown detour after check-in.',
+            food: 'Dinner already handled.',
+            kidPlan: 'Straight to room/reset and early bedtime.',
             mapUrl: mapSearchUrl('DoubleTree by Hilton Quebec Resort, 7900 Rue du Marigot, Québec, QC G1G 6T8'),
             sourceUrl: 'https://maps.app.goo.gl/GCTZ4AECxQ77SkAJA?g_st=ac'
           })
         ],
         meals: [
-          mealSlot({ id: 'd7-breakfast', meal: 'Breakfast', title: 'Best Western Plus Moncton breakfast', selectedStopId: 'd7-depart', backup: 'Packed breakfast if hotel service would delay the 06:45 departure.' }),
-          mealSlot({ id: 'd7-lunch', meal: 'Lunch', title: 'Flameo Edmundston — shared-route lunch stop', selectedStopId: 'd7-edmundston-shared', backup: 'Pizza Delight or another option in the same 180 Bd Hébert cluster; do not create a separate detour.' }),
-          mealSlot({ id: 'd7-dinner', meal: 'Dinner', title: 'La Fabrique du Smoked Meat — Québec City', selectedStopId: 'd7-smoked-meat', backup: 'Takeout from the same stop if arrival is late; then continue directly to DoubleTree.' })
+          mealSlot({ id: 'd7-breakfast', meal: 'Breakfast', title: 'Best Western Plus Moncton breakfast', selectedStopId: 'd7-depart', backup: 'Packed breakfast if hotel service would delay departure.' }),
+          mealSlot({ id: 'd7-lunch', meal: 'Lunch', title: 'Flameo Edmundston — shared-route lunch stop', selectedStopId: 'd7-edmundston-shared', backup: 'Another option in the same cluster; no separate restaurant detour.' }),
+          mealSlot({ id: 'd7-dinner', meal: 'Dinner', title: 'La Fabrique du Smoked Meat — Québec City', selectedStopId: 'd7-smoked-meat', backup: 'Takeout from the same stop if late; then continue directly to DoubleTree.' })
         ]
       });
     }
