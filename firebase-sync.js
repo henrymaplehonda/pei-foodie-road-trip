@@ -3,11 +3,11 @@ import {
   getAuth,
   GoogleAuthProvider,
   browserLocalPersistence,
+  browserSessionPersistence,
+  inMemoryPersistence,
   setPersistence,
   onAuthStateChanged,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   signOut
 } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
 import {
@@ -22,6 +22,7 @@ import {
 const settings = window.PEI_FIREBASE_SYNC || {};
 const storageBridge = window.PeiFirebaseSyncStorage;
 const CLIENT_KEY = 'pei-foodie-road-trip/firebase-client/v1';
+const REMOTE_BOOTSTRAP_KEY = 'pei-foodie-road-trip/firebase-remote-bootstrap/v1';
 const STORAGE_FIELDS = {
   state: 'pei-foodie-road-trip/state/v3',
   picks: 'pei-foodie-road-trip/picks/v1',
@@ -52,6 +53,9 @@ let accountText = null;
 let signInButton = null;
 let signOutButton = null;
 let hideTimer = null;
+let authStateResolved = false;
+let signInInFlight = false;
+let persistenceMode = 'local';
 
 function randomClientId() {
   try {
@@ -102,6 +106,30 @@ function remoteSnapshot(data) {
 
 function snapshotsEqual(a, b) {
   return Object.keys(STORAGE_FIELDS).every(field => (a && a[field] || null) === (b && b[field] || null));
+}
+
+function snapshotSignature(snapshot) {
+  const text = Object.keys(STORAGE_FIELDS)
+    .map(field => field + ':' + String(snapshot && snapshot[field] || ''))
+    .join('\u001f');
+  let hash = 2166136261;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16) + ':' + text.length;
+}
+
+function readRemoteBootstrapSignature() {
+  try { return sessionStorage.getItem(REMOTE_BOOTSTRAP_KEY); } catch (error) { return null; }
+}
+
+function markRemoteBootstrap(snapshot) {
+  try { sessionStorage.setItem(REMOTE_BOOTSTRAP_KEY, snapshotSignature(snapshot)); } catch (error) {}
+}
+
+function clearRemoteBootstrap() {
+  try { sessionStorage.removeItem(REMOTE_BOOTSTRAP_KEY); } catch (error) {}
 }
 
 function setStatus(message, kind = '') {
@@ -157,12 +185,12 @@ function mountPanel() {
   panel.innerHTML = `
     <div class="firebase-sync-row">
       <div class="firebase-sync-copy">
-        <p class="firebase-sync-title">Sign in to sync your whole trip</p>
-        <p class="firebase-sync-status" data-kind="warn">Your itinerary progress, choices, packing, expenses, picks, and theme are currently saved only on this device.</p>
-        <p class="firebase-sync-account">Not signed in</p>
+        <p class="firebase-sync-title">Checking cloud sync…</p>
+        <p class="firebase-sync-status">Checking your saved Google sign-in before showing the sign-in button.</p>
+        <p class="firebase-sync-account">Checking account…</p>
       </div>
       <div class="firebase-sync-actions">
-        <button type="button" class="primary" data-sync-sign-in>Sign in with Google</button>
+        <button type="button" class="primary" data-sync-sign-in disabled>Sign in with Google</button>
         <button type="button" data-sync-sign-out hidden>Sign out</button>
       </div>
     </div>`;
@@ -180,13 +208,17 @@ function mountPanel() {
   });
 
   if (!isConfigured) {
+    titleText.textContent = 'Cloud sync unavailable';
+    setAccount(null);
     setStatus('Cloud sync needs a valid Firebase Web API key before sign-in can work.', 'error');
     signInButton.disabled = true;
   }
 }
 
 async function handleSignIn() {
-  if (!auth) return;
+  if (!auth || !authStateResolved || signInInFlight) return;
+  signInInFlight = true;
+  if (signInButton) signInButton.disabled = true;
   setStatus('Opening Google sign-in…', '');
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
@@ -194,10 +226,8 @@ async function handleSignIn() {
     await signInWithPopup(auth, provider);
   } catch (error) {
     if (error && (error.code === 'auth/popup-blocked' || error.code === 'auth/operation-not-supported-in-this-environment')) {
-      await signInWithRedirect(auth, provider);
-      return;
-    }
-    if (error && error.code !== 'auth/popup-closed-by-user') {
+      setStatus('This in-app browser cannot complete Google sign-in reliably. Open the trip in Chrome, Safari, or another full browser and sign in there.', 'error');
+    } else if (error && error.code !== 'auth/popup-closed-by-user') {
       const message = error.code === 'auth/api-key-not-valid.-please-pass-a-valid-api-key.'
         ? 'Firebase rejected the Web API key. Copy it directly from Google Cloud Credentials.'
         : 'Google sign-in failed: ' + (error.message || error.code || 'unknown error');
@@ -205,6 +235,9 @@ async function handleSignIn() {
     } else {
       setStatus('Sign-in cancelled. Your changes remain only on this device.', 'warn');
     }
+  } finally {
+    signInInFlight = false;
+    if (signInButton && !currentUser) signInButton.disabled = false;
   }
 }
 
@@ -255,6 +288,12 @@ function schedulePush(reason = 'change') {
   pushTimer = setTimeout(() => pushLocalSnapshot(reason), 450);
 }
 
+function refreshAfterRemote(remote, message, delay) {
+  markRemoteBootstrap(remote);
+  setStatus(message, 'ok');
+  setTimeout(() => location.reload(), delay);
+}
+
 async function connectTrip() {
   if (unsubscribe) unsubscribe();
   unsubscribe = null;
@@ -264,22 +303,41 @@ async function connectTrip() {
   try {
     const initial = await getDoc(tripRef);
     if (!initial.exists()) {
+      clearRemoteBootstrap();
       await pushLocalSnapshot('first-device-seed');
     } else {
       const data = initial.data() || {};
       const legacyDocument = !(data.appData && typeof data.appData === 'object');
-      const changed = applyRemoteSnapshot(remoteSnapshot(data));
-      if (legacyDocument) {
-        // Upgrade the checklist-only document after merging it with this
-        // device's packing, expenses, and theme.
-        await pushLocalSnapshot('migrate-full-app-data');
+      const remote = remoteSnapshot(data);
+      const remoteSignature = snapshotSignature(remote);
+      const bootstrapSignature = readRemoteBootstrapSignature();
+      const resumedAfterRemoteRefresh = Boolean(bootstrapSignature && bootstrapSignature === remoteSignature);
+
+      if (resumedAfterRemoteRefresh) {
+        // The previous page already copied this exact cloud snapshot into
+        // localStorage and reloaded. app.js may have normalized that state while
+        // starting up. Treat that normalized local state as the converged form
+        // and write it back once instead of downloading + reloading forever.
+        clearRemoteBootstrap();
+        if (!snapshotsEqual(localSnapshot(), remote)) {
+          await pushLocalSnapshot('post-remote-refresh-normalize');
+        } else {
+          setStatus('Everything is synced across devices.', 'ok');
+        }
+      } else {
+        const changed = applyRemoteSnapshot(remote);
+        if (legacyDocument) {
+          // Upgrade the checklist-only document after merging it with this
+          // device's packing, expenses, and theme.
+          await pushLocalSnapshot('migrate-full-app-data');
+        }
+        if (changed) {
+          refreshAfterRemote(remote, 'Downloaded the shared trip. Refreshing once…', 250);
+          return;
+        }
+        clearRemoteBootstrap();
+        setStatus('Everything is synced across devices.', 'ok');
       }
-      if (changed) {
-        setStatus('Downloaded the shared trip. Refreshing…', 'ok');
-        setTimeout(() => location.reload(), 250);
-        return;
-      }
-      setStatus('Everything is synced across devices.', 'ok');
     }
 
     firstRemoteLoad = false;
@@ -290,10 +348,11 @@ async function connectTrip() {
         setStatus('Everything is synced across devices.', 'ok');
         return;
       }
-      const changed = applyRemoteSnapshot(remoteSnapshot(data));
+      const remote = remoteSnapshot(data);
+      const changed = applyRemoteSnapshot(remote);
       if (changed && !firstRemoteLoad) {
-        setStatus('Updated from another device. Refreshing…', 'ok');
-        setTimeout(() => location.reload(), 300);
+        refreshAfterRemote(remote, 'Updated from another device. Refreshing once…', 300);
+        return;
       }
       firstRemoteLoad = false;
     }, error => {
@@ -302,6 +361,7 @@ async function connectTrip() {
     });
   } catch (error) {
     console.error('Firebase sync connection failed.', error);
+    clearRemoteBootstrap();
     setStatus('Could not open the shared trip. Check Firebase setup and rules.', 'error');
   }
 }
@@ -310,7 +370,37 @@ function disconnectTrip() {
   if (unsubscribe) unsubscribe();
   unsubscribe = null;
   tripRef = null;
+  clearRemoteBootstrap();
   setStatus('Your changes are currently saved only on this device. Sign in to sync the entire trip.', 'warn');
+}
+
+async function configurePersistence() {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+    persistenceMode = 'local';
+    return;
+  } catch (localError) {
+    console.warn('Firebase local auth persistence is unavailable; trying session persistence.', localError);
+  }
+
+  try {
+    await setPersistence(auth, browserSessionPersistence);
+    persistenceMode = 'session';
+    return;
+  } catch (sessionError) {
+    console.warn('Firebase session auth persistence is unavailable; using in-memory persistence.', sessionError);
+  }
+
+  try {
+    await setPersistence(auth, inMemoryPersistence);
+    persistenceMode = 'memory';
+  } catch (memoryError) {
+    // Persistence failure must never prevent auth-state observation. Firebase's
+    // current auth instance can still report a user in environments that reject
+    // explicit persistence stores.
+    persistenceMode = 'unknown';
+    console.warn('Firebase could not set an explicit auth persistence mode.', memoryError);
+  }
 }
 
 window.addEventListener('pei-firebase-local-change', event => {
@@ -333,18 +423,30 @@ if (isConfigured) {
     const app = initializeApp(settings.firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
-    await setPersistence(auth, browserLocalPersistence);
-    try { await getRedirectResult(auth); } catch (error) { console.warn('Redirect sign-in result failed.', error); }
+
+    await configurePersistence();
 
     onAuthStateChanged(auth, user => {
+      authStateResolved = true;
       currentUser = user;
       setAccount(user);
       updatePresentation(user);
-      if (user) connectTrip();
-      else disconnectTrip();
+      if (signInButton) signInButton.disabled = Boolean(user) || signInInFlight;
+      if (user) {
+        if (persistenceMode === 'session') {
+          setStatus('Signed in for this browser session. Loading the shared trip…', 'warn');
+        } else if (persistenceMode === 'memory' || persistenceMode === 'unknown') {
+          setStatus('Signed in for this page session only. Loading the shared trip…', 'warn');
+        }
+        connectTrip();
+      } else {
+        disconnectTrip();
+      }
     });
   } catch (error) {
     console.error('Firebase initialization failed.', error);
+    authStateResolved = true;
+    if (signInButton) signInButton.disabled = true;
     const message = error && String(error.code || error.message || '').includes('api-key')
       ? 'Firebase rejected the Web API key. Copy it directly from Google Cloud Credentials.'
       : 'Firebase initialization failed. Recheck firebase-config.js.';
