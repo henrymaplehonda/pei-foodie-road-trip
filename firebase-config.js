@@ -92,11 +92,12 @@ if (isLocalSmokeRun && document.readyState === 'loading') {
   document.write('<style>.firebase-sync-panel{pointer-events:none!important}</style>');
 }
 
-// Load the live Aug 17/Aug 18/Aug 19 route corrections and UI alignment for
+// Load the live Aug 17/Aug 18/Aug 20 route corrections and UI alignment for
 // real visitors. The historical smoke fixture deliberately stays on the
 // original itinerary snapshot because that suite contains date-specific legacy asserts.
 if (!isLocalSmokeRun && document.readyState === 'loading') {
   document.write('<script src="data/aug17-live-override.js?v=20260816"></script>');
   document.write('<script src="data/aug18-live-override.js?v=20260817"></script>');
+  document.write('<script src="data/aug20-live-override.js?v=20260818"></script>');
   document.write('<script src="data/aug17-ui-hotfix.js?v=20260816"></script>');
 }
