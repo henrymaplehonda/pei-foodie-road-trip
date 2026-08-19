@@ -100,6 +100,7 @@ if (!isLocalSmokeRun && document.readyState === 'loading') {
   document.write('<script src="data/aug18-live-override.js?v=20260817"></script>');
   document.write('<script src="data/aug19-live-override.js?v=20260818"></script>');
   document.write('<script src="data/aug20-live-override.js?v=20260818"></script>');
+  document.write('<script src="data/aug20-esso-hotfix.js?v=20260819"></script>');
   document.write('<script src="data/aug21-live-override.js?v=20260818"></script>');
   document.write('<script src="data/aug17-ui-hotfix.js?v=20260816"></script>');
 }
